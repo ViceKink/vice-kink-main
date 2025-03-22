@@ -1,7 +1,6 @@
-
 import { useEffect, useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
-import { ChevronLeft, Settings, Tabs } from 'lucide-react';
+import { ChevronLeft, Settings } from 'lucide-react';
 import BentoProfile from '@/components/ui/BentoProfile';
 import { useAuth } from '@/context/AuthContext';
 import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

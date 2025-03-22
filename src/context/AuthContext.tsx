@@ -1,5 +1,4 @@
-
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -57,7 +56,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Mock user data for demo purposes
   const mockUser: User = {
     id: "user-123",
     name: "Niharika Singh",
@@ -102,7 +100,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Check for authentication status on initial load
   useEffect(() => {
     const checkUser = async () => {
       setIsLoading(true);
@@ -111,8 +108,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (session) {
           const { user: authUser } = session;
-          // For now, use the mock user data, but in the future we'll fetch the actual profile
-          // Simulating fetching a profile
           setUser(mockUser);
         }
       } catch (error) {
@@ -124,11 +119,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     checkUser();
     
-    // Set up listener for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session) {
-          // For demo, continue using mock user
           setUser(mockUser);
         } else {
           setUser(null);
@@ -152,7 +145,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) throw error;
       
-      // For demo, we'll continue using mock user
       setUser(mockUser);
       toast.success('Successfully logged in!');
     } catch (error: any) {
@@ -180,7 +172,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signup = async (userData: Partial<User>, password: string) => {
     setIsLoading(true);
     try {
-      // First, create the auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userData.email as string,
         password: password,
@@ -194,7 +185,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (authError) throw authError;
       
       if (authData.user) {
-        // Then create the profile in our profiles table
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({
@@ -214,7 +204,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
         if (profileError) throw profileError;
         
-        // Use the mock user for demo purposes
         setUser(mockUser);
         toast.success('Account created successfully!');
       }
@@ -229,8 +218,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchProfile = async (userId?: string): Promise<User | null> => {
     try {
-      // For demo purposes, return the mock user
-      // In production, we would fetch the actual profile data from Supabase
       return mockUser;
     } catch (error) {
       console.error("Error fetching profile:", error);
