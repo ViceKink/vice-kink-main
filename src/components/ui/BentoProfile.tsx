@@ -1,9 +1,11 @@
 
+import React from 'react';
 import ProfileSection from '@/components/profile/ProfileSection';
 import ProfileTag from '@/components/ui/ProfileTag';
 import AudioPlayer from '@/components/ui/AudioPlayer';
 import { Check, MapPin, Verified, Heart } from 'lucide-react';
 import { UserProfile } from '@/context/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface BentoProfileProps {
   profile: UserProfile;
@@ -11,50 +13,48 @@ interface BentoProfileProps {
 }
 
 const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => {
+  const isMobile = useIsMobile();
+  
   return (
-    <div className="bento-grid">
-      {/* Main Photo */}
-      <ProfileSection 
-        gridSpan={{
-          cols: "col-span-7",
-          rows: "row-span-4",
-          colsStart: "col-start-1",
-          rowsStart: "row-start-1"
-        }}
-        className="relative bg-black"
-      >
-        {profile.photos && profile.photos.length > 0 ? (
+    <div className="bento-grid max-w-[60%] mx-auto">
+      {/* Main Photo - only show if photos exist */}
+      {profile.photos && profile.photos.length > 0 && (
+        <ProfileSection 
+          gridSpan={{
+            cols: isMobile ? "col-span-6" : "col-span-7",
+            rows: "row-span-4",
+            colsStart: "col-start-1",
+            rowsStart: "row-start-1"
+          }}
+          className="relative bg-black"
+        >
           <img
             src={profile.photos[0]}
             alt={profile.name}
             className="w-full h-full object-cover"
           />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-800">
-            <p className="text-gray-500">No photo available</p>
+          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent text-white">
+            <div className="flex items-baseline">
+              <h2 className="text-2xl font-bold">{profile.name}</h2>
+              {profile.verified && (
+                <Verified className="w-5 h-5 ml-1 text-vice-purple" />
+              )}
+            </div>
+            <div className="flex items-center text-sm mt-1">
+              <MapPin className="w-3 h-3 mr-1" />
+              <span>{profile.location || 'No location'}</span>
+            </div>
           </div>
-        )}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent text-white">
-          <div className="flex items-baseline">
-            <h2 className="text-2xl font-bold">{profile.name}</h2>
-            {profile.verified && (
-              <Verified className="w-5 h-5 ml-1 text-vice-purple" />
-            )}
-          </div>
-          <div className="flex items-center text-sm mt-1">
-            <MapPin className="w-3 h-3 mr-1" />
-            <span>{profile.location || 'No location'}</span>
-          </div>
-        </div>
-      </ProfileSection>
+        </ProfileSection>
+      )}
 
       {/* User Info */}
       <ProfileSection
         gridSpan={{
-          cols: "col-span-5",
+          cols: isMobile ? "col-span-6" : "col-span-5",
           rows: "row-span-2",
-          colsStart: "col-start-8",
-          rowsStart: "row-start-1"
+          colsStart: isMobile ? "col-start-1" : (profile.photos && profile.photos.length > 0 ? "col-start-8" : "col-start-1"),
+          rowsStart: isMobile && profile.photos && profile.photos.length > 0 ? "row-start-5" : "row-start-1"
         }}
         className="bg-white dark:bg-card p-4"
       >
@@ -69,26 +69,32 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           </div>
           
           <div className="mt-2 flex items-center">
-            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-              profile.about?.status === 'single' ? 'bg-vice-purple/10 text-vice-purple' : 
-              profile.about?.status === 'married' ? 'bg-vice-red/10 text-vice-red' : 
-              'bg-vice-orange/10 text-vice-orange'
-            }`}>
-              {profile.about?.status || 'Not specified'}
-            </span>
+            {profile.about?.status && (
+              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                profile.about?.status === 'single' ? 'bg-vice-purple/10 text-vice-purple' : 
+                profile.about?.status === 'married' ? 'bg-vice-red/10 text-vice-red' : 
+                'bg-vice-orange/10 text-vice-orange'
+              }`}>
+                {profile.about?.status}
+              </span>
+            )}
           </div>
           
-          <div className="mt-3 flex items-center">
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-secondary text-secondary-foreground">
-              {profile.about?.occupation || 'Not specified'}
-            </span>
-          </div>
+          {profile.about?.occupation && (
+            <div className="mt-3 flex items-center">
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-secondary text-secondary-foreground">
+                {profile.about?.occupation}
+              </span>
+            </div>
+          )}
           
           <div className="mt-auto">
             <div className="flex flex-wrap gap-2 mt-2">
-              <div className="flex items-center text-xs text-foreground/70">
-                <span className="font-semibold">{profile.about?.height || 'Height not specified'}</span>
-              </div>
+              {profile.about?.height && (
+                <div className="flex items-center text-xs text-foreground/70">
+                  <span className="font-semibold">{profile.about?.height}</span>
+                </div>
+              )}
               
               {profile.about?.zodiac && (
                 <div className="flex items-center text-xs text-foreground/70">
@@ -107,27 +113,29 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
       </ProfileSection>
 
       {/* Bio */}
-      <ProfileSection
-        gridSpan={{
-          cols: "col-span-5",
-          rows: "row-span-2",
-          colsStart: "col-start-8",
-          rowsStart: "row-start-3"
-        }}
-        className="bg-vice-red p-4 text-white"
-      >
-        <h3 className="text-lg font-semibold mb-2">My story</h3>
-        <p className="text-sm">{profile.bio || 'No bio available'}</p>
-      </ProfileSection>
+      {profile.bio && (
+        <ProfileSection
+          gridSpan={{
+            cols: isMobile ? "col-span-6" : "col-span-5",
+            rows: "row-span-2",
+            colsStart: isMobile ? "col-start-1" : (profile.photos && profile.photos.length > 0 ? "col-start-8" : "col-start-1"),
+            rowsStart: isMobile ? (profile.photos && profile.photos.length > 0 ? "row-start-6" : "row-start-3") : (profile.photos && profile.photos.length > 0 ? "row-start-3" : "row-start-3")
+          }}
+          className="bg-vice-red p-4 text-white"
+        >
+          <h3 className="text-lg font-semibold mb-2">My story</h3>
+          <p className="text-sm">{profile.bio}</p>
+        </ProfileSection>
+      )}
 
       {/* Audio */}
       {profile.audio && (
         <ProfileSection
           gridSpan={{
-            cols: "col-span-4",
+            cols: isMobile ? "col-span-6" : "col-span-4",
             rows: "row-span-1",
             colsStart: "col-start-1",
-            rowsStart: "row-start-5"
+            rowsStart: isMobile ? (profile.photos && profile.photos.length > 0 ? "row-start-7" : "row-start-5") : (profile.photos && profile.photos.length > 0 ? "row-start-5" : "row-start-5")
           }}
           className="bg-vice-purple/10 p-0 overflow-hidden"
         >
@@ -139,90 +147,83 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
       )}
 
       {/* Vices */}
-      <ProfileSection
-        gridSpan={{
-          cols: "col-span-3",
-          rows: "row-span-2",
-          colsStart: "col-start-1",
-          rowsStart: "row-start-6"
-        }}
-        className="bg-white dark:bg-card p-4"
-      >
-        <h3 className="text-base font-semibold mb-2">Vices</h3>
-        <div className="flex flex-wrap gap-2">
-          {profile.vices && profile.vices.length > 0 ? (
-            profile.vices.map((vice, index) => (
+      {profile.vices && profile.vices.length > 0 && (
+        <ProfileSection
+          gridSpan={{
+            cols: isMobile ? "col-span-6" : "col-span-6",
+            rows: "row-span-1",
+            colsStart: "col-start-1",
+            rowsStart: isMobile ? (profile.photos && profile.photos.length > 0 ? "row-start-8" : "row-start-6") : (profile.photos && profile.photos.length > 0 ? "row-start-6" : "row-start-6")
+          }}
+          className="bg-white dark:bg-card p-4"
+        >
+          <h3 className="text-base font-semibold mb-2">Vices</h3>
+          <div className="flex flex-wrap gap-2">
+            {profile.vices.map((vice, index) => (
               <ProfileTag key={index} label={vice} type="vice" />
-            ))
-          ) : (
-            <p className="text-sm text-foreground/50">No vices listed</p>
-          )}
-        </div>
-      </ProfileSection>
+            ))}
+          </div>
+        </ProfileSection>
+      )}
 
       {/* Kinks */}
-      <ProfileSection
-        gridSpan={{
-          cols: "col-span-3",
-          rows: "row-span-2",
-          colsStart: "col-start-4",
-          rowsStart: "row-start-6"
-        }}
-        className="bg-white dark:bg-card p-4"
-      >
-        <h3 className="text-base font-semibold mb-2">Kinks</h3>
-        <div className="flex flex-wrap gap-2">
-          {profile.kinks && profile.kinks.length > 0 ? (
-            profile.kinks.map((kink, index) => (
+      {profile.kinks && profile.kinks.length > 0 && (
+        <ProfileSection
+          gridSpan={{
+            cols: isMobile ? "col-span-6" : "col-span-6",
+            rows: "row-span-1",
+            colsStart: "col-start-1",
+            rowsStart: isMobile ? (profile.photos && profile.photos.length > 0 ? "row-start-9" : "row-start-7") : (profile.photos && profile.photos.length > 0 ? "row-start-7" : "row-start-7")
+          }}
+          className="bg-white dark:bg-card p-4"
+        >
+          <h3 className="text-base font-semibold mb-2">Kinks</h3>
+          <div className="flex flex-wrap gap-2">
+            {profile.kinks.map((kink, index) => (
               <ProfileTag key={index} label={kink} type="kink" />
-            ))
-          ) : (
-            <p className="text-sm text-foreground/50">No kinks listed</p>
-          )}
-        </div>
-      </ProfileSection>
+            ))}
+          </div>
+        </ProfileSection>
+      )}
 
       {/* Secondary Photos */}
-      <ProfileSection
-        gridSpan={{
-          cols: "col-span-6",
-          rows: "row-span-3",
-          colsStart: "col-start-7",
-          rowsStart: "row-start-5"
-        }}
-        className="bg-black p-0 overflow-hidden"
-      >
-        <div className="grid grid-cols-2 grid-rows-2 gap-1 h-full">
-          {profile.photos && profile.photos.slice(1, 5).map((photo, index) => (
-            <div key={index} className="relative overflow-hidden">
-              <img
-                src={photo}
-                alt={`${profile.name} photo ${index + 2}`}
-                className="w-full h-full object-cover"
-              />
-              {index === 2 && profile.photos.length > 5 && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white">
-                  <span className="text-lg font-semibold">+{profile.photos.length - 4} photos</span>
-                </div>
-              )}
-            </div>
-          ))}
-          {(!profile.photos || profile.photos.length <= 1) && (
-            <div className="col-span-2 row-span-2 flex items-center justify-center bg-gray-200 dark:bg-gray-800">
-              <p className="text-gray-500">No additional photos</p>
-            </div>
-          )}
-        </div>
-      </ProfileSection>
+      {profile.photos && profile.photos.length > 1 && (
+        <ProfileSection
+          gridSpan={{
+            cols: isMobile ? "col-span-6" : "col-span-6",
+            rows: "row-span-3",
+            colsStart: isMobile ? "col-start-1" : "col-start-7",
+            rowsStart: isMobile ? (profile.photos && profile.photos.length > 0 ? "row-start-10" : "row-start-8") : (profile.photos && profile.photos.length > 0 ? "row-start-5" : "row-start-5")
+          }}
+          className="bg-black p-0 overflow-hidden"
+        >
+          <div className="grid grid-cols-2 grid-rows-2 gap-1 h-full">
+            {profile.photos.slice(1, 5).map((photo, index) => (
+              <div key={index} className="relative overflow-hidden">
+                <img
+                  src={photo}
+                  alt={`${profile.name} photo ${index + 2}`}
+                  className="w-full h-full object-cover"
+                />
+                {index === 2 && profile.photos.length > 5 && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white">
+                    <span className="text-lg font-semibold">+{profile.photos.length - 4} photos</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </ProfileSection>
+      )}
 
       {/* Flirting Style */}
       {profile.flirtingStyle && (
         <ProfileSection
           gridSpan={{
-            cols: "col-span-6",
+            cols: isMobile ? "col-span-6" : "col-span-6",
             rows: "row-span-1",
             colsStart: "col-start-1",
-            rowsStart: "row-start-8"
+            rowsStart: isMobile ? (profile.photos && profile.photos.length > 0 ? "row-start-11" : "row-start-9") : (profile.photos && profile.photos.length > 0 ? "row-start-8" : "row-start-8")
           }}
           className="bg-white dark:bg-card p-4"
         >
@@ -239,10 +240,10 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
       {profile.passions && profile.passions.length > 0 && (
         <ProfileSection
           gridSpan={{
-            cols: "col-span-3",
+            cols: isMobile ? "col-span-6" : "col-span-3",
             rows: "row-span-1",
-            colsStart: "col-start-7",
-            rowsStart: "row-start-8"
+            colsStart: isMobile ? "col-start-1" : "col-start-7",
+            rowsStart: isMobile ? (profile.photos && profile.photos.length > 0 ? "row-start-12" : "row-start-10") : (profile.photos && profile.photos.length > 0 ? "row-start-8" : "row-start-8")
           }}
           className="bg-vice-dark-purple p-4 text-white"
         >
@@ -257,10 +258,10 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
       {/* Quote */}
       <ProfileSection
         gridSpan={{
-          cols: "col-span-3",
+          cols: isMobile ? "col-span-6" : "col-span-3",
           rows: "row-span-1",
-          colsStart: "col-start-10",
-          rowsStart: "row-start-8"
+          colsStart: isMobile ? "col-start-1" : "col-start-10",
+          rowsStart: isMobile ? (profile.photos && profile.photos.length > 0 ? "row-start-13" : "row-start-11") : (profile.photos && profile.photos.length > 0 ? "row-start-8" : "row-start-8")
         }}
         className="bg-vice-orange p-4 text-white"
       >
