@@ -1,14 +1,16 @@
+
 import { useEffect, useState } from 'react';
-import { NavLink, useParams } from 'react-router-dom';
+import { NavLink, useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Settings } from 'lucide-react';
 import BentoProfile from '@/components/ui/BentoProfile';
 import { useAuth } from '@/context/AuthContext';
-import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
 
 const Profile = () => {
   const { id } = useParams();
-  const { user, fetchProfile } = useAuth();
+  const navigate = useNavigate();
+  const { user, fetchProfile, isAuthenticated } = useAuth();
   const [profileUser, setProfileUser] = useState(user);
   const [activeTab, setActiveTab] = useState<'persona' | 'erotics'>('persona');
   const [isLoading, setIsLoading] = useState(false);
@@ -47,6 +49,26 @@ const Profile = () => {
         <div className="text-center">
           <h2 className="text-2xl font-semibold mb-2">Loading Profile...</h2>
           <p className="text-sm text-foreground/70">Please wait a moment</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // If trying to view the current user's profile but not authenticated
+  if (isCurrentUser && !isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-semibold mb-4">Sign in to view your profile</h2>
+          <p className="text-foreground/70 mb-6">
+            You need to be signed in to view and manage your profile.
+          </p>
+          <Button 
+            className="bg-vice-purple hover:bg-vice-dark-purple"
+            onClick={() => navigate('/auth')}
+          >
+            Sign In
+          </Button>
         </div>
       </div>
     );

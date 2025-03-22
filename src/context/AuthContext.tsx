@@ -1,32 +1,35 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
-interface User {
+interface UserProfile {
   id: string;
   name: string;
-  age: number;
+  age?: number;
   email: string;
-  photos: string[];
-  location: string;
-  verified: boolean;
-  about: {
-    occupation: string;
-    status: 'single' | 'married' | 'it\'s complicated';
-    height: string;
+  photos?: string[];
+  location?: string;
+  verified?: boolean;
+  about?: {
+    occupation?: string;
+    status?: 'single' | 'married' | 'it\'s complicated';
+    height?: string;
     zodiac?: string;
     religion?: string;
     languages?: string[];
-    lifestyle: {
+    lifestyle?: {
       smoking?: boolean;
       drinking?: string;
       exercise?: string;
       diet?: string;
     };
   };
-  vices: string[];
-  kinks: string[];
-  bio: string;
+  vices?: string[];
+  kinks?: string[];
+  bio?: string;
   lookingFor?: string;
   flirtingStyle?: string;
   audio?: {
@@ -41,94 +44,57 @@ interface User {
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: UserProfile | null;
+  session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  signup: (userData: Partial<User>, password: string) => Promise<void>;
-  fetchProfile: (userId?: string) => Promise<User | null>;
+  signup: (userData: Partial<UserProfile>, password: string) => Promise<void>;
+  fetchProfile: (userId?: string) => Promise<UserProfile | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
-  const mockUser: User = {
-    id: "user-123",
-    name: "Niharika Singh",
-    age: 27,
-    email: "niharika@example.com",
-    location: "Mumbai",
-    verified: true,
-    photos: [
-      "/lovable-uploads/d35b405d-2dbf-4fcc-837b-1d48cb945bf4.png",
-      "/lovable-uploads/ea8c69d9-6b5b-4bba-aceb-7d05f9a47ee5.png",
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1000&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1000&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=1000&auto=format&fit=crop"
-    ],
-    about: {
-      occupation: "Lawyer",
-      status: "single",
-      height: "5'4\"",
-      zodiac: "Virgo",
-      religion: "Hindu",
-      languages: ["English", "Hindi", "Marathi"],
-      lifestyle: {
-        smoking: false,
-        drinking: "occasionally",
-        exercise: "regularly",
-        diet: "non-vegetarian"
-      }
-    },
-    vices: ["Smoking", "Music", "Single Malt", "420", "Hiking"],
-    kinks: ["BDSM", "CNC", "Foot Fetish", "Dominatrix"],
-    bio: "Mumbai born and bred. I pursued my college education in Kerala. Currently, I split my time between Kerala and Pune for work. Family means the world to me—I have two siblings who are my entire heart. Aai, baba, and friends are integral parts of my life.",
-    lookingFor: "someone genuine to connect with",
-    flirtingStyle: "To roast you",
-    audio: {
-      title: "what my most days are like",
-      url: "https://example.com/audio.mp3"
-    },
-    passions: ["my work"],
-    music: {
-      favoriteSong: "Healing",
-      artists: ["Taylor Swift", "The Weeknd"]
-    }
-  };
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const checkUser = async () => {
-      setIsLoading(true);
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          const { user: authUser } = session;
-          setUser(mockUser);
-        }
-      } catch (error) {
-        console.error("Error checking authentication:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    checkUser();
-    
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session) {
-          setUser(mockUser);
+      async (event, currentSession) => {
+        console.log("Auth state changed:", event);
+        setSession(currentSession);
+        
+        if (currentSession) {
+          const profile = await fetchProfile(currentSession.user.id);
+          setUser(profile);
         } else {
           setUser(null);
         }
+        
         setIsLoading(false);
       }
     );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
+      console.log("Got session:", currentSession);
+      setSession(currentSession);
+      
+      if (currentSession) {
+        const profile = await fetchProfile(currentSession.user.id);
+        setUser(profile);
+      }
+      
+      setIsLoading(false);
+    }).catch(error => {
+      console.error("Error getting session:", error);
+      setIsLoading(false);
+    });
     
     return () => {
       subscription.unsubscribe();
@@ -145,7 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) throw error;
       
-      setUser(mockUser);
+      navigate('/');
       toast.success('Successfully logged in!');
     } catch (error: any) {
       console.error("Login error:", error.message);
@@ -162,6 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       
       setUser(null);
+      navigate('/auth');
       toast.success('Successfully logged out');
     } catch (error: any) {
       console.error("Logout error:", error.message);
@@ -169,7 +136,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signup = async (userData: Partial<User>, password: string) => {
+  const signup = async (userData: Partial<UserProfile>, password: string) => {
     setIsLoading(true);
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -204,8 +171,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
         if (profileError) throw profileError;
         
-        setUser(mockUser);
-        toast.success('Account created successfully!');
+        toast.success('Account created successfully! Please check your email to verify your account.');
+        navigate('/auth');
       }
     } catch (error: any) {
       console.error("Signup error:", error.message);
@@ -216,9 +183,90 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const fetchProfile = async (userId?: string): Promise<User | null> => {
+  const fetchProfile = async (userId?: string): Promise<UserProfile | null> => {
     try {
-      return mockUser;
+      if (!userId && !session?.user?.id) return null;
+      
+      const profileId = userId || session?.user?.id;
+      
+      // Fetch the basic profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', profileId)
+        .single();
+        
+      if (profileError) throw profileError;
+      if (!profileData) return null;
+      
+      // Fetch profile photos
+      const { data: photosData } = await supabase
+        .from('profile_photos')
+        .select('url')
+        .eq('profile_id', profileId)
+        .order('order_index', { ascending: true });
+        
+      // Fetch vices
+      const { data: vicesData } = await supabase
+        .from('profile_vices')
+        .select('vices(name)')
+        .eq('profile_id', profileId);
+        
+      // Fetch kinks
+      const { data: kinksData } = await supabase
+        .from('profile_kinks')
+        .select('kinks(name)')
+        .eq('profile_id', profileId);
+        
+      // Fetch audio
+      const { data: audioData } = await supabase
+        .from('profile_audio')
+        .select('*')
+        .eq('profile_id', profileId)
+        .single();
+        
+      // Fetch passions
+      const { data: passionsData } = await supabase
+        .from('profile_passions')
+        .select('passion')
+        .eq('profile_id', profileId);
+        
+      // Construct the complete user profile
+      const userProfile: UserProfile = {
+        id: profileData.id,
+        name: profileData.name,
+        age: profileData.age,
+        email: session?.user?.email || 'user@example.com',
+        location: profileData.location,
+        verified: profileData.verified,
+        photos: photosData?.map(photo => photo.url) || [],
+        about: {
+          occupation: profileData.occupation,
+          status: profileData.relationship_status as 'single' | 'married' | 'it\'s complicated',
+          height: profileData.height,
+          zodiac: profileData.zodiac,
+          religion: profileData.religion,
+          lifestyle: {
+            // These would come from additional tables if we had them
+            smoking: false,
+            drinking: 'occasionally',
+            exercise: 'regularly',
+            diet: 'non-vegetarian'
+          }
+        },
+        vices: vicesData?.map(vice => vice.vices.name) || [],
+        kinks: kinksData?.map(kink => kink.kinks.name) || [],
+        bio: profileData.bio,
+        lookingFor: profileData.looking_for,
+        flirtingStyle: profileData.flirting_style,
+        audio: audioData ? {
+          title: audioData.title,
+          url: audioData.url
+        } : undefined,
+        passions: passionsData?.map(passion => passion.passion) || []
+      };
+      
+      return userProfile;
     } catch (error) {
       console.error("Error fetching profile:", error);
       return null;
@@ -229,6 +277,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider
       value={{
         user,
+        session,
         isAuthenticated: !!user,
         isLoading,
         login,
