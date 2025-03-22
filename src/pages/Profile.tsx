@@ -3,15 +3,14 @@ import { useEffect, useState } from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Settings } from 'lucide-react';
 import BentoProfile from '@/components/ui/BentoProfile';
-import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth, UserProfile } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 
 const Profile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, fetchProfile, isAuthenticated } = useAuth();
-  const [profileUser, setProfileUser] = useState(user);
+  const [profileUser, setProfileUser] = useState<UserProfile | null>(user);
   const [activeTab, setActiveTab] = useState<'persona' | 'erotics'>('persona');
   const [isLoading, setIsLoading] = useState(false);
   

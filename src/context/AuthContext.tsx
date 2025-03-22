@@ -5,7 +5,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
-interface UserProfile {
+export interface UserProfile {
   id: string;
   name: string;
   age?: number;
@@ -52,6 +52,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   signup: (userData: Partial<UserProfile>, password: string) => Promise<void>;
   fetchProfile: (userId?: string) => Promise<UserProfile | null>;
+  updateUserVices: (viceIds: string[]) => Promise<void>;
+  updateUserKinks: (kinkIds: string[]) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -183,6 +185,110 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateUserVices = async (viceIds: string[]) => {
+    try {
+      if (!session?.user?.id) {
+        throw new Error('User not authenticated');
+      }
+      
+      // First delete existing vices
+      const { error: deleteError } = await supabase
+        .from('profile_vices')
+        .delete()
+        .eq('profile_id', session.user.id);
+        
+      if (deleteError) throw deleteError;
+      
+      // Then insert new vices
+      if (viceIds.length > 0) {
+        const viceInserts = viceIds.map(viceId => ({
+          profile_id: session.user.id,
+          vice_id: viceId
+        }));
+        
+        const { error: insertError } = await supabase
+          .from('profile_vices')
+          .insert(viceInserts);
+          
+        if (insertError) throw insertError;
+      }
+      
+      // Update user in state
+      if (user) {
+        // Fetch updated vices
+        const { data: vicesData } = await supabase
+          .from('profile_vices')
+          .select('vices(name)')
+          .eq('profile_id', session.user.id);
+          
+        const updatedVices = vicesData?.map(vice => vice.vices.name) || [];
+        
+        setUser({
+          ...user,
+          vices: updatedVices
+        });
+      }
+      
+      toast.success('Vices updated successfully');
+    } catch (error: any) {
+      console.error("Update vices error:", error.message);
+      toast.error(error.message || 'Failed to update vices');
+      throw error;
+    }
+  };
+
+  const updateUserKinks = async (kinkIds: string[]) => {
+    try {
+      if (!session?.user?.id) {
+        throw new Error('User not authenticated');
+      }
+      
+      // First delete existing kinks
+      const { error: deleteError } = await supabase
+        .from('profile_kinks')
+        .delete()
+        .eq('profile_id', session.user.id);
+        
+      if (deleteError) throw deleteError;
+      
+      // Then insert new kinks
+      if (kinkIds.length > 0) {
+        const kinkInserts = kinkIds.map(kinkId => ({
+          profile_id: session.user.id,
+          kink_id: kinkId
+        }));
+        
+        const { error: insertError } = await supabase
+          .from('profile_kinks')
+          .insert(kinkInserts);
+          
+        if (insertError) throw insertError;
+      }
+      
+      // Update user in state
+      if (user) {
+        // Fetch updated kinks
+        const { data: kinksData } = await supabase
+          .from('profile_kinks')
+          .select('kinks(name)')
+          .eq('profile_id', session.user.id);
+          
+        const updatedKinks = kinksData?.map(kink => kink.kinks.name) || [];
+        
+        setUser({
+          ...user,
+          kinks: updatedKinks
+        });
+      }
+      
+      toast.success('Kinks updated successfully');
+    } catch (error: any) {
+      console.error("Update kinks error:", error.message);
+      toast.error(error.message || 'Failed to update kinks');
+      throw error;
+    }
+  };
+
   const fetchProfile = async (userId?: string): Promise<UserProfile | null> => {
     try {
       if (!userId && !session?.user?.id) return null;
@@ -284,6 +390,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout,
         signup,
         fetchProfile,
+        updateUserVices,
+        updateUserKinks,
       }}
     >
       {children}
