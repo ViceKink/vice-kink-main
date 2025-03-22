@@ -1,22 +1,48 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
-import { ChevronLeft, Settings } from 'lucide-react';
+import { ChevronLeft, Settings, Tabs } from 'lucide-react';
 import BentoProfile from '@/components/ui/BentoProfile';
 import { useAuth } from '@/context/AuthContext';
+import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
 
 const Profile = () => {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, fetchProfile } = useAuth();
+  const [profileUser, setProfileUser] = useState(user);
+  const [activeTab, setActiveTab] = useState<'persona' | 'erotics'>('persona');
+  const [isLoading, setIsLoading] = useState(false);
   
   const isCurrentUser = !id || id === user?.id;
   
   useEffect(() => {
     // Scroll to top when component mounts
     window.scrollTo(0, 0);
-  }, []);
+    
+    // If viewing another user's profile, fetch their data
+    const getProfileData = async () => {
+      if (id && id !== user?.id) {
+        setIsLoading(true);
+        try {
+          const profile = await fetchProfile(id);
+          if (profile) {
+            setProfileUser(profile);
+          }
+        } catch (error) {
+          console.error("Error fetching profile:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setProfileUser(user);
+      }
+    };
+    
+    getProfileData();
+  }, [id, user, fetchProfile]);
   
-  if (!user) {
+  if (isLoading || !profileUser) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -26,6 +52,10 @@ const Profile = () => {
       </div>
     );
   }
+  
+  const handleTabChange = (tab: 'persona' | 'erotics') => {
+    setActiveTab(tab);
+  };
   
   return (
     <div className="min-h-screen pt-20 pb-28 px-4 md:px-6">
@@ -60,19 +90,32 @@ const Profile = () => {
         
         <div className="mb-4">
           <div className="flex space-x-4">
-            <button className="px-4 py-2 rounded-full bg-secondary text-foreground/80 hover:bg-secondary/80 transition-colors">
+            <button 
+              className={`px-4 py-2 rounded-full ${activeTab === 'persona' ? 'bg-secondary text-foreground/80' : 'bg-secondary/50 text-foreground/80 hover:bg-secondary/80'} transition-colors`}
+              onClick={() => handleTabChange('persona')}
+            >
               Persona
             </button>
-            <button className="px-4 py-2 rounded-full bg-secondary/50 text-foreground/80 hover:bg-secondary/80 transition-colors">
+            <button 
+              className={`px-4 py-2 rounded-full ${activeTab === 'erotics' ? 'bg-secondary text-foreground/80' : 'bg-secondary/50 text-foreground/80 hover:bg-secondary/80'} transition-colors`}
+              onClick={() => handleTabChange('erotics')}
+            >
               Erotics
             </button>
           </div>
         </div>
         
-        <BentoProfile 
-          profile={user}
-          isCurrentUser={isCurrentUser}
-        />
+        {activeTab === 'persona' ? (
+          <BentoProfile 
+            profile={profileUser}
+            isCurrentUser={isCurrentUser}
+          />
+        ) : (
+          <div className="p-8 bg-white dark:bg-card rounded-2xl shadow-md text-center">
+            <h3 className="text-xl font-bold mb-4">Erotics Profile</h3>
+            <p className="text-foreground/70">This section is still under development. Coming soon!</p>
+          </div>
+        )}
       </div>
     </div>
   );
