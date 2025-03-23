@@ -42,15 +42,17 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   if (loadingTimeout && isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center flex-col p-4">
-        <div className="text-center mb-4">
+        <div className="text-center mb-4 max-w-md">
           <h2 className="text-2xl font-semibold mb-2">Loading is taking longer than expected</h2>
-          <p className="text-sm text-foreground/70 mb-4">
+          <p className="text-sm text-foreground/70 mb-6">
             You can try refreshing the page or continue waiting
           </p>
-          <Progress value={loadingProgress} className="w-60 h-2" />
+          <div className="w-full mb-6">
+            <Progress value={loadingProgress} className="w-full h-2" />
+          </div>
           <button 
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-vice-purple text-white rounded-md"
+            className="px-6 py-2 bg-vice-purple hover:bg-vice-dark-purple text-white rounded-md transition-colors"
           >
             Refresh Page
           </button>
@@ -63,10 +65,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     console.log("ProtectedRoute: Loading auth state...", { isLoading, isAuthenticated, userId: user?.id });
     return (
       <div className="flex min-h-screen items-center justify-center flex-col p-4">
-        <div className="text-center mb-4">
+        <div className="text-center mb-4 max-w-md">
           <h2 className="text-2xl font-semibold mb-2">Loading...</h2>
-          <p className="text-sm text-foreground/70 mb-4">Please wait a moment</p>
-          <Progress value={loadingProgress} className="w-60 h-2" />
+          <p className="text-sm text-foreground/70 mb-6">Please wait a moment</p>
+          <div className="w-full">
+            <Progress value={loadingProgress} className="w-full h-2" />
+          </div>
         </div>
       </div>
     );

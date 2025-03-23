@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Settings, RefreshCw, Pencil } from 'lucide-react';
@@ -99,14 +100,20 @@ const Profile = () => {
     window.location.reload();
   };
   
+  const handleTabChange = (tab: 'persona' | 'erotics') => {
+    setActiveTab(tab);
+  };
+  
   if (authLoading) {
     console.log("Profile page: Auth loading...");
     return (
       <div className="flex min-h-screen items-center justify-center flex-col p-4">
-        <div className="text-center mb-4">
+        <div className="text-center mb-4 max-w-md">
           <h2 className="text-2xl font-semibold mb-2">Loading Profile...</h2>
-          <p className="text-sm text-foreground/70 mb-4">Checking authentication</p>
-          <Progress value={25} className="w-60 h-2" />
+          <p className="text-sm text-foreground/70 mb-6">Checking authentication</p>
+          <div className="w-full">
+            <Progress value={25} className="w-full h-2" />
+          </div>
         </div>
       </div>
     );
@@ -115,11 +122,14 @@ const Profile = () => {
   if (loadingTimeout && isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center flex-col p-4">
-        <div className="text-center mb-4">
+        <div className="text-center mb-4 max-w-md">
           <h2 className="text-2xl font-semibold mb-2">Loading is taking longer than expected</h2>
-          <p className="text-sm text-foreground/70 mb-4">
+          <p className="text-sm text-foreground/70 mb-6">
             There might be an issue loading your profile data
           </p>
+          <div className="w-full mb-6">
+            <Progress value={loadingProgress} className="w-full h-2" />
+          </div>
           <Button 
             onClick={handleRetry}
             className="bg-vice-purple hover:bg-vice-dark-purple flex items-center gap-2"
@@ -135,10 +145,12 @@ const Profile = () => {
     console.log("Profile page: Profile data loading...");
     return (
       <div className="flex min-h-screen items-center justify-center flex-col p-4">
-        <div className="text-center mb-4">
+        <div className="text-center mb-4 max-w-md">
           <h2 className="text-2xl font-semibold mb-2">Loading Profile...</h2>
-          <p className="text-sm text-foreground/70 mb-4">Please wait a moment</p>
-          <Progress value={loadingProgress} className="w-60 h-2" />
+          <p className="text-sm text-foreground/70 mb-6">Please wait a moment</p>
+          <div className="w-full">
+            <Progress value={loadingProgress} className="w-full h-2" />
+          </div>
         </div>
       </div>
     );
@@ -204,10 +216,6 @@ const Profile = () => {
     name: profileUser.name,
     isCurrentUser
   });
-  
-  const handleTabChange = (tab: 'persona' | 'erotics') => {
-    setActiveTab(tab);
-  };
   
   return (
     <div className="min-h-screen pt-20 pb-28 px-4 md:px-6">
