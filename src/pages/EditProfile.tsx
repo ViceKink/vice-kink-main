@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, UserProfile } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth';
+import { UserProfile } from '@/types/auth';
 import { ChevronLeft, Save, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';

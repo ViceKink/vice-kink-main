@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { UserProfile, FlirtingStyle } from '@/context/AuthContext';
+import { UserProfile, FlirtingStyle } from '@/types/auth';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
@@ -42,7 +42,7 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
       [attribute]: value
     };
     
-    // Store flirting style as a JSON string
+    // Store flirting style object (will be converted to JSON in AuthProvider)
     updateField('flirtingStyle', updatedStyle);
   };
   
