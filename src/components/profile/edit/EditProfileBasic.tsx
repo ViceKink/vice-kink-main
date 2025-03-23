@@ -2,13 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { UserProfile } from '@/types/auth';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, CalendarIcon, XCircle } from 'lucide-react';
-import { format, differenceInYears, getDate, getMonth } from 'date-fns';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertCircle } from 'lucide-react';
+import { differenceInYears, getDate, getMonth } from 'date-fns';
+import { CustomDatePicker } from '@/components/ui/custom-date-picker';
 
 interface EditProfileBasicProps {
   userData: Partial<UserProfile>;
@@ -164,38 +160,18 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
         
         <div className="space-y-2">
           <Label htmlFor="birthdate">Date of Birth</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                id="birthdate"
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !birthDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {birthDate ? format(birthDate, "PPP") : <span>Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={birthDate}
-                onSelect={setBirthDate}
-                disabled={(date) => {
-                  // Disable future dates
-                  if (date > new Date()) return true;
-                  
-                  // Disable dates that would make the user under 18
-                  const years = differenceInYears(new Date(), date);
-                  return years < 18;
-                }}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
+          <CustomDatePicker
+            value={birthDate}
+            onChange={setBirthDate}
+            disabled={(date) => {
+              // Disable future dates
+              if (date > new Date()) return true;
+              
+              // Disable dates that would make the user under 18
+              const years = differenceInYears(new Date(), date);
+              return years < 18;
+            }}
+          />
           {age !== undefined && (
             <p className="text-xs text-muted-foreground mt-1">
               Age: {age} years | Zodiac: {zodiacSign}

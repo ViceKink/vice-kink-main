@@ -73,13 +73,14 @@ function Calendar({
                   const newMonth = parseInt(value);
                   const newDate = new Date(month);
                   newDate.setMonth(newMonth);
-                  props.goToMonth(newDate);
+                  const navFn = props.onMonthNav || props.onChange;
+                  if (navFn) navFn(newDate);
                 }}
               >
-                <SelectTrigger className="h-7 w-[110px] text-xs font-medium">
+                <SelectTrigger className="h-7 w-[110px] text-xs font-medium z-50">
                   <SelectValue placeholder="Month" />
                 </SelectTrigger>
-                <SelectContent className="overflow-y-auto max-h-[240px]">
+                <SelectContent className="overflow-y-auto max-h-[240px] z-50">
                   {months.map((month, index) => (
                     <SelectItem key={month} value={index.toString()} className="text-xs cursor-pointer">
                       {month}
@@ -94,13 +95,14 @@ function Calendar({
                   const newYear = parseInt(value);
                   const newDate = new Date(month);
                   newDate.setFullYear(newYear);
-                  props.goToMonth(newDate);
+                  const navFn = props.onMonthNav || props.onChange;
+                  if (navFn) navFn(newDate);
                 }}
               >
-                <SelectTrigger className="h-7 w-[80px] text-xs font-medium">
+                <SelectTrigger className="h-7 w-[80px] text-xs font-medium z-50">
                   <SelectValue placeholder="Year" />
                 </SelectTrigger>
-                <SelectContent className="overflow-y-auto max-h-[240px]">
+                <SelectContent className="overflow-y-auto max-h-[240px] z-50">
                   {years.reverse().map((year) => (
                     <SelectItem key={year} value={year.toString()} className="text-xs cursor-pointer">
                       {year}
