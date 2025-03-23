@@ -110,9 +110,9 @@ const EditProfile = () => {
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="mb-6">
             <TabsTrigger value="basic">Basic Info</TabsTrigger>
+            <TabsTrigger value="photos">Photos</TabsTrigger>
             <TabsTrigger value="about">About Me</TabsTrigger>
             <TabsTrigger value="bio">Bio</TabsTrigger>
-            <TabsTrigger value="photos">Photos</TabsTrigger>
             <TabsTrigger value="interests">Interests</TabsTrigger>
           </TabsList>
           
@@ -121,6 +121,15 @@ const EditProfile = () => {
               <EditProfileBasic 
                 userData={profileData} 
                 updateField={updateField} 
+              />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="photos" className="mt-4">
+            <div className="bg-card rounded-lg p-6 shadow-sm">
+              <EditProfilePhotos
+                userData={profileData}
+                updateField={updateField}
               />
             </div>
           </TabsContent>
@@ -148,15 +157,6 @@ const EditProfile = () => {
                   updateField={updateField} 
                 />
               </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="photos" className="mt-4">
-            <div className="bg-card rounded-lg p-6 shadow-sm">
-              <EditProfilePhotos
-                userData={profileData}
-                updateField={updateField}
-              />
             </div>
           </TabsContent>
           

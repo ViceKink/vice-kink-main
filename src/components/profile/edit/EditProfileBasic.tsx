@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '@/context/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, CalendarIcon } from 'lucide-react';
+import { AlertCircle, CalendarIcon, XCircle } from 'lucide-react';
 import { format, differenceInYears, getDate, getMonth } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -123,8 +122,6 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
   );
   const [age, setAge] = useState<number | undefined>(userData.age);
   const [zodiacSign, setZodiacSign] = useState<string | undefined>(userData.about?.zodiac);
-  const [languages, setLanguages] = useState<string[]>(userData.about?.languages || []);
-  const [newLanguage, setNewLanguage] = useState('');
   
   // Calculate age and zodiac sign whenever birthDate changes
   useEffect(() => {
@@ -149,40 +146,6 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
       updateField('about', updatedAbout);
     }
   }, [birthDate, updateField]);
-  
-  // Function to handle language addition
-  const handleAddLanguage = () => {
-    if (newLanguage && !languages.includes(newLanguage)) {
-      const updatedLanguages = [...languages, newLanguage];
-      setLanguages(updatedLanguages);
-      
-      // Update languages in about object
-      const updatedAbout = { ...(userData.about || {}) };
-      updatedAbout.languages = updatedLanguages;
-      updateField('about', updatedAbout);
-      
-      // Clear input
-      setNewLanguage('');
-    }
-  };
-  
-  // Function to handle language removal
-  const handleRemoveLanguage = (language: string) => {
-    const updatedLanguages = languages.filter(lang => lang !== language);
-    setLanguages(updatedLanguages);
-    
-    // Update languages in about object
-    const updatedAbout = { ...(userData.about || {}) };
-    updatedAbout.languages = updatedLanguages;
-    updateField('about', updatedAbout);
-  };
-  
-  // Function to handle about field changes
-  const handleAboutFieldChange = (field: string, value: any) => {
-    const updatedAbout = { ...(userData.about || {}) };
-    updatedAbout[field] = value;
-    updateField('about', updatedAbout);
-  };
 
   return (
     <div className="space-y-6">
@@ -230,6 +193,9 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
                 }}
                 initialFocus
                 className={cn("p-3 pointer-events-auto")}
+                captionLayout="dropdown-buttons"
+                fromYear={1940}
+                toYear={2006} // Current year minus 18
               />
             </PopoverContent>
           </Popover>
@@ -258,130 +224,6 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
             onChange={(e) => updateField('hometown', e.target.value)}
             placeholder="Your hometown"
           />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="relationship">Relationship Status</Label>
-          <Select
-            value={userData.about?.status || ''}
-            onValueChange={(value) => handleAboutFieldChange('status', value)}
-          >
-            <SelectTrigger id="relationship">
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              {relationshipOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="height">Height</Label>
-          <Select
-            value={userData.about?.height || ''}
-            onValueChange={(value) => handleAboutFieldChange('height', value)}
-          >
-            <SelectTrigger id="height">
-              <SelectValue placeholder="Select height" />
-            </SelectTrigger>
-            <SelectContent className="max-h-[240px]">
-              {heightOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="religion">Religion</Label>
-          <Select
-            value={userData.about?.religion || ''}
-            onValueChange={(value) => handleAboutFieldChange('religion', value)}
-          >
-            <SelectTrigger id="religion">
-              <SelectValue placeholder="Select religion" />
-            </SelectTrigger>
-            <SelectContent>
-              {religionOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="sexuality">Sexuality</Label>
-          <Select
-            value={userData.about?.sexuality || ''}
-            onValueChange={(value) => handleAboutFieldChange('sexuality', value)}
-          >
-            <SelectTrigger id="sexuality">
-              <SelectValue placeholder="Select sexuality" />
-            </SelectTrigger>
-            <SelectContent>
-              {sexualityOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="languages">Languages</Label>
-          <div className="flex gap-2">
-            <Select
-              value={newLanguage}
-              onValueChange={setNewLanguage}
-            >
-              <SelectTrigger id="languages" className="flex-1">
-                <SelectValue placeholder="Select a language" />
-              </SelectTrigger>
-              <SelectContent>
-                {commonLanguages.map(language => (
-                  <SelectItem key={language} value={language}>
-                    {language}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button 
-              type="button" 
-              onClick={handleAddLanguage}
-              disabled={!newLanguage || languages.includes(newLanguage)}
-            >
-              Add
-            </Button>
-          </div>
-          
-          {languages.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-2">
-              {languages.map((language) => (
-                <div 
-                  key={language}
-                  className="flex items-center gap-1 bg-secondary px-2 py-1 rounded-full text-sm"
-                >
-                  {language}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveLanguage(language)}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <XCircle size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
         
         <div className="space-y-2 md:col-span-2">
