@@ -73,7 +73,10 @@ function Calendar({
                   const newMonth = parseInt(value);
                   const newDate = new Date(month);
                   newDate.setMonth(newMonth);
-                  props.goToMonth?.(newDate);
+                  // Use the more specific type from react-day-picker
+                  if (props.onMonthChange) {
+                    props.onMonthChange(newDate);
+                  }
                 }}
               >
                 <SelectTrigger className="h-7 w-[110px] text-xs font-medium z-50">
@@ -94,7 +97,10 @@ function Calendar({
                   const newYear = parseInt(value);
                   const newDate = new Date(month);
                   newDate.setFullYear(newYear);
-                  props.goToMonth?.(newDate);
+                  // Use the more specific type from react-day-picker
+                  if (props.onMonthChange) {
+                    props.onMonthChange(newDate);
+                  }
                 }}
               >
                 <SelectTrigger className="h-7 w-[80px] text-xs font-medium z-50">

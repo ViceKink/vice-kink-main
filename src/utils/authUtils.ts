@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, FlirtingStyle } from '@/types/auth';
 
@@ -23,7 +24,9 @@ const formatProfile = (profile: any): UserProfile => {
     name: profile.name,
     email: '', // This will be set later
     age: profile.age || undefined,
+    birthDate: profile.birth_date || undefined, // Map from birth_date to birthDate
     location: profile.location || undefined,
+    hometown: profile.hometown || undefined,
     verified: profile.verified || false,
     quote: profile.quote || undefined,
     bio: profile.bio || undefined,

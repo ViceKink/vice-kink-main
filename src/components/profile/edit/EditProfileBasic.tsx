@@ -129,7 +129,8 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
       updateField('age', calculatedAge);
       
       // Update birthDate in userData (using correct field name for the database)
-      updateField('birthDate', birthDate.toISOString());
+      const isoString = birthDate.toISOString();
+      updateField('birthDate', isoString);
       
       // Calculate zodiac sign
       const month = getMonth(birthDate);
@@ -142,7 +143,7 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
       updatedAbout.zodiac = sign;
       updateField('about', updatedAbout);
       
-      console.log("Updated birthDate:", birthDate.toISOString());
+      console.log("Updated birthDate:", isoString);
     }
   }, [birthDate, updateField, userData.about]);
 
