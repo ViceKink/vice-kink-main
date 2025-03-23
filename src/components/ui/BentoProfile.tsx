@@ -1,4 +1,3 @@
-
 import React from 'react';
 import ProfileSection from '@/components/profile/ProfileSection';
 import ProfileTag from '@/components/ui/ProfileTag';
@@ -49,7 +48,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             cols: isMobile ? "col-span-6" : "col-span-7",
             rows: "row-span-4",
             colsStart: "col-start-1",
-            rowsStart: `row-start-${getNextRow()}`
+            rowsStart: `row-start-${getNextRow().toString()}`
           }}
           className="relative bg-black"
         >
@@ -79,7 +78,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           cols: isMobile ? "col-span-6" : "col-span-5",
           rows: "row-span-2",
           colsStart: isMobile ? "col-start-1" : (hasPhotos ? "col-start-8" : "col-start-1"),
-          rowsStart: isMobile && hasPhotos ? `row-start-${getNextRow()}` : "row-start-1"
+          rowsStart: isMobile && hasPhotos ? `row-start-${getNextRow().toString()}` : "row-start-1"
         }}
         className="bg-white dark:bg-card p-4"
       >
@@ -144,7 +143,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             cols: isMobile ? "col-span-6" : "col-span-5",
             rows: "row-span-2",
             colsStart: isMobile ? "col-start-1" : (hasPhotos ? "col-start-8" : "col-start-1"),
-            rowsStart: isMobile ? `row-start-${getNextRow()}` : "row-start-3"
+            rowsStart: isMobile ? `row-start-${getNextRow().toString()}` : "row-start-3"
           }}
           className="bg-vice-red p-4 text-white"
         >
@@ -160,7 +159,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             cols: isMobile ? "col-span-6" : "col-span-4",
             rows: "row-span-1",
             colsStart: "col-start-1",
-            rowsStart: `row-start-${getNextRow()}`
+            rowsStart: `row-start-${getNextRow().toString()}`
           }}
           className="bg-vice-purple/10 p-0 overflow-hidden"
         >
@@ -178,7 +177,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             cols: isMobile ? "col-span-6" : "col-span-6",
             rows: "row-span-1",
             colsStart: "col-start-1",
-            rowsStart: `row-start-${getNextRow()}`
+            rowsStart: `row-start-${getNextRow().toString()}`
           }}
           className="bg-white dark:bg-card p-4"
         >
@@ -198,7 +197,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             cols: isMobile ? "col-span-6" : "col-span-6",
             rows: "row-span-1",
             colsStart: "col-start-1",
-            rowsStart: `row-start-${getNextRow()}`
+            rowsStart: `row-start-${getNextRow().toString()}`
           }}
           className="bg-white dark:bg-card p-4"
         >
@@ -218,7 +217,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             cols: isMobile ? "col-span-6" : "col-span-6",
             rows: "row-span-3",
             colsStart: isMobile ? "col-start-1" : "col-start-7",
-            rowsStart: isMobile ? `row-start-${getNextRow()}` : "row-start-5"
+            rowsStart: isMobile ? `row-start-${getNextRow().toString()}` : "row-start-5"
           }}
           className="bg-black p-0 overflow-hidden"
         >
@@ -248,7 +247,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             cols: isMobile ? "col-span-6" : "col-span-6",
             rows: "row-span-1",
             colsStart: "col-start-1",
-            rowsStart: `row-start-${getNextRow()}`
+            rowsStart: `row-start-${getNextRow().toString()}`
           }}
           className="bg-white dark:bg-card p-4"
         >
@@ -268,7 +267,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             cols: isMobile ? "col-span-6" : "col-span-3",
             rows: "row-span-1",
             colsStart: isMobile ? "col-start-1" : "col-start-7",
-            rowsStart: isMobile ? `row-start-${getNextRow()}` : `row-start-${(hasFlirtingStyle ? currentRow - 1 : getNextRow())}`
+            rowsStart: isMobile ? `row-start-${getNextRow().toString()}` : `row-start-${(hasFlirtingStyle ? currentRow - 1 : getNextRow()).toString()}`
           }}
           className="bg-vice-dark-purple p-4 text-white"
         >
@@ -286,7 +285,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           cols: isMobile ? "col-span-6" : "col-span-3",
           rows: "row-span-1",
           colsStart: isMobile ? "col-start-1" : (hasPassions ? "col-start-10" : "col-start-10"),
-          rowsStart: isMobile ? `row-start-${getNextRow()}` : (hasFlirtingStyle ? currentRow - 1 : currentRow)
+          rowsStart: isMobile ? `row-start-${getNextRow().toString()}` : (hasFlirtingStyle ? currentRow - 1 : currentRow).toString()
         }}
         className="bg-vice-orange p-4 text-white"
       >
