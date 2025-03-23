@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { UserProfile } from '@/context/AuthContext';
+import { UserProfile, FlirtingStyle } from '@/context/AuthContext';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
@@ -8,14 +8,6 @@ import { Slider } from '@/components/ui/slider';
 interface EditProfileAboutProps {
   userData: Partial<UserProfile>;
   updateField: (field: string, value: any) => void;
-}
-
-interface FlirtingStyle {
-  direct: number;
-  playful: number;
-  intellectual: number;
-  physical: number;
-  romantic: number;
 }
 
 const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
@@ -39,19 +31,19 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
         console.error('Error parsing flirting style:', error);
       }
     } else {
-      flirtingStyle = userData.flirtingStyle as unknown as FlirtingStyle;
+      flirtingStyle = userData.flirtingStyle as FlirtingStyle;
     }
   }
   
   // Handle updating a specific flirting style attribute
-  const updateFlirtingStyle = (attribute: string, value: number) => {
+  const updateFlirtingStyle = (attribute: keyof FlirtingStyle, value: number) => {
     const updatedStyle = {
       ...flirtingStyle,
       [attribute]: value
     };
     
     // Store flirting style as a JSON string
-    updateField('flirtingStyle', JSON.stringify(updatedStyle));
+    updateField('flirtingStyle', updatedStyle);
   };
   
   return (

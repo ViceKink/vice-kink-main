@@ -324,7 +324,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       // Create a database-compatible update object
-      const profileUpdateData = {
+      const profileUpdateData: {
+        name?: string;
+        age?: number;
+        location?: string;
+        bio?: string;
+        looking_for?: string;
+        flirting_style?: string | null;
+        occupation?: string;
+        relationship_status?: string;
+        height?: string;
+        zodiac?: string;
+        religion?: string;
+      } = {
         name: profileData.name,
         age: profileData.age,
         location: profileData.location,
