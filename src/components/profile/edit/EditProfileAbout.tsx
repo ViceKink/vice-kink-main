@@ -10,22 +10,38 @@ interface EditProfileAboutProps {
   updateField: (field: string, value: any) => void;
 }
 
+interface FlirtingStyle {
+  direct: number;
+  playful: number;
+  intellectual: number;
+  physical: number;
+  romantic: number;
+}
+
 const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
   // Extract the flirting style fields or initialize with defaults
-  const flirtingStyle = userData.flirtingStyle || {
+  const defaultFlirtingStyle: FlirtingStyle = {
     direct: 50,
     playful: 50,
     intellectual: 50,
     physical: 50,
     romantic: 50
   };
+
+  // Parse flirtingStyle if it's a string or use default
+  const flirtingStyle: FlirtingStyle = typeof userData.flirtingStyle === 'string' && userData.flirtingStyle
+    ? JSON.parse(userData.flirtingStyle as string)
+    : (userData.flirtingStyle as FlirtingStyle) || defaultFlirtingStyle;
   
   // Handle updating a specific flirting style attribute
   const updateFlirtingStyle = (attribute: string, value: number) => {
-    updateField('flirtingStyle', {
-      ...(userData.flirtingStyle || {}),
+    const updatedStyle = {
+      ...flirtingStyle,
       [attribute]: value
-    });
+    };
+    
+    // Store flirting style as a JSON string
+    updateField('flirtingStyle', JSON.stringify(updatedStyle));
   };
   
   return (

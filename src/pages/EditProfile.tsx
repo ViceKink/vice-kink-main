@@ -49,15 +49,7 @@ const EditProfile = () => {
     }));
   };
   
-  const updateAboutField = (field: string, value: any) => {
-    setProfileData(prev => ({
-      ...prev,
-      about: {
-        ...(prev.about || {}),
-        [field]: value
-      }
-    }));
-  };
+  // We'll remove this updateAboutField function and just use updateField directly
   
   return (
     <div className="min-h-screen pt-20 pb-28 px-4 md:px-6">
@@ -110,7 +102,7 @@ const EditProfile = () => {
             <div className="bg-card rounded-lg p-6 shadow-sm">
               <EditProfileAbout 
                 userData={profileData} 
-                updateAboutField={updateAboutField} 
+                updateField={updateField} 
               />
             </div>
           </TabsContent>
