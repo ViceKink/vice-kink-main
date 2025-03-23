@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Settings } from 'lucide-react';
+import { ChevronLeft, Settings, RefreshCw } from 'lucide-react';
 import BentoProfile from '@/components/ui/BentoProfile';
 import { useAuth, UserProfile } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -17,8 +17,34 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState<'persona' | 'erotics'>('persona');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   
   const isCurrentUser = !id || id === user?.id;
+  
+  // Add loading progress simulation
+  useEffect(() => {
+    if (isLoading) {
+      const interval = setInterval(() => {
+        setLoadingProgress((prev) => {
+          const newValue = prev + Math.random() * 10;
+          return newValue >= 90 ? 90 : newValue;
+        });
+      }, 400);
+      
+      // Add a timeout to prevent infinite loading
+      const timeout = setTimeout(() => {
+        setLoadingTimeout(true);
+      }, 15000); // 15 seconds timeout
+      
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
+    } else {
+      setLoadingProgress(100);
+    }
+  }, [isLoading]);
   
   useEffect(() => {
     // Scroll to top when component mounts
@@ -27,7 +53,7 @@ const Profile = () => {
     // Debug information
     console.log("Profile component loaded", {
       id,
-      user: user?.id,
+      userId: user?.id,
       isAuthenticated,
       authLoading
     });
@@ -38,16 +64,20 @@ const Profile = () => {
       setError(null);
       
       try {
+        console.log("Attempting to fetch profile data", { id, userId: user?.id, isAuthenticated });
         let profile = null;
         
         if (id && id !== user?.id) {
           // Fetch other user's profile
+          console.log("Fetching other user's profile", { id });
           profile = await fetchProfile(id);
         } else if (user) {
           // Use current user's profile
+          console.log("Using current user's profile", { userId: user.id });
           profile = user;
         } else if (isAuthenticated) {
           // Fetch current user's profile if not available
+          console.log("Fetching current user's profile (authenticated but no user data)");
           profile = await fetchProfile();
         }
         
@@ -72,8 +102,16 @@ const Profile = () => {
     }
   }, [id, user, fetchProfile, isAuthenticated, authLoading]);
   
+  const handleRetry = () => {
+    setLoadingTimeout(false);
+    setIsLoading(true);
+    setLoadingProgress(0);
+    window.location.reload();
+  };
+  
   // Show loading state while authentication is being checked
   if (authLoading) {
+    console.log("Profile page: Auth loading...");
     return (
       <div className="flex min-h-screen items-center justify-center flex-col p-4">
         <div className="text-center mb-4">
@@ -85,14 +123,35 @@ const Profile = () => {
     );
   }
   
+  // Show timeout state if loading takes too long
+  if (loadingTimeout && isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center flex-col p-4">
+        <div className="text-center mb-4">
+          <h2 className="text-2xl font-semibold mb-2">Loading is taking longer than expected</h2>
+          <p className="text-sm text-foreground/70 mb-4">
+            There might be an issue loading your profile data
+          </p>
+          <Button 
+            onClick={handleRetry}
+            className="bg-vice-purple hover:bg-vice-dark-purple flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" /> Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
   // Show loading state while profile data is being fetched
   if (isLoading) {
+    console.log("Profile page: Profile data loading...");
     return (
       <div className="flex min-h-screen items-center justify-center flex-col p-4">
         <div className="text-center mb-4">
           <h2 className="text-2xl font-semibold mb-2">Loading Profile...</h2>
           <p className="text-sm text-foreground/70 mb-4">Please wait a moment</p>
-          <Progress value={60} className="w-60 h-2" />
+          <Progress value={loadingProgress} className="w-60 h-2" />
         </div>
       </div>
     );
@@ -155,6 +214,13 @@ const Profile = () => {
       </div>
     );
   }
+  
+  // If we made it here, we have a valid profile to display
+  console.log("Profile page: Rendering profile content", { 
+    profileId: profileUser.id, 
+    name: profileUser.name,
+    isCurrentUser
+  });
   
   const handleTabChange = (tab: 'persona' | 'erotics') => {
     setActiveTab(tab);

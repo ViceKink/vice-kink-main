@@ -15,6 +15,17 @@ interface ProfileAudioProps {
 const ProfileAudio = ({ audio, currentRow }: ProfileAudioProps) => {
   const isMobile = useIsMobile();
   
+  // Safety check for audio data
+  if (!audio || !audio.url) {
+    console.log("ProfileAudio: Missing audio data", { audio });
+    return null;
+  }
+  
+  console.log("ProfileAudio: Rendering audio player", { 
+    audioTitle: audio.title, 
+    hasAudioUrl: !!audio.url 
+  });
+  
   return (
     <ProfileSection
       gridSpan={{

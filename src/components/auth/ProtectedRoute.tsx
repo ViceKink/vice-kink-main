@@ -9,9 +9,10 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
   
   // Simulate loading progress
   useEffect(() => {
@@ -23,13 +24,43 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         });
       }, 400);
       
-      return () => clearInterval(interval);
+      // Add a timeout to prevent infinite loading
+      const timeout = setTimeout(() => {
+        setLoadingTimeout(true);
+      }, 10000); // 10 seconds timeout
+      
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
     } else {
       setLoadingProgress(100);
     }
   }, [isLoading]);
   
+  // Show timeout message if loading takes too long
+  if (loadingTimeout && isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center flex-col p-4">
+        <div className="text-center mb-4">
+          <h2 className="text-2xl font-semibold mb-2">Loading is taking longer than expected</h2>
+          <p className="text-sm text-foreground/70 mb-4">
+            You can try refreshing the page or continue waiting
+          </p>
+          <Progress value={loadingProgress} className="w-60 h-2" />
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-vice-purple text-white rounded-md"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+  
   if (isLoading) {
+    console.log("ProtectedRoute: Loading auth state...", { isLoading, isAuthenticated, userId: user?.id });
     return (
       <div className="flex min-h-screen items-center justify-center flex-col p-4">
         <div className="text-center mb-4">
@@ -40,6 +71,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       </div>
     );
   }
+  
+  console.log("ProtectedRoute: Auth check complete", { isAuthenticated, path: location.pathname });
   
   if (!isAuthenticated) {
     // Preserve the intended destination to return after login
