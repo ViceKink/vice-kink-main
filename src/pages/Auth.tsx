@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -156,7 +155,7 @@ const LoginForm = ({ onLogin, isLoading }: LoginFormProps) => {
 };
 
 interface SignupFormProps {
-  onSignup: (userData: any, password: string) => Promise<void>;
+  onSignup: (email: string, password: string, name: string) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -166,6 +165,7 @@ const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [localLoading, setLocalLoading] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,17 +186,18 @@ const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
     }
     
     try {
-      const userData = {
-        name,
-        email
-      };
-      
-      await onSignup(userData, password);
+      setLocalLoading(true);
+      await onSignup(email, password, name);
       toast.success('Please check your email to confirm your account.');
     } catch (error) {
       // Error is handled in the auth context
+    } finally {
+      setLocalLoading(false);
     }
   };
+  
+  // Use both the global and local loading states
+  const buttonLoading = isLoading || localLoading;
   
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -209,6 +210,7 @@ const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
           value={name}
           onChange={(e) => setName(e.target.value)}
           className={cn(errors.name && "border-destructive")}
+          disabled={buttonLoading}
         />
         {errors.name && (
           <p className="text-destructive text-sm">{errors.name}</p>
@@ -263,9 +265,9 @@ const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
       <Button 
         type="submit" 
         className="w-full bg-vice-purple hover:bg-vice-dark-purple" 
-        disabled={isLoading}
+        disabled={buttonLoading}
       >
-        {isLoading ? 'Creating Account...' : 'Create Account'}
+        {buttonLoading ? 'Creating Account...' : 'Create Account'}
       </Button>
     </form>
   );

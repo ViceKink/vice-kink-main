@@ -15,11 +15,14 @@ type AuthContextType = {
   user: UserProfile | null;
   session: Session | null;
   isAuthenticated: boolean;
+  isLoading: boolean; // Added isLoading property
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (profileData: Partial<UserProfile>) => Promise<void>;
-  loading: boolean;
+  fetchProfile: (userId?: string) => Promise<UserProfile | null>; // Added fetchProfile method
+  updateUserVices?: (vices: string[]) => Promise<void>; // Added for VicesKinksManager
+  updateUserKinks?: (kinks: string[]) => Promise<void>; // Added for VicesKinksManager
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +46,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     setLoading(false);
   }, []);
+
+  // Implement fetchProfile method
+  const fetchProfile = async (userId?: string): Promise<UserProfile | null> => {
+    try {
+      // If no userId is provided, use the current user's id
+      const targetId = userId || session?.user?.id;
+      
+      if (!targetId) {
+        console.error('No user ID available to fetch profile');
+        return null;
+      }
+      
+      const userData = await fetchUserProfile(targetId);
+      
+      // If this is the current user, update the state
+      if (!userId && session?.user?.id === targetId) {
+        setUser(userData);
+      }
+      
+      return userData;
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener
@@ -135,15 +163,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Mock implementations for VicesKinksManager
+  const updateUserVices = async (vices: string[]) => {
+    console.log("Updating vices:", vices);
+    // This would be implemented to save to Supabase
+  };
+  
+  const updateUserKinks = async (kinks: string[]) => {
+    console.log("Updating kinks:", kinks);
+    // This would be implemented to save to Supabase
+  };
+
   const contextValue: AuthContextType = {
     user,
     session,
     isAuthenticated: !!session,
+    isLoading: loading,
     login,
     signup,
     logout,
     updateProfile,
-    loading,
+    fetchProfile,
+    updateUserVices,
+    updateUserKinks,
   };
 
   return (
