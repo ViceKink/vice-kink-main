@@ -15,10 +15,11 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
+// Create a new QueryClient instance outside the component
 const queryClient = new QueryClient();
 
-const App = () => (
-  <React.StrictMode>
+const App = () => {
+  return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
@@ -52,7 +53,7 @@ const App = () => (
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
-  </React.StrictMode>
-);
+  );
+};
 
 export default App;
