@@ -1,15 +1,16 @@
 
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Heart, MessageSquare, Settings, PlusCircle } from 'lucide-react';
+import { Home, Heart, MessageSquare, Settings, PlusCircle, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/context/auth';
 import CreatePostModal from '@/components/post/CreatePostModal';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [createPostOpen, setCreatePostOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   
   useEffect(() => {
     const handleScroll = () => {
@@ -84,23 +85,31 @@ const Navbar = () => {
               {isAuthenticated && (
                 <Button 
                   variant="ghost" 
-                  size="icon"
                   onClick={() => setCreatePostOpen(true)}
-                  className="rounded-full hover:bg-vice-purple/10 text-foreground/80 hover:text-vice-purple"
+                  className="h-10 w-10 md:h-11 md:w-auto md:px-4 rounded-full hover:bg-vice-purple/10 text-foreground/80 hover:text-vice-purple"
                 >
-                  <PlusCircle className="h-5 w-5" />
-                  <span className="sr-only">Create Post</span>
+                  <PlusCircle className="h-6 w-6 md:mr-2" />
+                  <span className="hidden md:inline">Create Post</span>
                 </Button>
               )}
               {isAuthenticated && (
                 <NavLink
                   to="/profile"
                   className={({ isActive }) =>
-                    `rounded-full p-2 transition-colors hover:bg-vice-purple/10 ${
+                    `flex items-center justify-center h-10 w-10 rounded-full transition-colors hover:bg-vice-purple/10 ${
                       isActive ? 'bg-vice-purple/20 text-vice-purple' : 'text-foreground/80'
                     }`
                   }
                 >
+                  <Avatar className="h-9 w-9">
+                    {user?.photos && user.photos.length > 0 ? (
+                      <AvatarImage src={user.photos[0]} alt={user?.name || 'Profile'} />
+                    ) : (
+                      <AvatarFallback className="bg-vice-purple/10 text-vice-purple">
+                        {user?.name ? user.name.charAt(0).toUpperCase() : <User className="h-5 w-5" />}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
                   <span className="sr-only">Profile</span>
                 </NavLink>
               )}

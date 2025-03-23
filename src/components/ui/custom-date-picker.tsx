@@ -17,7 +17,6 @@ interface CustomDatePickerProps {
   disabled?: (date: Date) => boolean;
   placeholder?: string;
   className?: string;
-  disableCalendar?: boolean;
 }
 
 export function CustomDatePicker({
