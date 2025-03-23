@@ -70,9 +70,10 @@ function Calendar({
               <Select
                 value={month.getMonth().toString()}
                 onValueChange={(value) => {
+                  const newMonth = parseInt(value);
                   const newDate = new Date(month);
-                  newDate.setMonth(parseInt(value));
-                  props.onMonthChange?.(newDate);
+                  newDate.setMonth(newMonth);
+                  props.goToMonth(newDate);
                 }}
               >
                 <SelectTrigger className="h-7 w-[110px] text-xs font-medium">
@@ -90,9 +91,10 @@ function Calendar({
               <Select
                 value={month.getFullYear().toString()}
                 onValueChange={(value) => {
+                  const newYear = parseInt(value);
                   const newDate = new Date(month);
-                  newDate.setFullYear(parseInt(value));
-                  props.onMonthChange?.(newDate);
+                  newDate.setFullYear(newYear);
+                  props.goToMonth(newDate);
                 }}
               >
                 <SelectTrigger className="h-7 w-[80px] text-xs font-medium">
