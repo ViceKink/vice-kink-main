@@ -35,8 +35,20 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       };
     } else {
       setLoadingProgress(100);
+      // Reset timeout state when loading completes
+      setLoadingTimeout(false);
     }
   }, [isLoading]);
+  
+  // Debug logs to trace auth state
+  useEffect(() => {
+    console.log("ProtectedRoute: Auth state updated", { 
+      isLoading, 
+      isAuthenticated, 
+      userId: user?.id,
+      path: location.pathname
+    });
+  }, [isLoading, isAuthenticated, user, location.pathname]);
   
   // Show timeout message if loading takes too long
   if (loadingTimeout && isLoading) {

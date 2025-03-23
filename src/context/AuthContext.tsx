@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -13,7 +12,7 @@ export interface UserProfile {
   photos?: string[];
   location?: string;
   verified?: boolean;
-  quote?: string; // Added quote field
+  quote?: string;
   about?: {
     occupation?: string;
     status?: 'single' | 'married' | 'it\'s complicated';
@@ -32,7 +31,13 @@ export interface UserProfile {
   kinks?: string[];
   bio?: string;
   lookingFor?: string;
-  flirtingStyle?: string;
+  flirtingStyle?: string | {
+    direct: number;
+    playful: number;
+    intellectual: number;
+    physical: number;
+    romantic: number;
+  };
   audio?: {
     title: string;
     url: string;
@@ -67,14 +72,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("Auth Provider: Setting up auth state change listener");
+    
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
-        console.log("Auth state changed:", event);
+        console.log("Auth state changed:", event, currentSession?.user?.id);
         setSession(currentSession);
         
         if (currentSession) {
-          const profile = await fetchProfile(currentSession.user.id);
-          setUser(profile);
+          try {
+            const profile = await fetchProfile(currentSession.user.id);
+            setUser(profile);
+          } catch (error) {
+            console.error("Error fetching profile on auth state change:", error);
+            setUser(null);
+          }
         } else {
           setUser(null);
         }
@@ -83,13 +96,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
+    // THEN check for existing session
+    console.log("Auth Provider: Checking for existing session");
     supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
-      console.log("Got session:", currentSession);
+      console.log("Got session:", currentSession?.user?.id);
       setSession(currentSession);
       
       if (currentSession) {
-        const profile = await fetchProfile(currentSession.user.id);
-        setUser(profile);
+        try {
+          const profile = await fetchProfile(currentSession.user.id);
+          setUser(profile);
+        } catch (error) {
+          console.error("Error fetching profile on init:", error);
+          setUser(null);
+        }
       }
       
       setIsLoading(false);
@@ -99,6 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
     
     return () => {
+      console.log("Auth Provider: Cleaning up auth state change listener");
       subscription.unsubscribe();
     };
   }, []);
@@ -106,14 +127,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log("Attempting login for:", email);
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
       if (error) throw error;
       
-      navigate('/');
+      console.log("Login successful, user:", data.user?.id);
       toast.success('Successfully logged in!');
     } catch (error: any) {
       console.error("Login error:", error.message);
@@ -374,7 +396,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchProfile = async (userId?: string): Promise<UserProfile | null> => {
     try {
-      if (!userId && !session?.user?.id) return null;
+      console.log("Fetching profile for user:", userId || session?.user?.id);
+      if (!userId && !session?.user?.id) {
+        console.log("No user ID available, cannot fetch profile");
+        return null;
+      }
       
       const profileId = userId || session?.user?.id;
       
@@ -384,8 +410,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .eq('id', profileId)
         .single();
         
-      if (profileError) throw profileError;
-      if (!profileData) return null;
+      if (profileError) {
+        console.error("Error fetching profile data:", profileError);
+        throw profileError;
+      }
+      
+      if (!profileData) {
+        console.log("No profile data found for user:", profileId);
+        return null;
+      }
       
       const { data: photosData } = await supabase
         .from('profile_photos')
@@ -421,6 +454,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: session?.user?.email || 'user@example.com',
         location: profileData.location,
         verified: profileData.verified,
+        quote: profileData.quote,
         photos: photosData?.map(photo => photo.url) || [],
         about: {
           occupation: profileData.occupation,
@@ -447,6 +481,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         passions: passionsData?.map(passion => passion.passion) || []
       };
       
+      console.log("Profile fetched successfully:", userProfile.id);
       return userProfile;
     } catch (error) {
       console.error("Error fetching profile:", error);
