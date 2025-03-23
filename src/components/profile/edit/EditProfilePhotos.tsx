@@ -21,6 +21,72 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
   const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
   const MAX_SIZE = 5 * 1024 * 1024; // 5MB
   
+  // Function to compress an image
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Calculate new dimensions while maintaining aspect ratio
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 1200;
+          
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height = Math.round(height * (MAX_WIDTH / width));
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width = Math.round(width * (MAX_HEIGHT / height));
+              height = MAX_HEIGHT;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('Failed to get canvas context'));
+            return;
+          }
+          
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Convert to blob
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error('Failed to compress image'));
+                return;
+              }
+              resolve(blob);
+            },
+            file.type,
+            0.7 // Quality parameter (0.7 = 70% quality)
+          );
+        };
+        
+        img.onerror = () => {
+          reject(new Error('Failed to load image'));
+        };
+      };
+      
+      reader.onerror = () => {
+        reject(new Error('Failed to read file'));
+      };
+    });
+  };
+  
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -39,31 +105,104 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
       return;
     }
     
-    // Validate file size
-    if (file.size > MAX_SIZE) {
-      setError('File size must be less than 5MB.');
-      return;
-    }
-    
     setIsUploading(true);
     setError('');
+    setUploadProgress(10); // Start progress indicator
     
     try {
+      let fileToUpload: Blob = file;
+      
+      // Check if file needs compression
+      if (file.size > MAX_SIZE) {
+        setUploadProgress(30);
+        fileToUpload = await compressImage(file);
+        
+        // If still too large after compression
+        if (fileToUpload.size > MAX_SIZE) {
+          // Try more aggressive compression
+          const canvas = document.createElement('canvas');
+          const img = new Image();
+          
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => {
+              // Reduce dimensions more aggressively
+              const MAX_DIM = 800;
+              let width = img.width;
+              let height = img.height;
+              
+              const aspectRatio = width / height;
+              
+              if (aspectRatio > 1) {
+                width = MAX_DIM;
+                height = width / aspectRatio;
+              } else {
+                height = MAX_DIM;
+                width = height * aspectRatio;
+              }
+              
+              canvas.width = width;
+              canvas.height = height;
+              
+              const ctx = canvas.getContext('2d');
+              if (!ctx) {
+                reject(new Error('Failed to get canvas context'));
+                return;
+              }
+              
+              ctx.drawImage(img, 0, 0, width, height);
+              
+              canvas.toBlob(
+                (blob) => {
+                  if (!blob) {
+                    reject(new Error('Failed to compress image'));
+                    return;
+                  }
+                  fileToUpload = blob;
+                  resolve();
+                },
+                'image/jpeg',
+                0.5 // Lower quality
+              );
+            };
+            
+            img.onerror = () => reject(new Error('Failed to load image for compression'));
+            
+            const reader = new FileReader();
+            reader.onload = (e) => { img.src = e.target?.result as string; };
+            reader.onerror = () => reject(new Error('Failed to read file for compression'));
+            reader.readAsDataURL(fileToUpload);
+          });
+          
+          // If still too large after aggressive compression
+          if (fileToUpload.size > MAX_SIZE) {
+            setError('Image is too large. Even after compression, it exceeds the 5MB limit.');
+            setIsUploading(false);
+            setUploadProgress(0);
+            return;
+          }
+        }
+      }
+      
+      setUploadProgress(50);
+      
       // Generate a unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${uuidv4()}.${fileExt}`;
       const filePath = `photos/${fileName}`;
       
       // Upload to Supabase Storage
+      setUploadProgress(70);
       const { data, error: uploadError } = await supabase.storage
         .from('profile-media')
-        .upload(filePath, file, {
+        .upload(filePath, fileToUpload, {
           cacheControl: '3600',
           upsert: false,
           contentType: file.type
         });
       
       if (uploadError) throw uploadError;
+      
+      setUploadProgress(90);
       
       // Get public URL
       const { data: publicUrlData } = supabase.storage
@@ -75,6 +214,8 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
       // Update photos array
       const updatedPhotos = [...currentPhotos, publicUrl];
       updateField('photos', updatedPhotos);
+      
+      setUploadProgress(100);
       
       // Also save to database
       if (userData.id) {
@@ -162,6 +303,7 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
       
       <p className="text-sm text-muted-foreground">
         Upload photos to showcase your personality. You can upload up to {MAX_PHOTOS} photos.
+        Large images will be automatically compressed.
       </p>
       
       <div className="mt-4">

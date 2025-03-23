@@ -46,6 +46,9 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
         // Create a local URL for preview
         const audioUrl = URL.createObjectURL(audioBlob);
         setAudioUrl(audioUrl);
+        
+        // Auto upload after recording stops
+        uploadRecording(audioBlob, audioTitle);
       };
       
       mediaRecorder.start();
@@ -86,8 +89,8 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
   
-  const uploadRecording = async () => {
-    if (!audioBlob || !audioTitle.trim()) {
+  const uploadRecording = async (blob: Blob | null, title: string) => {
+    if (!blob || !title.trim()) {
       setError('Please record audio and provide a title before uploading');
       return;
     }
@@ -102,7 +105,7 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
       // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profile-media')
-        .upload(filePath, audioBlob, {
+        .upload(filePath, blob, {
           contentType: 'audio/webm',
           upsert: true
         });
@@ -121,7 +124,7 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
       
       // Update parent component
       updateField('audio', {
-        title: audioTitle.trim(),
+        title: title.trim(),
         url: publicUrl
       });
       
@@ -133,43 +136,12 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
     }
   };
   
-  const handleUpdateAudio = () => {
-    setError('');
-    
-    if (!audioTitle.trim()) {
-      setError('Please enter a title for your audio');
-      return;
-    }
-    
-    if (!audioUrl.trim()) {
-      setError('Please record or provide a URL for your audio');
-      return;
-    }
-    
-    // If this is a blob URL from recording, upload it first
-    if (audioUrl.startsWith('blob:') && audioBlob) {
-      uploadRecording();
-      return;
-    }
-    
-    // For external URLs, validate and update directly
-    try {
-      new URL(audioUrl);
-      updateField('audio', {
-        title: audioTitle.trim(),
-        url: audioUrl.trim()
-      });
-    } catch (e) {
-      setError('Please enter a valid URL');
-    }
-  };
-  
   const hasAudio = !!(userData.audio?.url && userData.audio?.title);
   
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
-        Add a voice introduction to your profile. You can record directly or provide a URL to an audio file.
+        Add a voice introduction to your profile by recording directly.
       </p>
       
       <div className="space-y-4">
@@ -213,38 +185,24 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
             )}
           </div>
           
-          {audioBlob && (
+          {audioBlob && !isUploading && audioUrl.startsWith('blob:') && (
             <Button
               type="button"
               variant="outline"
-              onClick={uploadRecording}
+              onClick={() => uploadRecording(audioBlob, audioTitle)}
               disabled={isUploading || !audioBlob}
               className="mt-2"
             >
-              {isUploading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                'Upload Recording'
-              )}
+              Upload Recording
             </Button>
           )}
-        </div>
-        
-        <div className="space-y-2 mt-2">
-          <Label htmlFor="audioUrl">Or enter Audio URL</Label>
-          <Input
-            id="audioUrl"
-            value={audioUrl}
-            onChange={(e) => setAudioUrl(e.target.value)}
-            placeholder="https://example.com/audio.mp3"
-            disabled={isRecording || isUploading}
-          />
-          <p className="text-xs text-muted-foreground">
-            Link to an audio file hosted online. MP3, WAV or OGG formats are recommended.
-          </p>
+          
+          {isUploading && (
+            <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Uploading audio...</span>
+            </div>
+          )}
         </div>
         
         {error && (
@@ -253,14 +211,6 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
             <span>{error}</span>
           </div>
         )}
-        
-        <Button
-          onClick={handleUpdateAudio}
-          variant="secondary"
-          disabled={isRecording || isUploading}
-        >
-          Update Audio
-        </Button>
         
         {(hasAudio || audioUrl) && !isRecording && (
           <div className="mt-6">

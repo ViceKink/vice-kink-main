@@ -7,7 +7,7 @@ interface ProfileSecondaryPhotosProps {
   photos: string[];
   name: string;
   currentRow: number;
-  hasVicesOrKinks: boolean; // New prop to check if vices or kinks exist
+  hasVicesOrKinks: boolean; // Prop to check if vices or kinks exist
 }
 
 const ProfileSecondaryPhotos = ({ photos, name, currentRow, hasVicesOrKinks }: ProfileSecondaryPhotosProps) => {
