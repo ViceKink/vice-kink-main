@@ -1,3 +1,4 @@
+
 import { 
   createContext, 
   useState, 
@@ -5,7 +6,7 @@ import {
   ReactNode,
   useCallback
 } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, FlirtingStyle } from '@/types/auth';
 import { fetchUserProfile, updateUserProfile } from '@/utils/authUtils';
@@ -184,6 +185,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Explicitly exclude the email field from updates
         if (key === 'email') {
           return; // Skip email field
+        }
+        else if (key === 'birthDate') {
+          // Ensure we're using the correct field name that matches the database column
+          profileUpdateData['birth_date'] = value;
         }
         else if (key === 'flirtingStyle') {
           profileUpdateData['flirting_style'] = typeof value === 'object' 

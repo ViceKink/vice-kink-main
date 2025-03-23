@@ -127,7 +127,7 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
       setAge(calculatedAge);
       updateField('age', calculatedAge);
       
-      // Update birthDate in userData
+      // Update birthDate in userData (using correct field name in the database)
       updateField('birthDate', birthDate.toISOString());
       
       // Calculate zodiac sign
@@ -140,8 +140,10 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
       const updatedAbout = { ...(userData.about || {}) };
       updatedAbout.zodiac = sign;
       updateField('about', updatedAbout);
+      
+      console.log("Updated birthDate:", birthDate.toISOString());
     }
-  }, [birthDate, updateField]);
+  }, [birthDate, updateField, userData.about]);
 
   return (
     <div className="space-y-6">
@@ -173,9 +175,9 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
             }}
           />
           {age !== undefined && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Age: {age} years | Zodiac: {zodiacSign}
-            </p>
+            <div className="text-sm text-foreground mt-3">
+              <span className="font-medium">Age:</span> {age} years | <span className="font-medium">Zodiac:</span> {zodiacSign}
+            </div>
           )}
         </div>
         

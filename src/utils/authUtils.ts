@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, FlirtingStyle } from '@/types/auth';
 
@@ -219,18 +218,31 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
     console.log('Updating profile with data:', profileData);
     
     // Ensure we're not trying to update non-existent columns
-    const columnsToIgnore = ['about'];
+    const columnsToIgnore = ['about', 'email'];
     const sanitizedData = { ...profileData };
     
-    columnsToIgnore.forEach(col => {
-      if (sanitizedData[col] !== undefined) {
-        delete sanitizedData[col];
+    // Convert any camelCase to snake_case for database compatibility
+    const finalData: Record<string, any> = {};
+    
+    Object.entries(sanitizedData).forEach(([key, value]) => {
+      if (!columnsToIgnore.includes(key)) {
+        // Convert camelCase to snake_case
+        const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+        
+        // Special case for birthDate -> birth_date (common field name issue)
+        if (key === 'birthDate') {
+          finalData['birth_date'] = value;
+        } else {
+          finalData[snakeKey] = value;
+        }
       }
     });
     
+    console.log('Sanitized profile data for update:', finalData);
+    
     const { error } = await supabase
       .from('profiles')
-      .update(sanitizedData)
+      .update(finalData)
       .eq('id', userId);
       
     if (error) {

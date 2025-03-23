@@ -1,10 +1,7 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { 
   Select, 
@@ -30,7 +27,6 @@ export function CustomDatePicker({
   disabled,
   placeholder = "Pick a date",
   className,
-  disableCalendar = false
 }: CustomDatePickerProps) {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(value);
   
@@ -123,7 +119,7 @@ export function CustomDatePicker({
             <SelectTrigger id="day-select" className="w-[80px]">
               <SelectValue placeholder="Day" />
             </SelectTrigger>
-            <SelectContent className="overflow-y-auto max-h-[240px] z-50">
+            <SelectContent className="overflow-y-auto max-h-[240px] z-50 bg-popover">
               {availableDays.map((d) => (
                 <SelectItem 
                   key={d} 
@@ -147,7 +143,7 @@ export function CustomDatePicker({
             <SelectTrigger id="month-select" className="w-[120px]">
               <SelectValue placeholder="Month" />
             </SelectTrigger>
-            <SelectContent className="overflow-y-auto max-h-[240px] z-50">
+            <SelectContent className="overflow-y-auto max-h-[240px] z-50 bg-popover">
               {months.map((m) => (
                 <SelectItem 
                   key={m.value} 
@@ -171,7 +167,7 @@ export function CustomDatePicker({
             <SelectTrigger id="year-select" className="w-[100px]">
               <SelectValue placeholder="Year" />
             </SelectTrigger>
-            <SelectContent className="overflow-y-auto max-h-[240px] z-50">
+            <SelectContent className="overflow-y-auto max-h-[240px] z-50 bg-popover">
               {years.map((y) => (
                 <SelectItem 
                   key={y} 
@@ -186,35 +182,9 @@ export function CustomDatePicker({
         </div>
       </div>
 
-      {!disableCalendar && (
-        <div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !selectedDate && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {selectedDate ? format(selectedDate, "PPP") : <span>Or pick from calendar</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => {
-                  setSelectedDate(date);
-                  onChange?.(date);
-                }}
-                disabled={disabled}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
+      {selectedDate && (
+        <div className="text-sm text-foreground bg-muted p-2 rounded-md">
+          {format(selectedDate, "PPP")}
         </div>
       )}
     </div>
