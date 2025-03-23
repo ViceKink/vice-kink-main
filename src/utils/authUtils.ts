@@ -24,7 +24,7 @@ const formatProfile = (profile: any): UserProfile => {
     name: profile.name,
     email: '', // This will be set later
     age: profile.age || undefined,
-    birthDate: profile.birth_date || undefined, // Map from birth_date to birthDate
+    birthDate: profile.birth_date ? profile.birth_date : undefined,
     location: profile.location || undefined,
     hometown: profile.hometown || undefined,
     verified: profile.verified || false,
@@ -228,31 +228,55 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
     const finalData: Record<string, any> = {};
     
     Object.entries(sanitizedData).forEach(([key, value]) => {
-      if (!columnsToIgnore.includes(key)) {
-        // Convert camelCase to snake_case
-        const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-        
-        // Special case for birthDate -> birth_date (common field name issue)
-        if (key === 'birthDate') {
-          finalData['birth_date'] = value;
-        } else {
-          finalData[snakeKey] = value;
-        }
+      // Explicitly exclude the email field from updates
+      if (key === 'email') {
+        return; // Skip email field
+      }
+      else if (key === 'birthDate') {
+        // Ensure we're using the correct field name that matches the database column
+        finalData['birth_date'] = value;
+      }
+      else if (key === 'flirtingStyle') {
+        finalData['flirting_style'] = typeof value === 'object' 
+          ? JSON.stringify(value) 
+          : value;
+      } 
+      else if (key !== 'passions' && key !== 'vices' && key !== 'kinks' && key !== 'photos' && key !== 'audio') {
+        // Skip certain fields that are handled separately
+        const snakeCaseKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+        finalData[snakeCaseKey] = value;
       }
     });
     
-    console.log('Sanitized profile data for update:', finalData);
-    
-    const { error } = await supabase
-      .from('profiles')
-      .update(finalData)
-      .eq('id', userId);
-      
-    if (error) {
-      console.error('Error in updateUserProfile:', error);
-      throw error;
+    // Only update if there are properties to update
+    if (Object.keys(finalData).length > 0) {
+      try {
+        console.log('Updating profile with data:', finalData);
+        await supabase
+          .from('profiles')
+          .update(finalData)
+          .eq('id', userId);
+      } catch (error: any) {
+        console.error('Error updating profile fields:', error);
+        let errorMessage = 'Failed to update profile';
+        
+        // Provide more specific error message
+        if (error.message) {
+          if (error.message.includes("column")) {
+            const columnMatch = error.message.match(/'([^']+)'/);
+            if (columnMatch && columnMatch[1]) {
+              errorMessage = `Failed to update profile: Issue with field "${columnMatch[1]}"`;
+            }
+          } else {
+            errorMessage = `Failed to update profile: ${error.message}`;
+          }
+        }
+        
+        throw new Error(errorMessage);
+      }
     }
     
+    // Update local state
     return true;
   } catch (error) {
     console.error('Error updating user profile:', error);

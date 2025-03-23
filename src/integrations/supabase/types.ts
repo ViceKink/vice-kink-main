@@ -222,6 +222,7 @@ export type Database = {
         Row: {
           age: number | null
           bio: string | null
+          birth_date: string | null
           created_at: string | null
           flirting_style: string | null
           height: string | null
@@ -239,6 +240,7 @@ export type Database = {
         Insert: {
           age?: number | null
           bio?: string | null
+          birth_date?: string | null
           created_at?: string | null
           flirting_style?: string | null
           height?: string | null
@@ -256,6 +258,7 @@ export type Database = {
         Update: {
           age?: number | null
           bio?: string | null
+          birth_date?: string | null
           created_at?: string | null
           flirting_style?: string | null
           height?: string | null

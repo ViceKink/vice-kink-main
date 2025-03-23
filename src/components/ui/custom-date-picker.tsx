@@ -90,6 +90,9 @@ export function CustomDatePicker({
       return;
     }
     
+    // Set date to noon to avoid timezone issues
+    newDate.setHours(12, 0, 0, 0);
+    
     setSelectedDate(newDate);
     onChange?.(newDate);
   };
