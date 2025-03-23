@@ -1,17 +1,9 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-
-// Define FlirtingStyle interface
-export interface FlirtingStyle {
-  direct: number;
-  playful: number;
-  intellectual: number;
-  physical: number;
-  romantic: number;
-}
 
 export interface UserProfile {
   id: string;
@@ -21,7 +13,6 @@ export interface UserProfile {
   photos?: string[];
   location?: string;
   verified?: boolean;
-  quote?: string;
   about?: {
     occupation?: string;
     status?: 'single' | 'married' | 'it\'s complicated';
@@ -40,7 +31,7 @@ export interface UserProfile {
   kinks?: string[];
   bio?: string;
   lookingFor?: string;
-  flirtingStyle?: string | FlirtingStyle;
+  flirtingStyle?: string;
   audio?: {
     title: string;
     url: string;
@@ -63,7 +54,6 @@ interface AuthContextType {
   fetchProfile: (userId?: string) => Promise<UserProfile | null>;
   updateUserVices: (viceIds: string[]) => Promise<void>;
   updateUserKinks: (kinkIds: string[]) => Promise<void>;
-  updateProfile: (profileData: Partial<UserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -75,22 +65,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("Auth Provider: Setting up auth state change listener");
-    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
-        console.log("Auth state changed:", event, currentSession?.user?.id);
+        console.log("Auth state changed:", event);
         setSession(currentSession);
         
         if (currentSession) {
-          try {
-            const profile = await fetchProfile(currentSession.user.id);
-            setUser(profile);
-          } catch (error) {
-            console.error("Error fetching profile on auth state change:", error);
-            setUser(null);
-          }
+          const profile = await fetchProfile(currentSession.user.id);
+          setUser(profile);
         } else {
           setUser(null);
         }
@@ -100,19 +83,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // THEN check for existing session
-    console.log("Auth Provider: Checking for existing session");
     supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
-      console.log("Got session:", currentSession?.user?.id);
+      console.log("Got session:", currentSession);
       setSession(currentSession);
       
       if (currentSession) {
-        try {
-          const profile = await fetchProfile(currentSession.user.id);
-          setUser(profile);
-        } catch (error) {
-          console.error("Error fetching profile on init:", error);
-          setUser(null);
-        }
+        const profile = await fetchProfile(currentSession.user.id);
+        setUser(profile);
       }
       
       setIsLoading(false);
@@ -122,7 +99,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
     
     return () => {
-      console.log("Auth Provider: Cleaning up auth state change listener");
       subscription.unsubscribe();
     };
   }, []);
@@ -130,15 +106,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      console.log("Attempting login for:", email);
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
       if (error) throw error;
       
-      console.log("Login successful, user:", data.user?.id);
+      navigate('/');
       toast.success('Successfully logged in!');
     } catch (error: any) {
       console.error("Login error:", error.message);
@@ -216,6 +191,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('User not authenticated');
       }
       
+      // First delete existing vices
       const { error: deleteError } = await supabase
         .from('profile_vices')
         .delete()
@@ -223,6 +199,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
       if (deleteError) throw deleteError;
       
+      // Then insert new vices
       if (viceIds.length > 0) {
         const viceInserts = viceIds.map(viceId => ({
           profile_id: session.user.id,
@@ -236,7 +213,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (insertError) throw insertError;
       }
       
+      // Update user in state
       if (user) {
+        // Fetch updated vices
         const { data: vicesData } = await supabase
           .from('profile_vices')
           .select('vices(name)')
@@ -264,6 +243,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('User not authenticated');
       }
       
+      // First delete existing kinks
       const { error: deleteError } = await supabase
         .from('profile_kinks')
         .delete()
@@ -271,6 +251,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
       if (deleteError) throw deleteError;
       
+      // Then insert new kinks
       if (kinkIds.length > 0) {
         const kinkInserts = kinkIds.map(kinkId => ({
           profile_id: session.user.id,
@@ -284,7 +265,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (insertError) throw insertError;
       }
       
+      // Update user in state
       if (user) {
+        // Fetch updated kinks
         const { data: kinksData } = await supabase
           .from('profile_kinks')
           .select('kinks(name)')
@@ -306,175 +289,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateProfile = async (profileData: Partial<UserProfile>) => {
-    try {
-      if (!session?.user?.id) {
-        throw new Error('User not authenticated');
-      }
-      
-      console.log("Updating profile with data:", profileData);
-      
-      // If flirtingStyle is an object, convert it to a JSON string for storage
-      let flirtingStyleForDB: string | null = null;
-      if (profileData.flirtingStyle) {
-        flirtingStyleForDB = typeof profileData.flirtingStyle === 'string' 
-          ? profileData.flirtingStyle 
-          : JSON.stringify(profileData.flirtingStyle);
-      }
-      
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          name: profileData.name,
-          age: profileData.age,
-          location: profileData.location,
-          bio: profileData.bio,
-          looking_for: profileData.lookingFor,
-          flirting_style: flirtingStyleForDB,
-          occupation: profileData.about?.occupation,
-          relationship_status: profileData.about?.status,
-          height: profileData.about?.height,
-          zodiac: profileData.about?.zodiac,
-          religion: profileData.about?.religion,
-        })
-        .eq('id', session.user.id);
-        
-      if (profileError) throw profileError;
-      
-      if (profileData.passions && profileData.passions.length > 0) {
-        const { error: deletePassionsError } = await supabase
-          .from('profile_passions')
-          .delete()
-          .eq('profile_id', session.user.id);
-          
-        if (deletePassionsError) throw deletePassionsError;
-        
-        const passionInserts = profileData.passions.map(passion => ({
-          profile_id: session.user.id,
-          passion: passion
-        }));
-        
-        const { error: insertPassionsError } = await supabase
-          .from('profile_passions')
-          .insert(passionInserts);
-          
-        if (insertPassionsError) throw insertPassionsError;
-      }
-      
-      if (profileData.audio) {
-        const { data: existingAudio } = await supabase
-          .from('profile_audio')
-          .select('id')
-          .eq('profile_id', session.user.id)
-          .single();
-          
-        if (existingAudio) {
-          const { error: audioError } = await supabase
-            .from('profile_audio')
-            .update({
-              title: profileData.audio.title,
-              url: profileData.audio.url
-            })
-            .eq('profile_id', session.user.id);
-            
-          if (audioError) throw audioError;
-        } else {
-          const { error: audioError } = await supabase
-            .from('profile_audio')
-            .insert({
-              profile_id: session.user.id,
-              title: profileData.audio.title,
-              url: profileData.audio.url
-            });
-            
-          if (audioError) throw audioError;
-        }
-      }
-      
-      const updatedProfile = await fetchProfile();
-      if (updatedProfile) {
-        setUser(updatedProfile);
-      }
-      
-      toast.success('Profile updated successfully');
-      return;
-    } catch (error: any) {
-      console.error("Error updating profile:", error.message);
-      toast.error(error.message || 'Failed to update profile');
-      throw error;
-    }
-  };
-
   const fetchProfile = async (userId?: string): Promise<UserProfile | null> => {
     try {
-      console.log("Fetching profile for user:", userId || session?.user?.id);
-      if (!userId && !session?.user?.id) {
-        console.log("No user ID available, cannot fetch profile");
-        return null;
-      }
+      if (!userId && !session?.user?.id) return null;
       
       const profileId = userId || session?.user?.id;
       
+      // Fetch the basic profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', profileId)
         .single();
         
-      if (profileError) {
-        console.error("Error fetching profile data:", profileError);
-        throw profileError;
-      }
+      if (profileError) throw profileError;
+      if (!profileData) return null;
       
-      if (!profileData) {
-        console.log("No profile data found for user:", profileId);
-        return null;
-      }
-      
+      // Fetch profile photos
       const { data: photosData } = await supabase
         .from('profile_photos')
         .select('url')
         .eq('profile_id', profileId)
         .order('order_index', { ascending: true });
         
+      // Fetch vices
       const { data: vicesData } = await supabase
         .from('profile_vices')
         .select('vices(name)')
         .eq('profile_id', profileId);
         
+      // Fetch kinks
       const { data: kinksData } = await supabase
         .from('profile_kinks')
         .select('kinks(name)')
         .eq('profile_id', profileId);
         
+      // Fetch audio
       const { data: audioData } = await supabase
         .from('profile_audio')
         .select('*')
         .eq('profile_id', profileId)
         .single();
         
+      // Fetch passions
       const { data: passionsData } = await supabase
         .from('profile_passions')
         .select('passion')
         .eq('profile_id', profileId);
         
-      // Try to parse flirting style if it's a JSON string
-      let parsedFlirtingStyle: string | FlirtingStyle = profileData.flirting_style || '';
-      if (typeof profileData.flirting_style === 'string' && profileData.flirting_style) {
-        try {
-          // Try to parse it as JSON
-          const parsed = JSON.parse(profileData.flirting_style);
-          // Check if it matches the expected FlirtingStyle structure
-          if (parsed && typeof parsed === 'object' && 'direct' in parsed) {
-            parsedFlirtingStyle = parsed as FlirtingStyle;
-          }
-        } catch (e) {
-          // If parsing fails, keep it as a string
-          console.log("Failed to parse flirting style as JSON:", e);
-          parsedFlirtingStyle = profileData.flirting_style;
-        }
-      }
-      
+      // Construct the complete user profile
       const userProfile: UserProfile = {
         id: profileData.id,
         name: profileData.name,
@@ -482,7 +345,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: session?.user?.email || 'user@example.com',
         location: profileData.location,
         verified: profileData.verified,
-        quote: profileData.quote || undefined,
         photos: photosData?.map(photo => photo.url) || [],
         about: {
           occupation: profileData.occupation,
@@ -491,6 +353,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           zodiac: profileData.zodiac,
           religion: profileData.religion,
           lifestyle: {
+            // These would come from additional tables if we had them
             smoking: false,
             drinking: 'occasionally',
             exercise: 'regularly',
@@ -501,7 +364,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         kinks: kinksData?.map(kink => kink.kinks.name) || [],
         bio: profileData.bio,
         lookingFor: profileData.looking_for,
-        flirtingStyle: parsedFlirtingStyle,
+        flirtingStyle: profileData.flirting_style,
         audio: audioData ? {
           title: audioData.title,
           url: audioData.url
@@ -509,7 +372,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         passions: passionsData?.map(passion => passion.passion) || []
       };
       
-      console.log("Profile fetched successfully:", userProfile.id);
       return userProfile;
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -530,7 +392,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         fetchProfile,
         updateUserVices,
         updateUserKinks,
-        updateProfile,
       }}
     >
       {children}
