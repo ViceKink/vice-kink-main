@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,14 +17,12 @@ const Auth = () => {
   // Add effect to handle navigation when auth state changes
   useEffect(() => {
     if (isAuthenticated) {
+      console.log("User is authenticated, navigating to home");
       navigate('/', { replace: true });
     }
   }, [isAuthenticated, navigate]);
   
-  // Don't use Navigate component directly to avoid rendering issues
-  // during authentication state changes
-  
-  console.log("Auth page state:", { isAuthenticated, isLoading: authLoading });
+  console.log("Auth page state:", { isAuthenticated, authLoading });
   
   return (
     <div className="min-h-screen pt-20 flex items-center justify-center px-4">
@@ -70,7 +68,7 @@ const LoginForm = ({ onLogin, isAuthLoading }: LoginFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLocalLoading, setIsLocalLoading] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,18 +87,18 @@ const LoginForm = ({ onLogin, isAuthLoading }: LoginFormProps) => {
     }
     
     try {
-      setIsLoading(true);
+      setIsLocalLoading(true);
       await onLogin(email, password);
     } catch (error) {
       // Error is handled in the auth context
       console.error("Login form error:", error);
     } finally {
-      setIsLoading(false);
+      setIsLocalLoading(false);
     }
   };
   
   // Combined loading state from local and auth context
-  const loading = isLoading || isAuthLoading;
+  const loading = isLocalLoading || isAuthLoading;
   
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -158,7 +156,7 @@ const SignupForm = ({ onSignup, isAuthLoading }: SignupFormProps) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLocalLoading, setIsLocalLoading] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,7 +177,7 @@ const SignupForm = ({ onSignup, isAuthLoading }: SignupFormProps) => {
     }
     
     try {
-      setIsLoading(true);
+      setIsLocalLoading(true);
       const userData = {
         name,
         email
@@ -191,12 +189,12 @@ const SignupForm = ({ onSignup, isAuthLoading }: SignupFormProps) => {
       // Error is handled in the auth context
       console.error("Signup form error:", error);
     } finally {
-      setIsLoading(false);
+      setIsLocalLoading(false);
     }
   };
   
   // Combined loading state from local and auth context
-  const loading = isLoading || isAuthLoading;
+  const loading = isLocalLoading || isAuthLoading;
   
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
