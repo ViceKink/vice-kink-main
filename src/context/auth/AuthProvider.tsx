@@ -1,4 +1,3 @@
-
 import { 
   createContext, 
   useState, 
@@ -188,10 +187,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         else if (key === 'birthDate') {
           // Ensure we're using the correct field name that matches the database column
-          profileUpdateData['birth_date'] = value;
+          profileUpdateData.birth_date = value;
         }
         else if (key === 'flirtingStyle') {
-          profileUpdateData['flirting_style'] = typeof value === 'object' 
+          profileUpdateData.flirting_style = typeof value === 'object' 
             ? JSON.stringify(value) 
             : value;
         } 

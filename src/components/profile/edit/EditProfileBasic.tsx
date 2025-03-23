@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '@/types/auth';
 import { Input } from '@/components/ui/input';
@@ -127,7 +128,7 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
       setAge(calculatedAge);
       updateField('age', calculatedAge);
       
-      // Update birthDate in userData (using correct field name in the database)
+      // Update birthDate in userData (using correct field name for the database)
       updateField('birthDate', birthDate.toISOString());
       
       // Calculate zodiac sign
