@@ -9,7 +9,287 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      kinks: {
+        Row: {
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      profile_audio: {
+        Row: {
+          created_at: string | null
+          id: string
+          profile_id: string
+          title: string
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          profile_id: string
+          title: string
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          profile_id?: string
+          title?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_audio_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_kinks: {
+        Row: {
+          kink_id: string
+          profile_id: string
+        }
+        Insert: {
+          kink_id: string
+          profile_id: string
+        }
+        Update: {
+          kink_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_kinks_kink_id_fkey"
+            columns: ["kink_id"]
+            isOneToOne: false
+            referencedRelation: "kinks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_kinks_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_passions: {
+        Row: {
+          created_at: string | null
+          id: string
+          passion: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          passion: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          passion?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_passions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_photos: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_primary: boolean | null
+          order_index: number
+          profile_id: string
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          order_index: number
+          profile_id: string
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          order_index?: number
+          profile_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_photos_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_prompts: {
+        Row: {
+          answer: string
+          created_at: string | null
+          id: string
+          order_index: number
+          profile_id: string
+          prompt: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string | null
+          id?: string
+          order_index: number
+          profile_id: string
+          prompt: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string | null
+          id?: string
+          order_index?: number
+          profile_id?: string
+          prompt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_prompts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_vices: {
+        Row: {
+          profile_id: string
+          vice_id: string
+        }
+        Insert: {
+          profile_id: string
+          vice_id: string
+        }
+        Update: {
+          profile_id?: string
+          vice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_vices_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_vices_vice_id_fkey"
+            columns: ["vice_id"]
+            isOneToOne: false
+            referencedRelation: "vices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          age: number | null
+          bio: string | null
+          created_at: string | null
+          flirting_style: string | null
+          height: string | null
+          id: string
+          location: string | null
+          looking_for: string | null
+          name: string
+          occupation: string | null
+          quote: string | null
+          relationship_status: string | null
+          religion: string | null
+          verified: boolean | null
+          zodiac: string | null
+        }
+        Insert: {
+          age?: number | null
+          bio?: string | null
+          created_at?: string | null
+          flirting_style?: string | null
+          height?: string | null
+          id: string
+          location?: string | null
+          looking_for?: string | null
+          name: string
+          occupation?: string | null
+          quote?: string | null
+          relationship_status?: string | null
+          religion?: string | null
+          verified?: boolean | null
+          zodiac?: string | null
+        }
+        Update: {
+          age?: number | null
+          bio?: string | null
+          created_at?: string | null
+          flirting_style?: string | null
+          height?: string | null
+          id?: string
+          location?: string | null
+          looking_for?: string | null
+          name?: string
+          occupation?: string | null
+          quote?: string | null
+          relationship_status?: string | null
+          religion?: string | null
+          verified?: boolean | null
+          zodiac?: string | null
+        }
+        Relationships: []
+      }
+      vices: {
+        Row: {
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

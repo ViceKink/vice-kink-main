@@ -13,6 +13,7 @@ import EditProfilePassions from '@/components/profile/edit/EditProfilePassions';
 import VicesKinksManager from '@/components/profile/VicesKinksManager';
 import EditProfileAudio from '@/components/profile/edit/EditProfileAudio';
 import EditProfilePhotos from '@/components/profile/edit/EditProfilePhotos';
+import { Separator } from '@/components/ui/separator';
 
 const EditProfile = () => {
   const { user, updateProfile } = useAuth();
@@ -79,14 +80,12 @@ const EditProfile = () => {
         <h1 className="text-2xl font-bold mb-6">Edit Your Profile</h1>
         
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-8 overflow-x-auto md:overflow-visible">
+          <TabsList className="mb-6">
             <TabsTrigger value="basic">Basic Info</TabsTrigger>
             <TabsTrigger value="about">About Me</TabsTrigger>
             <TabsTrigger value="bio">Bio</TabsTrigger>
             <TabsTrigger value="photos">Photos</TabsTrigger>
-            <TabsTrigger value="passions">Passions</TabsTrigger>
-            <TabsTrigger value="vices">Vices</TabsTrigger>
-            <TabsTrigger value="kinks">Kinks</TabsTrigger>
+            <TabsTrigger value="interests">Interests</TabsTrigger>
           </TabsList>
           
           <TabsContent value="basic" className="mt-4">
@@ -133,23 +132,22 @@ const EditProfile = () => {
             </div>
           </TabsContent>
           
-          <TabsContent value="passions" className="mt-4">
+          <TabsContent value="interests" className="mt-4">
             <div className="bg-card rounded-lg p-6 shadow-sm">
+              <h2 className="text-lg font-semibold mb-4">Your Passions</h2>
               <EditProfilePassions 
                 userData={profileData} 
                 updateField={updateField} 
               />
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="vices" className="mt-4">
-            <div className="bg-card rounded-lg p-6 shadow-sm">
+              
+              <Separator className="my-6" />
+              
+              <h2 className="text-lg font-semibold mb-4">Your Vices</h2>
               <VicesKinksManager mode="vices" />
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="kinks" className="mt-4">
-            <div className="bg-card rounded-lg p-6 shadow-sm">
+              
+              <Separator className="my-6" />
+              
+              <h2 className="text-lg font-semibold mb-4">Your Kinks</h2>
               <VicesKinksManager mode="kinks" />
             </div>
           </TabsContent>

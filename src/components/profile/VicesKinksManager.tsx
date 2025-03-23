@@ -100,9 +100,6 @@ const VicesKinksManager = ({ mode }: VicesKinksManagerProps) => {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">
-        Manage your {mode === 'vices' ? 'vices' : 'kinks'}
-      </h3>
       <p className="text-sm text-muted-foreground">
         Select all that apply to you. This information will be visible on your profile.
       </p>
