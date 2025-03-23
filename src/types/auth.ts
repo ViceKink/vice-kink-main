@@ -10,10 +10,12 @@ export interface FlirtingStyle {
 export interface UserProfile {
   id: string;
   name: string;
-  age?: number;
   email: string;
+  birthDate?: string; // New field for date of birth
+  age?: number;
   photos?: string[];
   location?: string;
+  hometown?: string; // New field for hometown
   verified?: boolean;
   quote?: string;
   about?: {
@@ -23,6 +25,7 @@ export interface UserProfile {
     zodiac?: string;
     religion?: string;
     languages?: string[];
+    sexuality?: string; // New field for sexuality
     lifestyle?: {
       smoking?: boolean;
       drinking?: string;

@@ -1,16 +1,104 @@
-
 import React, { useState } from 'react';
 import { UserProfile } from '@/context/AuthContext';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Upload, Trash2, XCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Upload, Loader2, XCircle, GripVertical, ArrowUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
+import { 
+  DndContext, 
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface EditProfilePhotosProps {
   userData: Partial<UserProfile>;
   updateField: (field: string, value: any) => void;
 }
+
+interface SortablePhotoItemProps {
+  id: string;
+  url: string;
+  index: number;
+  isMain: boolean;
+  onDelete: (url: string) => void;
+}
+
+const SortablePhotoItem = ({ id, url, index, isMain, onDelete }: SortablePhotoItemProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      className="relative group border rounded-lg overflow-hidden"
+    >
+      <div 
+        className="absolute top-2 left-2 bg-black/70 text-white p-1.5 rounded-full 
+                cursor-grab opacity-0 group-hover:opacity-100 transition-opacity z-10"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical size={16} />
+      </div>
+      
+      <img 
+        src={url} 
+        alt={`Profile photo ${index + 1}`} 
+        className="w-full h-48 object-cover"
+      />
+      
+      <button
+        type="button"
+        onClick={() => onDelete(url)}
+        className="absolute top-2 right-2 bg-black/70 text-white p-1.5 rounded-full 
+                  opacity-0 group-hover:opacity-100 transition-opacity z-10"
+        aria-label="Delete photo"
+      >
+        <XCircle size={18} />
+      </button>
+      
+      {isMain ? (
+        <span className="absolute bottom-2 left-2 bg-vice-purple text-white text-xs px-2 py-1 rounded-full">
+          Main Photo
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={() => {/* This will be implemented in the parent component */}}
+          className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full 
+                    opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <ArrowUp size={12} className="inline mr-1" />
+          Make Main
+        </button>
+      )}
+    </div>
+  );
+};
 
 const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) => {
   const [isUploading, setIsUploading] = useState(false);
@@ -21,7 +109,13 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
   const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
   const MAX_SIZE = 5 * 1024 * 1024; // 5MB
   
-  // Function to compress an image
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   const compressImage = (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -35,7 +129,6 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
           let width = img.width;
           let height = img.height;
           
-          // Calculate new dimensions while maintaining aspect ratio
           const MAX_WIDTH = 1200;
           const MAX_HEIGHT = 1200;
           
@@ -62,7 +155,6 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
           
           ctx.drawImage(img, 0, 0, width, height);
           
-          // Convert to blob
           canvas.toBlob(
             (blob) => {
               if (!blob) {
@@ -72,7 +164,7 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
               resolve(blob);
             },
             file.type,
-            0.7 // Quality parameter (0.7 = 70% quality)
+            0.7
           );
         };
         
@@ -99,7 +191,6 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
     
     const file = files[0];
     
-    // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
       setError('Please upload a JPEG, PNG, or WebP image.');
       return;
@@ -107,25 +198,21 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
     
     setIsUploading(true);
     setError('');
-    setUploadProgress(10); // Start progress indicator
+    setUploadProgress(10);
     
     try {
       let fileToUpload: Blob = file;
       
-      // Check if file needs compression
       if (file.size > MAX_SIZE) {
         setUploadProgress(30);
         fileToUpload = await compressImage(file);
         
-        // If still too large after compression
         if (fileToUpload.size > MAX_SIZE) {
-          // Try more aggressive compression
           const canvas = document.createElement('canvas');
           const img = new Image();
           
           await new Promise<void>((resolve, reject) => {
             img.onload = () => {
-              // Reduce dimensions more aggressively
               const MAX_DIM = 800;
               let width = img.width;
               let height = img.height;
@@ -161,7 +248,7 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
                   resolve();
                 },
                 'image/jpeg',
-                0.5 // Lower quality
+                0.5
               );
             };
             
@@ -173,7 +260,6 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
             reader.readAsDataURL(fileToUpload);
           });
           
-          // If still too large after aggressive compression
           if (fileToUpload.size > MAX_SIZE) {
             setError('Image is too large. Even after compression, it exceeds the 5MB limit.');
             setIsUploading(false);
@@ -185,12 +271,10 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
       
       setUploadProgress(50);
       
-      // Generate a unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${uuidv4()}.${fileExt}`;
       const filePath = `photos/${fileName}`;
       
-      // Upload to Supabase Storage
       setUploadProgress(70);
       const { data, error: uploadError } = await supabase.storage
         .from('profile-media')
@@ -204,20 +288,17 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
       
       setUploadProgress(90);
       
-      // Get public URL
       const { data: publicUrlData } = supabase.storage
         .from('profile-media')
         .getPublicUrl(filePath);
       
       const publicUrl = publicUrlData.publicUrl;
       
-      // Update photos array
       const updatedPhotos = [...currentPhotos, publicUrl];
       updateField('photos', updatedPhotos);
       
       setUploadProgress(100);
       
-      // Also save to database
       if (userData.id) {
         const { error: dbError } = await supabase
           .from('profile_photos')
@@ -233,7 +314,6 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
         }
       }
       
-      // Reset the input
       e.target.value = '';
     } catch (err: any) {
       console.error('Error uploading photo:', err);
@@ -244,17 +324,14 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
     }
   };
   
-  const handleDeletePhoto = async (photoUrl: string, index: number) => {
+  const handleDeletePhoto = async (photoUrl: string) => {
     try {
       const currentPhotos = userData.photos || [];
       const updatedPhotos = currentPhotos.filter(url => url !== photoUrl);
       
-      // Update state
       updateField('photos', updatedPhotos);
       
-      // Delete from database if user ID exists
       if (userData.id) {
-        // First, get the database record ID using the URL
         const { data: photoRecord, error: fetchError } = await supabase
           .from('profile_photos')
           .select('id')
@@ -277,8 +354,6 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
           }
         }
         
-        // Try to delete the file from storage
-        // Extract the file path from the URL
         const urlParts = photoUrl.split('/');
         const fileName = urlParts[urlParts.length - 1];
         const filePath = `photos/${fileName}`;
@@ -297,13 +372,107 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
     }
   };
   
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) {
+      return;
+    }
+    
+    const oldIndex = userData.photos?.findIndex(url => url === active.id) || 0;
+    const newIndex = userData.photos?.findIndex(url => url === over.id) || 0;
+    
+    if (oldIndex === -1 || newIndex === -1) return;
+    
+    const updatedPhotos = arrayMove(userData.photos || [], oldIndex, newIndex);
+    updateField('photos', updatedPhotos);
+    
+    if (userData.id) {
+      try {
+        const { data: photoRecords, error: fetchError } = await supabase
+          .from('profile_photos')
+          .select('id, url, order_index')
+          .eq('profile_id', userData.id)
+          .order('order_index', { ascending: true });
+          
+        if (fetchError) {
+          console.error('Error fetching photo records:', fetchError);
+          return;
+        }
+        
+        for (let i = 0; i < updatedPhotos.length; i++) {
+          const photoUrl = updatedPhotos[i];
+          const photoRecord = photoRecords?.find(record => record.url === photoUrl);
+          
+          if (photoRecord) {
+            const { error: updateError } = await supabase
+              .from('profile_photos')
+              .update({ order_index: i })
+              .eq('id', photoRecord.id);
+              
+            if (updateError) {
+              console.error('Error updating photo order:', updateError);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error reordering photos in database:', err);
+      }
+    }
+  };
+  
+  const handleMakeMainPhoto = async (photoUrl: string) => {
+    if (!userData.photos || userData.photos.length < 2) return;
+    
+    const photoIndex = userData.photos.findIndex(url => url === photoUrl);
+    if (photoIndex <= 0) return;
+    
+    const updatedPhotos = [...userData.photos];
+    updatedPhotos.splice(photoIndex, 1);
+    updatedPhotos.unshift(photoUrl);
+    
+    updateField('photos', updatedPhotos);
+    
+    if (userData.id) {
+      try {
+        const { data: photoRecords, error: fetchError } = await supabase
+          .from('profile_photos')
+          .select('id, url')
+          .eq('profile_id', userData.id);
+          
+        if (fetchError) {
+          console.error('Error fetching photo records:', fetchError);
+          return;
+        }
+        
+        for (let i = 0; i < updatedPhotos.length; i++) {
+          const url = updatedPhotos[i];
+          const record = photoRecords?.find(r => r.url === url);
+          
+          if (record) {
+            const { error: updateError } = await supabase
+              .from('profile_photos')
+              .update({ order_index: i })
+              .eq('id', record.id);
+              
+            if (updateError) {
+              console.error('Error updating photo order:', updateError);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error making photo main in database:', err);
+      }
+    }
+  };
+  
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold">Profile Photos</h2>
       
       <p className="text-sm text-muted-foreground">
         Upload photos to showcase your personality. You can upload up to {MAX_PHOTOS} photos.
-        Large images will be automatically compressed.
+        Large images will be automatically compressed. Drag photos to reorder them.
       </p>
       
       <div className="mt-4">
@@ -360,31 +529,29 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
       {userData.photos && userData.photos.length > 0 && (
         <div className="mt-6">
           <h3 className="text-md font-medium mb-3">Your Photos</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {userData.photos.map((photo, index) => (
-              <div key={index} className="relative group">
-                <img 
-                  src={photo} 
-                  alt={`Profile photo ${index + 1}`} 
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleDeletePhoto(photo, index)}
-                  className="absolute top-2 right-2 bg-black/70 text-white p-1.5 rounded-full 
-                            opacity-0 group-hover:opacity-100 transition-opacity"
-                  aria-label="Delete photo"
-                >
-                  <XCircle size={18} />
-                </button>
-                {index === 0 && (
-                  <span className="absolute bottom-2 left-2 bg-vice-purple text-white text-xs px-2 py-1 rounded-full">
-                    Main Photo
-                  </span>
-                )}
+          <DndContext 
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext 
+              items={userData.photos}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {userData.photos.map((photo, index) => (
+                  <SortablePhotoItem
+                    key={photo}
+                    id={photo}
+                    url={photo}
+                    index={index}
+                    isMain={index === 0}
+                    onDelete={handleDeletePhoto}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         </div>
       )}
     </div>
