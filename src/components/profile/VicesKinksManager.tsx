@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import ProfileTag from '@/components/ui/ProfileTag';
 import { Check, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -19,14 +18,14 @@ interface Kink {
 
 interface VicesKinksManagerProps {
   mode: 'vices' | 'kinks';
+  userData: any;
+  updateField: (field: string, value: any) => void;
 }
 
-const VicesKinksManager = ({ mode }: VicesKinksManagerProps) => {
-  const { user, updateUserVices, updateUserKinks } = useAuth();
+const VicesKinksManager = ({ mode, userData, updateField }: VicesKinksManagerProps) => {
   const [items, setItems] = useState<(Vice | Kink)[]>([]);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -41,15 +40,9 @@ const VicesKinksManager = ({ mode }: VicesKinksManagerProps) => {
         setItems(data || []);
 
         // Set initially selected items based on user profile
-        if (user) {
-          const userItems = mode === 'vices' ? user.vices : user.kinks;
-          if (userItems && userItems.length > 0) {
-            // Find IDs for the items that match names in user profile
-            const matchingIds = data
-              ?.filter(item => userItems.includes(item.name))
-              .map(item => item.id) || [];
-            setSelectedIds(matchingIds);
-          }
+        const userItems = mode === 'vices' ? userData.vices : userData.kinks;
+        if (userItems && userItems.length > 0) {
+          setSelectedItems(userItems);
         }
       } catch (error) {
         console.error(`Error fetching ${mode}:`, error);
@@ -60,33 +53,25 @@ const VicesKinksManager = ({ mode }: VicesKinksManagerProps) => {
     };
     
     fetchItems();
-  }, [mode, user]);
+  }, [mode, userData]);
 
-  const handleItemToggle = (id: string) => {
-    setSelectedIds(prev => {
-      if (prev.includes(id)) {
-        return prev.filter(itemId => itemId !== id);
+  const handleItemToggle = (itemName: string) => {
+    setSelectedItems(prev => {
+      if (prev.includes(itemName)) {
+        return prev.filter(item => item !== itemName);
       } else {
-        return [...prev, id];
+        return [...prev, itemName];
       }
     });
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      if (mode === 'vices') {
-        await updateUserVices(selectedIds);
-        toast.success('Vices updated successfully');
-      } else {
-        await updateUserKinks(selectedIds);
-        toast.success('Kinks updated successfully');
-      }
-    } catch (error) {
-      console.error(`Error updating ${mode}:`, error);
-      toast.error(`Failed to update ${mode}. Please try again.`);
-    } finally {
-      setSaving(false);
+    
+    // Update parent component state immediately
+    const fieldName = mode === 'vices' ? 'vices' : 'kinks';
+    const currentItems = userData[fieldName] || [];
+    
+    if (currentItems.includes(itemName)) {
+      updateField(fieldName, currentItems.filter((item: string) => item !== itemName));
+    } else {
+      updateField(fieldName, [...currentItems, itemName]);
     }
   };
 
@@ -105,40 +90,28 @@ const VicesKinksManager = ({ mode }: VicesKinksManagerProps) => {
       </p>
       
       <div className="flex flex-wrap gap-2 mt-4">
-        {items.map((item) => (
-          <button
-            key={item.id}
-            className="group relative"
-            onClick={() => handleItemToggle(item.id)}
-          >
-            <ProfileTag 
-              label={item.name}
-              type={mode === 'vices' ? 'vice' : 'kink'}
-              isActive={selectedIds.includes(item.id)}
-              className="pr-6"
-            />
-            {selectedIds.includes(item.id) ? (
-              <span className="absolute right-1 top-1/2 transform -translate-y-1/2 h-4 w-4 flex items-center justify-center rounded-full bg-foreground/10">
-                <Check className="h-3 w-3" />
-              </span>
-            ) : (
-              <span className="absolute right-1 top-1/2 transform -translate-y-1/2 h-4 w-4 flex items-center justify-center rounded-full bg-foreground/5 group-hover:bg-foreground/10">
-                <Plus className="h-3 w-3" />
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-      
-      <div className="flex justify-end pt-4">
-        <Button 
-          disabled={saving}
-          onClick={handleSave}
-          className="bg-vice-purple hover:bg-vice-dark-purple"
-        >
-          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Save {mode === 'vices' ? 'Vices' : 'Kinks'}
-        </Button>
+        {items.map((item) => {
+          const isSelected = selectedItems.includes(item.name);
+          return (
+            <button
+              key={item.id}
+              className="group relative"
+              onClick={() => handleItemToggle(item.name)}
+            >
+              <ProfileTag 
+                label={item.name}
+                type={mode === 'vices' ? 'vice' : 'kink'}
+                isActive={isSelected}
+                className={isSelected ? "pr-6" : ""}
+              />
+              {isSelected && (
+                <span className="absolute right-1 top-1/2 transform -translate-y-1/2 h-4 w-4 flex items-center justify-center rounded-full bg-foreground/10">
+                  <Check className="h-3 w-3" />
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

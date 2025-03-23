@@ -144,12 +144,20 @@ const EditProfile = () => {
               <Separator className="my-6" />
               
               <h2 className="text-lg font-semibold mb-4">Your Vices</h2>
-              <VicesKinksManager mode="vices" />
+              <VicesKinksManager 
+                mode="vices" 
+                userData={profileData}
+                updateField={updateField}
+              />
               
               <Separator className="my-6" />
               
               <h2 className="text-lg font-semibold mb-4">Your Kinks</h2>
-              <VicesKinksManager mode="kinks" />
+              <VicesKinksManager 
+                mode="kinks" 
+                userData={profileData}
+                updateField={updateField}
+              />
             </div>
           </TabsContent>
         </Tabs>

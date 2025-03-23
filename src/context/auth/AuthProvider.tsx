@@ -1,4 +1,3 @@
-
 import { 
   createContext, 
   useState, 
@@ -21,8 +20,8 @@ type AuthContextType = {
   logout: () => Promise<void>;
   updateProfile: (profileData: Partial<UserProfile>) => Promise<void>;
   fetchProfile: (userId?: string) => Promise<UserProfile | null>;
-  updateUserVices?: (vices: string[]) => Promise<void>;
-  updateUserKinks?: (kinks: string[]) => Promise<void>;
+  updateUserVices: (vices: string[]) => Promise<void>;
+  updateUserKinks: (kinks: string[]) => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,7 +31,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Function to update user data from Supabase profile
   const updateUserData = useCallback(async (session: Session | null) => {
     if (session?.user) {
       try {
@@ -40,8 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(userData);
       } catch (error) {
         console.error('Error fetching user profile:', error);
-        // Important: Still set loading to false even if profile fetch fails
-        // This prevents infinite loading
+        setLoading(false);
       }
     } else {
       setUser(null);
@@ -49,10 +46,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }, []);
 
-  // Implement fetchProfile method with error handling and timeouts
   const fetchProfile = async (userId?: string): Promise<UserProfile | null> => {
     try {
-      // If no userId is provided, use the current user's id
       const targetId = userId || session?.user?.id;
       
       if (!targetId) {
@@ -60,17 +55,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
       
-      // Add a timeout to prevent hanging requests
       const timeoutPromise = new Promise<null>((_, reject) => {
         setTimeout(() => reject(new Error('Profile fetch timeout')), 8000);
       });
       
       const fetchPromise = fetchUserProfile(targetId);
       
-      // Race between timeout and actual fetch
       const userData = await Promise.race([fetchPromise, timeoutPromise]) as UserProfile;
       
-      // If this is the current user, update the state
       if (!userId && session?.user?.id === targetId) {
         setUser(userData);
       }
@@ -86,21 +78,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log("Setting up auth state listener");
     let authStateSubscription: { unsubscribe: () => void } | null = null;
     
-    // Set up auth state listener
     const setupAuthListener = async () => {
       try {
-        // Check for existing session first
         const { data: sessionData } = await supabase.auth.getSession();
         console.log("Initial session check:", sessionData.session ? "Session exists" : "No session");
         setSession(sessionData.session);
         
-        // Then set up the auth state change listener
         const { data } = supabase.auth.onAuthStateChange(
           async (_event, newSession) => {
             console.log("Auth state changed:", _event, newSession ? "Session exists" : "No session");
             setSession(newSession);
             
-            // Only attempt to fetch user data if we have a session
             if (newSession) {
               await updateUserData(newSession);
             } else {
@@ -112,7 +100,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         authStateSubscription = data.subscription;
         
-        // Update user data with initial session
         if (sessionData.session) {
           await updateUserData(sessionData.session);
         } else {
@@ -175,28 +162,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!user?.id) return;
 
     try {
-      // Create an object that will be compatible with the database schema
       const profileUpdateData: Record<string, any> = {};
       
-      // Copy all valid properties from profileData to profileUpdateData
       Object.entries(profileData).forEach(([key, value]) => {
-        // Special handling for flirtingStyle to ensure it's always a string in the database
         if (key === 'flirtingStyle') {
           profileUpdateData['flirting_style'] = typeof value === 'object' 
             ? JSON.stringify(value) 
             : value;
         } 
-        // Regular properties (convert camelCase to snake_case)
         else {
           const snakeCaseKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
           profileUpdateData[snakeCaseKey] = value;
         }
       });
       
-      // Now profileUpdateData should have all keys in snake_case and compatible types
       await updateUserProfile(user.id, profileUpdateData);
       
-      // Update the local user state
       setUser(prev => prev ? { ...prev, ...profileData } : null);
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -204,15 +185,82 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Mock implementations for VicesKinksManager 
   const updateUserVices = async (vices: string[]) => {
-    console.log("Updating vices:", vices);
-    // This would be implemented to save to Supabase
+    if (!user?.id) return;
+    
+    try {
+      const { data: viceData, error: viceError } = await supabase
+        .from('vices')
+        .select('id, name')
+        .in('name', vices);
+        
+      if (viceError) throw viceError;
+      
+      const { error: deleteError } = await supabase
+        .from('profile_vices')
+        .delete()
+        .eq('profile_id', user.id);
+        
+      if (deleteError) throw deleteError;
+      
+      if (viceData && viceData.length > 0) {
+        const viceInserts = viceData.map(vice => ({
+          profile_id: user.id,
+          vice_id: vice.id
+        }));
+        
+        const { error: insertError } = await supabase
+          .from('profile_vices')
+          .insert(viceInserts);
+          
+        if (insertError) throw insertError;
+      }
+      
+      setUser(prev => prev ? { ...prev, vices } : null);
+      
+    } catch (error) {
+      console.error('Error updating vices:', error);
+      throw error;
+    }
   };
   
   const updateUserKinks = async (kinks: string[]) => {
-    console.log("Updating kinks:", kinks);
-    // This would be implemented to save to Supabase
+    if (!user?.id) return;
+    
+    try {
+      const { data: kinkData, error: kinkError } = await supabase
+        .from('kinks')
+        .select('id, name')
+        .in('name', kinks);
+        
+      if (kinkError) throw kinkError;
+      
+      const { error: deleteError } = await supabase
+        .from('profile_kinks')
+        .delete()
+        .eq('profile_id', user.id);
+        
+      if (deleteError) throw deleteError;
+      
+      if (kinkData && kinkData.length > 0) {
+        const kinkInserts = kinkData.map(kink => ({
+          profile_id: user.id,
+          kink_id: kink.id
+        }));
+        
+        const { error: insertError } = await supabase
+          .from('profile_kinks')
+          .insert(kinkInserts);
+          
+        if (insertError) throw insertError;
+      }
+      
+      setUser(prev => prev ? { ...prev, kinks } : null);
+      
+    } catch (error) {
+      console.error('Error updating kinks:', error);
+      throw error;
+    }
   };
 
   const contextValue: AuthContextType = {

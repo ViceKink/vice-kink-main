@@ -1,60 +1,57 @@
 
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { cn } from '@/lib/utils';
 
 interface ProfileTagProps {
   label: string;
-  type?: 'default' | 'kink' | 'vice' | 'primary' | 'lifestyle';
-  size?: 'sm' | 'md' | 'lg';
+  type?: 'passion' | 'vice' | 'kink' | 'hobby';
   isActive?: boolean;
-  onClick?: () => void;
   className?: string;
 }
 
-const ProfileTag = ({
-  label,
-  type = 'default',
-  size = 'md',
+const ProfileTag = ({ 
+  label, 
+  type = 'passion', 
   isActive = false,
-  onClick,
-  className,
+  className = '' 
 }: ProfileTagProps) => {
-  const baseClasses = "inline-flex items-center justify-center rounded-full font-medium transition-all duration-200";
-  
-  const sizeClasses = {
-    sm: "text-xs px-2 py-0.5",
-    md: "text-sm px-3 py-1",
-    lg: "text-base px-4 py-1.5",
+  // Custom styles based on tag type
+  const getTypeStyles = () => {
+    switch (type) {
+      case 'passion':
+        return isActive 
+          ? 'bg-vice-purple/90 text-white border-vice-purple hover:bg-vice-purple'
+          : 'bg-vice-purple/10 text-foreground/70 border-vice-purple/20 hover:border-vice-purple/40';
+      case 'vice':
+        // Use pink color (#ff52b1) instead of red
+        return isActive 
+          ? 'bg-[#ff52b1]/90 text-white border-[#ff52b1] hover:bg-[#ff52b1]'
+          : 'bg-[#ff52b1]/10 text-foreground/70 border-[#ff52b1]/20 hover:border-[#ff52b1]/40';
+      case 'kink':
+        return isActive 
+          ? 'bg-amber-500/90 text-white border-amber-500 hover:bg-amber-500'
+          : 'bg-amber-500/10 text-foreground/70 border-amber-500/20 hover:border-amber-500/40';
+      case 'hobby':
+        return isActive 
+          ? 'bg-teal-500/90 text-white border-teal-500 hover:bg-teal-500'
+          : 'bg-teal-500/10 text-foreground/70 border-teal-500/20 hover:border-teal-500/40';
+      default:
+        return isActive 
+          ? 'bg-vice-purple/90 text-white border-vice-purple hover:bg-vice-purple'
+          : 'bg-vice-purple/10 text-foreground/70 border-vice-purple/20 hover:border-vice-purple/40';
+    }
   };
-  
-  const typeClasses = {
-    default: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-    kink: "bg-vice-purple/10 text-vice-purple hover:bg-vice-purple/20",
-    vice: "bg-vice-red/10 text-vice-red hover:bg-vice-red/20",
-    primary: "bg-primary/10 text-primary hover:bg-primary/20",
-    lifestyle: "bg-vice-orange/10 text-vice-orange hover:bg-vice-orange/20",
-  };
-  
-  const activeClasses = {
-    default: "bg-secondary/90 ring-1 ring-border",
-    kink: "bg-vice-purple/20 ring-1 ring-vice-purple/30",
-    vice: "bg-vice-red/20 ring-1 ring-vice-red/30",
-    primary: "bg-primary/20 ring-1 ring-primary/30",
-    lifestyle: "bg-vice-orange/20 ring-1 ring-vice-orange/30",
-  };
-  
+
   return (
-    <span
+    <div 
       className={cn(
-        baseClasses,
-        sizeClasses[size],
-        isActive ? activeClasses[type] : typeClasses[type],
-        onClick && "cursor-pointer",
+        'inline-flex items-center px-3 py-1.5 text-sm rounded-full border transition-colors',
+        getTypeStyles(),
         className
       )}
-      onClick={onClick}
     >
       {label}
-    </span>
+    </div>
   );
 };
 
