@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,11 +12,26 @@ import { cn } from '@/lib/utils';
 const Auth = () => {
   const { login, signup, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const location = useLocation();
+  const navigate = useNavigate();
   
-  // If already authenticated, redirect to home
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
+  // Check for redirect after successful authentication
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Redirect to the page they tried to visit or home page
+      const from = location.state?.from?.pathname || '/';
+      console.log("Auth: User authenticated, redirecting to:", from);
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, location.state, navigate]);
+  
+  // Debug log for authentication state
+  useEffect(() => {
+    console.log("Auth page state:", { isAuthenticated, isLoading });
+  }, [isAuthenticated, isLoading]);
+  
+  // Don't render Navigate directly, use the effect instead
+  // This prevents issues with infinite redirects or loading states
   
   return (
     <div className="min-h-screen pt-20 flex items-center justify-center px-4">
@@ -62,6 +77,7 @@ const LoginForm = ({ onLogin, isLoading }: LoginFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [localLoading, setLocalLoading] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,11 +96,19 @@ const LoginForm = ({ onLogin, isLoading }: LoginFormProps) => {
     }
     
     try {
+      setLocalLoading(true);
       await onLogin(email, password);
+      // Login is handled in the auth context
     } catch (error) {
+      console.error("Login error:", error);
       // Error is handled in the auth context
+    } finally {
+      setLocalLoading(false);
     }
   };
+  
+  // Use both the global and local loading states
+  const buttonLoading = isLoading || localLoading;
   
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -97,6 +121,7 @@ const LoginForm = ({ onLogin, isLoading }: LoginFormProps) => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={cn(errors.email && "border-destructive")}
+          disabled={buttonLoading}
         />
         {errors.email && (
           <p className="text-destructive text-sm">{errors.email}</p>
@@ -112,6 +137,7 @@ const LoginForm = ({ onLogin, isLoading }: LoginFormProps) => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className={cn(errors.password && "border-destructive")}
+          disabled={buttonLoading}
         />
         {errors.password && (
           <p className="text-destructive text-sm">{errors.password}</p>
@@ -121,9 +147,9 @@ const LoginForm = ({ onLogin, isLoading }: LoginFormProps) => {
       <Button 
         type="submit" 
         className="w-full bg-vice-purple hover:bg-vice-dark-purple" 
-        disabled={isLoading}
+        disabled={buttonLoading}
       >
-        {isLoading ? 'Logging in...' : 'Login'}
+        {buttonLoading ? 'Logging in...' : 'Login'}
       </Button>
     </form>
   );
