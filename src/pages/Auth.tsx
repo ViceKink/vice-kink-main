@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,13 +10,21 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 const Auth = () => {
-  const { login, signup, isAuthenticated, isLoading } = useAuth();
+  const { login, signup, isAuthenticated, isLoading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const navigate = useNavigate();
   
-  // If already authenticated, redirect to home
-  if (isAuthenticated) {
-    return <Navigate to="/" replace />;
-  }
+  // Add effect to handle navigation when auth state changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+  
+  // Don't use Navigate component directly to avoid rendering issues
+  // during authentication state changes
+  
+  console.log("Auth page state:", { isAuthenticated, isLoading: authLoading });
   
   return (
     <div className="min-h-screen pt-20 flex items-center justify-center px-4">
@@ -40,11 +48,11 @@ const Auth = () => {
             </TabsList>
             
             <TabsContent value="login">
-              <LoginForm onLogin={login} isLoading={isLoading} />
+              <LoginForm onLogin={login} isAuthLoading={authLoading} />
             </TabsContent>
             
             <TabsContent value="signup">
-              <SignupForm onSignup={signup} isLoading={isLoading} />
+              <SignupForm onSignup={signup} isAuthLoading={authLoading} />
             </TabsContent>
           </Tabs>
         </div>
@@ -55,13 +63,14 @@ const Auth = () => {
 
 interface LoginFormProps {
   onLogin: (email: string, password: string) => Promise<void>;
-  isLoading: boolean;
+  isAuthLoading: boolean;
 }
 
-const LoginForm = ({ onLogin, isLoading }: LoginFormProps) => {
+const LoginForm = ({ onLogin, isAuthLoading }: LoginFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,11 +89,18 @@ const LoginForm = ({ onLogin, isLoading }: LoginFormProps) => {
     }
     
     try {
+      setIsLoading(true);
       await onLogin(email, password);
     } catch (error) {
       // Error is handled in the auth context
+      console.error("Login form error:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
+  
+  // Combined loading state from local and auth context
+  const loading = isLoading || isAuthLoading;
   
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -97,6 +113,7 @@ const LoginForm = ({ onLogin, isLoading }: LoginFormProps) => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={cn(errors.email && "border-destructive")}
+          disabled={loading}
         />
         {errors.email && (
           <p className="text-destructive text-sm">{errors.email}</p>
@@ -112,6 +129,7 @@ const LoginForm = ({ onLogin, isLoading }: LoginFormProps) => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className={cn(errors.password && "border-destructive")}
+          disabled={loading}
         />
         {errors.password && (
           <p className="text-destructive text-sm">{errors.password}</p>
@@ -121,9 +139,9 @@ const LoginForm = ({ onLogin, isLoading }: LoginFormProps) => {
       <Button 
         type="submit" 
         className="w-full bg-vice-purple hover:bg-vice-dark-purple" 
-        disabled={isLoading}
+        disabled={loading}
       >
-        {isLoading ? 'Logging in...' : 'Login'}
+        {loading ? 'Logging in...' : 'Login'}
       </Button>
     </form>
   );
@@ -131,15 +149,16 @@ const LoginForm = ({ onLogin, isLoading }: LoginFormProps) => {
 
 interface SignupFormProps {
   onSignup: (userData: any, password: string) => Promise<void>;
-  isLoading: boolean;
+  isAuthLoading: boolean;
 }
 
-const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
+const SignupForm = ({ onSignup, isAuthLoading }: SignupFormProps) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,6 +179,7 @@ const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
     }
     
     try {
+      setIsLoading(true);
       const userData = {
         name,
         email
@@ -169,8 +189,14 @@ const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
       toast.success('Please check your email to confirm your account.');
     } catch (error) {
       // Error is handled in the auth context
+      console.error("Signup form error:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
+  
+  // Combined loading state from local and auth context
+  const loading = isLoading || isAuthLoading;
   
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -183,6 +209,7 @@ const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
           value={name}
           onChange={(e) => setName(e.target.value)}
           className={cn(errors.name && "border-destructive")}
+          disabled={loading}
         />
         {errors.name && (
           <p className="text-destructive text-sm">{errors.name}</p>
@@ -198,6 +225,7 @@ const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={cn(errors.email && "border-destructive")}
+          disabled={loading}
         />
         {errors.email && (
           <p className="text-destructive text-sm">{errors.email}</p>
@@ -213,6 +241,7 @@ const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className={cn(errors.password && "border-destructive")}
+          disabled={loading}
         />
         {errors.password && (
           <p className="text-destructive text-sm">{errors.password}</p>
@@ -228,6 +257,7 @@ const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           className={cn(errors.confirmPassword && "border-destructive")}
+          disabled={loading}
         />
         {errors.confirmPassword && (
           <p className="text-destructive text-sm">{errors.confirmPassword}</p>
@@ -237,9 +267,9 @@ const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
       <Button 
         type="submit" 
         className="w-full bg-vice-purple hover:bg-vice-dark-purple" 
-        disabled={isLoading}
+        disabled={loading}
       >
-        {isLoading ? 'Creating Account...' : 'Create Account'}
+        {loading ? 'Creating Account...' : 'Create Account'}
       </Button>
     </form>
   );
