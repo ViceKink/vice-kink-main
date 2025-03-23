@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/integrations/supabase/client';
 import ProfileTag from '@/components/ui/ProfileTag';
-import { Check, Plus, Loader2 } from 'lucide-react';
+import { Check, Plus, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Vice {
@@ -57,22 +57,16 @@ const VicesKinksManager = ({ mode, userData, updateField }: VicesKinksManagerPro
 
   const handleItemToggle = (itemName: string) => {
     setSelectedItems(prev => {
-      if (prev.includes(itemName)) {
-        return prev.filter(item => item !== itemName);
-      } else {
-        return [...prev, itemName];
-      }
+      const newItems = prev.includes(itemName)
+        ? prev.filter(item => item !== itemName)
+        : [...prev, itemName];
+      
+      // Update parent component state immediately
+      const fieldName = mode === 'vices' ? 'vices' : 'kinks';
+      updateField(fieldName, newItems);
+      
+      return newItems;
     });
-    
-    // Update parent component state immediately
-    const fieldName = mode === 'vices' ? 'vices' : 'kinks';
-    const currentItems = userData[fieldName] || [];
-    
-    if (currentItems.includes(itemName)) {
-      updateField(fieldName, currentItems.filter((item: string) => item !== itemName));
-    } else {
-      updateField(fieldName, [...currentItems, itemName]);
-    }
   };
 
   if (loading) {
@@ -102,11 +96,10 @@ const VicesKinksManager = ({ mode, userData, updateField }: VicesKinksManagerPro
                 label={item.name}
                 type={mode === 'vices' ? 'vice' : 'kink'}
                 isActive={isSelected}
-                className={isSelected ? "pr-6" : ""}
               />
               {isSelected && (
-                <span className="absolute right-1 top-1/2 transform -translate-y-1/2 h-4 w-4 flex items-center justify-center rounded-full bg-foreground/10">
-                  <Check className="h-3 w-3" />
+                <span className="absolute -top-1.5 -right-1.5 h-4 w-4 flex items-center justify-center rounded-full bg-foreground/10">
+                  <X className="h-3 w-3" />
                 </span>
               )}
             </button>

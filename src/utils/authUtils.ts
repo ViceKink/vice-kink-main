@@ -150,7 +150,7 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
       // Continue without audio
     }
     
-    // Fetch vices with error handling (was missing)
+    // Fetch vices with error handling
     try {
       const { data: vicesData } = await supabase
         .from('profile_vices')
@@ -174,7 +174,7 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
       // Continue without vices
     }
     
-    // Fetch kinks with error handling (was missing)
+    // Fetch kinks with error handling
     try {
       const { data: kinksData } = await supabase
         .from('profile_kinks')
@@ -216,12 +216,27 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
 // Update user profile
 export const updateUserProfile = async (userId: string, profileData: Record<string, any>) => {
   try {
+    console.log('Updating profile with data:', profileData);
+    
+    // Ensure we're not trying to update non-existent columns
+    const columnsToIgnore = ['about'];
+    const sanitizedData = { ...profileData };
+    
+    columnsToIgnore.forEach(col => {
+      if (sanitizedData[col] !== undefined) {
+        delete sanitizedData[col];
+      }
+    });
+    
     const { error } = await supabase
       .from('profiles')
-      .update(profileData)
+      .update(sanitizedData)
       .eq('id', userId);
       
-    if (error) throw error;
+    if (error) {
+      console.error('Error in updateUserProfile:', error);
+      throw error;
+    }
     
     return true;
   } catch (error) {

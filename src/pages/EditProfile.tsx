@@ -7,6 +7,7 @@ import { ChevronLeft, Save, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import EditProfileBasic from '@/components/profile/edit/EditProfileBasic';
 import EditProfileAbout from '@/components/profile/edit/EditProfileAbout';
 import EditProfileBio from '@/components/profile/edit/EditProfileBio';
@@ -17,10 +18,11 @@ import EditProfilePhotos from '@/components/profile/edit/EditProfilePhotos';
 import { Separator } from '@/components/ui/separator';
 
 const EditProfile = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, updateUserVices, updateUserKinks } = useAuth();
   const navigate = useNavigate();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [profileData, setProfileData] = useState<Partial<UserProfile>>(user || {});
   
   if (!user) {
@@ -33,13 +35,31 @@ const EditProfile = () => {
   
   const handleUpdate = async () => {
     setIsSubmitting(true);
+    setError(null);
+    
     try {
+      // First update the profile data
       await updateProfile(profileData);
+      
+      // Then handle vices and kinks separately (these functions handle their own API calls)
+      if (profileData.vices) {
+        await updateUserVices(profileData.vices);
+      }
+      
+      if (profileData.kinks) {
+        await updateUserKinks(profileData.kinks);
+      }
+      
       toast.success('Profile updated successfully');
       navigate('/profile');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Update profile error:', error);
-      toast.error('Failed to update profile');
+      
+      // Set a more descriptive error message
+      setError(error.message || 'Failed to update profile');
+      
+      // Also show as toast
+      toast.error(error.message || 'Failed to update profile');
     } finally {
       setIsSubmitting(false);
     }
@@ -79,6 +99,13 @@ const EditProfile = () => {
         </div>
         
         <h1 className="text-2xl font-bold mb-6">Edit Your Profile</h1>
+        
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="mb-6">

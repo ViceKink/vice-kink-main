@@ -1,3 +1,4 @@
+
 import { 
   createContext, 
   useState, 
@@ -164,20 +165,61 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const profileUpdateData: Record<string, any> = {};
       
+      // Handle the about object separately
+      if (profileData.about) {
+        // Spread the about object properties into main level properties
+        const { occupation, status, height, zodiac, religion } = profileData.about;
+        
+        if (occupation !== undefined) profileUpdateData.occupation = occupation;
+        if (status !== undefined) profileUpdateData.relationship_status = status;
+        if (height !== undefined) profileUpdateData.height = height;
+        if (zodiac !== undefined) profileUpdateData.zodiac = zodiac;
+        if (religion !== undefined) profileUpdateData.religion = religion;
+        
+        // Delete the about property since we're handling it separately
+        delete profileData.about;
+      }
+      
+      // Process remaining properties
       Object.entries(profileData).forEach(([key, value]) => {
         if (key === 'flirtingStyle') {
           profileUpdateData['flirting_style'] = typeof value === 'object' 
             ? JSON.stringify(value) 
             : value;
         } 
-        else {
+        else if (key !== 'passions' && key !== 'vices' && key !== 'kinks' && key !== 'photos' && key !== 'audio') {
+          // Skip certain fields that are handled separately
           const snakeCaseKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
           profileUpdateData[snakeCaseKey] = value;
         }
       });
       
-      await updateUserProfile(user.id, profileUpdateData);
+      // Only update if there are properties to update
+      if (Object.keys(profileUpdateData).length > 0) {
+        try {
+          console.log('Updating profile with data:', profileUpdateData);
+          await updateUserProfile(user.id, profileUpdateData);
+        } catch (error: any) {
+          console.error('Error updating profile fields:', error);
+          let errorMessage = 'Failed to update profile';
+          
+          // Provide more specific error message
+          if (error.message) {
+            if (error.message.includes("column")) {
+              const columnMatch = error.message.match(/'([^']+)'/);
+              if (columnMatch && columnMatch[1]) {
+                errorMessage = `Failed to update profile: Issue with field "${columnMatch[1]}"`;
+              }
+            } else {
+              errorMessage = `Failed to update profile: ${error.message}`;
+            }
+          }
+          
+          throw new Error(errorMessage);
+        }
+      }
       
+      // Update local state
       setUser(prev => prev ? { ...prev, ...profileData } : null);
     } catch (error) {
       console.error('Error updating profile:', error);

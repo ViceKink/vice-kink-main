@@ -23,7 +23,7 @@ const ProfileTag = ({
           ? 'bg-vice-purple/90 text-white border-vice-purple hover:bg-vice-purple'
           : 'bg-vice-purple/10 text-foreground/70 border-vice-purple/20 hover:border-vice-purple/40';
       case 'vice':
-        // Use pink color (#ff52b1) instead of red
+        // Use the requested pink color (#ff52b1) instead of red
         return isActive 
           ? 'bg-[#ff52b1]/90 text-white border-[#ff52b1] hover:bg-[#ff52b1]'
           : 'bg-[#ff52b1]/10 text-foreground/70 border-[#ff52b1]/20 hover:border-[#ff52b1]/40';
