@@ -72,7 +72,7 @@ function Calendar({
                 onValueChange={(value) => {
                   const newDate = new Date(month);
                   newDate.setMonth(parseInt(value));
-                  props.onSelect(newDate);
+                  props.goToMonth(newDate);
                 }}
               >
                 <SelectTrigger className="h-7 w-[110px] text-xs font-medium">
@@ -92,7 +92,7 @@ function Calendar({
                 onValueChange={(value) => {
                   const newDate = new Date(month);
                   newDate.setFullYear(parseInt(value));
-                  props.onSelect(newDate);
+                  props.goToMonth(newDate);
                 }}
               >
                 <SelectTrigger className="h-7 w-[80px] text-xs font-medium">
