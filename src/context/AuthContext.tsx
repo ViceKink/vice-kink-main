@@ -4,6 +4,15 @@ import { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
+// Define FlirtingStyle interface
+export interface FlirtingStyle {
+  direct: number;
+  playful: number;
+  intellectual: number;
+  physical: number;
+  romantic: number;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -31,13 +40,7 @@ export interface UserProfile {
   kinks?: string[];
   bio?: string;
   lookingFor?: string;
-  flirtingStyle?: string | {
-    direct: number;
-    playful: number;
-    intellectual: number;
-    physical: number;
-    romantic: number;
-  };
+  flirtingStyle?: string | FlirtingStyle;
   audio?: {
     title: string;
     url: string;
@@ -311,6 +314,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       console.log("Updating profile with data:", profileData);
       
+      // If flirtingStyle is an object, convert it to a JSON string for storage
+      let flirtingStyleForDB: string | null = null;
+      if (profileData.flirtingStyle) {
+        flirtingStyleForDB = typeof profileData.flirtingStyle === 'string' 
+          ? profileData.flirtingStyle 
+          : JSON.stringify(profileData.flirtingStyle);
+      }
+      
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
@@ -319,7 +330,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           location: profileData.location,
           bio: profileData.bio,
           looking_for: profileData.lookingFor,
-          flirting_style: profileData.flirtingStyle,
+          flirting_style: flirtingStyleForDB,
           occupation: profileData.about?.occupation,
           relationship_status: profileData.about?.status,
           height: profileData.about?.height,
@@ -447,6 +458,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .select('passion')
         .eq('profile_id', profileId);
         
+      // Try to parse flirting style if it's a JSON string
+      let parsedFlirtingStyle: string | FlirtingStyle = profileData.flirting_style || '';
+      if (typeof profileData.flirting_style === 'string' && profileData.flirting_style) {
+        try {
+          // Try to parse it as JSON
+          const parsed = JSON.parse(profileData.flirting_style);
+          // Check if it matches the expected FlirtingStyle structure
+          if (parsed && typeof parsed === 'object' && 'direct' in parsed) {
+            parsedFlirtingStyle = parsed as FlirtingStyle;
+          }
+        } catch (e) {
+          // If parsing fails, keep it as a string
+          console.log("Failed to parse flirting style as JSON:", e);
+          parsedFlirtingStyle = profileData.flirting_style;
+        }
+      }
+      
       const userProfile: UserProfile = {
         id: profileData.id,
         name: profileData.name,
@@ -454,7 +482,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: session?.user?.email || 'user@example.com',
         location: profileData.location,
         verified: profileData.verified,
-        quote: profileData.quote,
+        quote: profileData.quote || undefined,
         photos: photosData?.map(photo => photo.url) || [],
         about: {
           occupation: profileData.occupation,
@@ -473,7 +501,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         kinks: kinksData?.map(kink => kink.kinks.name) || [],
         bio: profileData.bio,
         lookingFor: profileData.looking_for,
-        flirtingStyle: profileData.flirting_style,
+        flirtingStyle: parsedFlirtingStyle,
         audio: audioData ? {
           title: audioData.title,
           url: audioData.url

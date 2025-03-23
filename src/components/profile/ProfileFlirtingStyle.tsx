@@ -3,8 +3,16 @@ import React from 'react';
 import ProfileSection from '@/components/profile/ProfileSection';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+interface FlirtingStyleObject {
+  direct: number;
+  playful: number;
+  intellectual: number;
+  physical: number;
+  romantic: number;
+}
+
 interface ProfileFlirtingStyleProps {
-  flirtingStyle: string;
+  flirtingStyle: string | FlirtingStyleObject;
   currentRow: number;
 }
 
@@ -12,9 +20,28 @@ const ProfileFlirtingStyle = ({ flirtingStyle, currentRow }: ProfileFlirtingStyl
   const isMobile = useIsMobile();
   
   // Create a human-readable description of flirting style
-  const createFlirtingStyleDescription = (flirtingStyleStr: string): string => {
+  const createFlirtingStyleDescription = (style: string | FlirtingStyleObject): string => {
     try {
-      const styleObj = JSON.parse(flirtingStyleStr);
+      let styleObj: FlirtingStyleObject;
+      
+      if (typeof style === 'string') {
+        if (style.trim() === '') return 'Not specified';
+        
+        // Try to parse JSON string
+        try {
+          styleObj = JSON.parse(style);
+          // Check if it has the expected structure
+          if (!styleObj.direct && !styleObj.playful && !styleObj.intellectual && 
+              !styleObj.physical && !styleObj.romantic) {
+            return style; // Not a valid flirting style object, just return the string
+          }
+        } catch (e) {
+          // If parsing fails, return the string as is
+          return style;
+        }
+      } else {
+        styleObj = style;
+      }
       
       // Find the highest rated styles
       const entries = Object.entries(styleObj) as Array<[string, number]>;
@@ -30,8 +57,8 @@ const ProfileFlirtingStyle = ({ flirtingStyle, currentRow }: ProfileFlirtingStyl
         return `a mix of ${topStyles[0][0]} and ${topStyles[1][0]}`;
       }
     } catch (e) {
-      // If parsing fails, return the string as is
-      return flirtingStyleStr;
+      // If any error occurs, return a default message
+      return typeof flirtingStyle === 'string' ? flirtingStyle : "balanced across all styles";
     }
   };
   

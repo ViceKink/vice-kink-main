@@ -103,7 +103,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
       {/* Flirting Style - only show if exists */}
       {hasFlirtingStyle && (
         <ProfileFlirtingStyle
-          flirtingStyle={profile.flirtingStyle}
+          flirtingStyle={profile.flirtingStyle as any}
           currentRow={getNextRow()}
         />
       )}
