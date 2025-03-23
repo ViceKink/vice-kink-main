@@ -5,7 +5,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import ProfileTag from '@/components/ui/ProfileTag';
 import { Check, Plus, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
 
 interface Vice {
   id: string;
@@ -53,7 +52,6 @@ const VicesKinksManager = ({ mode }: VicesKinksManagerProps) => {
         }
       } catch (error) {
         console.error(`Error fetching ${mode}:`, error);
-        toast.error(`Could not load ${mode}. Please try again.`);
       } finally {
         setLoading(false);
       }
@@ -77,14 +75,11 @@ const VicesKinksManager = ({ mode }: VicesKinksManagerProps) => {
     try {
       if (mode === 'vices') {
         await updateUserVices(selectedIds);
-        toast.success('Vices updated successfully');
       } else {
         await updateUserKinks(selectedIds);
-        toast.success('Kinks updated successfully');
       }
     } catch (error) {
       console.error(`Error updating ${mode}:`, error);
-      toast.error(`Failed to update ${mode}. Please try again.`);
     } finally {
       setSaving(false);
     }

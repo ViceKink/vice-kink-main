@@ -41,7 +41,6 @@ export interface UserProfile {
     favoriteSong?: string;
     artists?: string[];
   };
-  quote?: string; // Add the quote property
 }
 
 interface AuthContextType {
@@ -66,23 +65,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.info("Auth Provider: Setting up auth state change listener");
-    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
-        console.info("Auth state changed:", event, currentSession?.user?.id);
+        console.log("Auth state changed:", event);
         setSession(currentSession);
         
         if (currentSession) {
-          try {
-            console.info("Fetching profile for user:", currentSession.user.id);
-            const profile = await fetchProfile(currentSession.user.id);
-            setUser(profile);
-          } catch (error) {
-            console.error("Error fetching profile after auth change:", error);
-            setUser(null);
-          }
+          const profile = await fetchProfile(currentSession.user.id);
+          setUser(profile);
         } else {
           setUser(null);
         }
@@ -92,19 +83,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // THEN check for existing session
-    console.info("Auth Provider: Checking for existing session");
     supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
-      console.info("Got session:", currentSession?.user?.id);
+      console.log("Got session:", currentSession);
       setSession(currentSession);
       
       if (currentSession) {
-        try {
-          const profile = await fetchProfile(currentSession.user.id);
-          setUser(profile);
-        } catch (error) {
-          console.error("Error fetching profile on init:", error);
-          setUser(null);
-        }
+        const profile = await fetchProfile(currentSession.user.id);
+        setUser(profile);
       }
       
       setIsLoading(false);
@@ -119,6 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -127,12 +113,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) throw error;
       
+      navigate('/');
       toast.success('Successfully logged in!');
-      navigate('/', { replace: true });
     } catch (error: any) {
       console.error("Login error:", error.message);
       toast.error(error.message || 'Failed to login');
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -151,6 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signup = async (userData: Partial<UserProfile>, password: string) => {
+    setIsLoading(true);
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userData.email as string,
@@ -179,9 +168,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             religion: userData.about?.religion,
             bio: userData.bio,
             looking_for: userData.lookingFor,
-            flirting_style: typeof userData.flirtingStyle === 'object' 
-              ? JSON.stringify(userData.flirtingStyle) 
-              : userData.flirtingStyle,
+            flirting_style: userData.flirtingStyle,
           });
           
         if (profileError) throw profileError;
@@ -193,6 +180,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Signup error:", error.message);
       toast.error(error.message || 'Failed to create account');
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -348,9 +337,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .select('passion')
         .eq('profile_id', profileId);
         
-      // Parse flirting style if it's stored as a JSON string
-      let flirtingStyle = profileData.flirting_style;
-      
       // Construct the complete user profile
       const userProfile: UserProfile = {
         id: profileData.id,
@@ -378,13 +364,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         kinks: kinksData?.map(kink => kink.kinks.name) || [],
         bio: profileData.bio,
         lookingFor: profileData.looking_for,
-        flirtingStyle: flirtingStyle,
+        flirtingStyle: profileData.flirting_style,
         audio: audioData ? {
           title: audioData.title,
           url: audioData.url
         } : undefined,
-        passions: passionsData?.map(passion => passion.passion) || [],
-        quote: "Express your desires creatively" // Default quote for now
+        passions: passionsData?.map(passion => passion.passion) || []
       };
       
       return userProfile;
