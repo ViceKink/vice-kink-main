@@ -57,7 +57,7 @@ function Calendar({
         IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
         IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
         Caption: (props: CaptionProps) => {
-          const { displayMonth, displayYear } = props;
+          const month = props.displayMonth;
           const currentYear = new Date().getFullYear();
           const years = Array.from({ length: currentYear - 1900 + 1 }, (_, i) => 1900 + i);
           const months = [
@@ -68,11 +68,11 @@ function Calendar({
           return (
             <div className="flex justify-center items-center gap-1">
               <Select
-                value={displayMonth.getMonth().toString()}
+                value={month.getMonth().toString()}
                 onValueChange={(value) => {
-                  const newDate = new Date(displayMonth);
+                  const newDate = new Date(month);
                   newDate.setMonth(parseInt(value));
-                  props.goToMonth(newDate);
+                  props.onSelect(newDate);
                 }}
               >
                 <SelectTrigger className="h-7 w-[110px] text-xs font-medium">
@@ -88,11 +88,11 @@ function Calendar({
               </Select>
               
               <Select
-                value={displayMonth.getFullYear().toString()}
+                value={month.getFullYear().toString()}
                 onValueChange={(value) => {
-                  const newDate = new Date(displayMonth);
+                  const newDate = new Date(month);
                   newDate.setFullYear(parseInt(value));
-                  props.goToMonth(newDate);
+                  props.onSelect(newDate);
                 }}
               >
                 <SelectTrigger className="h-7 w-[80px] text-xs font-medium">

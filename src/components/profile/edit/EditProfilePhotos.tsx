@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UserProfile } from '@/context/AuthContext';
+import { UserProfile } from '@/types/auth';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Upload, Loader2, XCircle, GripVertical, ArrowUp } from 'lucide-react';
@@ -34,9 +34,10 @@ interface SortablePhotoItemProps {
   index: number;
   isMain: boolean;
   onDelete: (url: string) => void;
+  onMakeMain: (url: string) => void;
 }
 
-const SortablePhotoItem = ({ id, url, index, isMain, onDelete }: SortablePhotoItemProps) => {
+const SortablePhotoItem = ({ id, url, index, isMain, onDelete, onMakeMain }: SortablePhotoItemProps) => {
   const {
     attributes,
     listeners,
@@ -88,7 +89,7 @@ const SortablePhotoItem = ({ id, url, index, isMain, onDelete }: SortablePhotoIt
       ) : (
         <button
           type="button"
-          onClick={() => {/* This will be implemented in the parent component */}}
+          onClick={() => onMakeMain(url)}
           className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full 
                     opacity-0 group-hover:opacity-100 transition-opacity"
         >
@@ -547,6 +548,7 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
                     index={index}
                     isMain={index === 0}
                     onDelete={handleDeletePhoto}
+                    onMakeMain={handleMakeMainPhoto}
                   />
                 ))}
               </div>
@@ -559,3 +561,4 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
 };
 
 export default EditProfilePhotos;
+

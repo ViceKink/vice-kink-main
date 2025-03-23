@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile } from '@/context/AuthContext';
+import { UserProfile } from '@/types/auth';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, CalendarIcon, XCircle } from 'lucide-react';
@@ -193,9 +193,6 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
                 }}
                 initialFocus
                 className={cn("p-3 pointer-events-auto")}
-                captionLayout="dropdown-buttons"
-                fromYear={1940}
-                toYear={2006} // Current year minus 18
               />
             </PopoverContent>
           </Popover>
