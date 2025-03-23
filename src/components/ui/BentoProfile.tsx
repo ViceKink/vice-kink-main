@@ -15,41 +15,16 @@ interface BentoProfileProps {
 const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => {
   const isMobile = useIsMobile();
   
-  // Calculate which rows to start on based on what exists
-  let currentRow = 1;
-  
-  // Helper function to determine if a section should show
-  const hasContent = (item: any[] | undefined | null): boolean => {
-    return !!item && item.length > 0;
-  };
-  
-  // Track if section was rendered to adjust positioning
-  const hasPhotos = hasContent(profile.photos);
-  const hasSecondaryPhotos = profile.photos && profile.photos.length > 1;
-  const hasVices = hasContent(profile.vices);
-  const hasKinks = hasContent(profile.kinks);
-  const hasPassions = hasContent(profile.passions);
-  const hasFlirtingStyle = !!profile.flirtingStyle;
-  const hasBio = !!profile.bio;
-  const hasAudio = !!profile.audio;
-  
-  // Dynamic row tracking functions
-  const getNextRow = () => {
-    const row = currentRow;
-    currentRow++;
-    return row;
-  };
-  
   return (
     <div className="bento-grid max-w-[60%] mx-auto">
       {/* Main Photo - only show if photos exist */}
-      {hasPhotos && (
+      {profile.photos && profile.photos.length > 0 && (
         <ProfileSection 
           gridSpan={{
             cols: isMobile ? "col-span-6" : "col-span-7",
             rows: "row-span-4",
             colsStart: "col-start-1",
-            rowsStart: `row-start-${getNextRow()}`
+            rowsStart: "row-start-1"
           }}
           className="relative bg-black"
         >
@@ -73,13 +48,13 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </ProfileSection>
       )}
 
-      {/* User Info - always show */}
+      {/* User Info */}
       <ProfileSection
         gridSpan={{
           cols: isMobile ? "col-span-6" : "col-span-5",
           rows: "row-span-2",
-          colsStart: isMobile ? "col-start-1" : (hasPhotos ? "col-start-8" : "col-start-1"),
-          rowsStart: isMobile && hasPhotos ? `row-start-${getNextRow()}` : "row-start-1"
+          colsStart: isMobile ? "col-start-1" : (profile.photos && profile.photos.length > 0 ? "col-start-8" : "col-start-1"),
+          rowsStart: isMobile && profile.photos && profile.photos.length > 0 ? "row-start-5" : "row-start-1"
         }}
         className="bg-white dark:bg-card p-4"
       >
@@ -137,14 +112,14 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </div>
       </ProfileSection>
 
-      {/* Bio - only show if exists */}
-      {hasBio && (
+      {/* Bio */}
+      {profile.bio && (
         <ProfileSection
           gridSpan={{
             cols: isMobile ? "col-span-6" : "col-span-5",
             rows: "row-span-2",
-            colsStart: isMobile ? "col-start-1" : (hasPhotos ? "col-start-8" : "col-start-1"),
-            rowsStart: isMobile ? `row-start-${getNextRow()}` : "row-start-3"
+            colsStart: isMobile ? "col-start-1" : (profile.photos && profile.photos.length > 0 ? "col-start-8" : "col-start-1"),
+            rowsStart: isMobile ? (profile.photos && profile.photos.length > 0 ? "row-start-6" : "row-start-3") : (profile.photos && profile.photos.length > 0 ? "row-start-3" : "row-start-3")
           }}
           className="bg-vice-red p-4 text-white"
         >
@@ -153,14 +128,14 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </ProfileSection>
       )}
 
-      {/* Audio - only show if exists */}
-      {hasAudio && (
+      {/* Audio */}
+      {profile.audio && (
         <ProfileSection
           gridSpan={{
             cols: isMobile ? "col-span-6" : "col-span-4",
             rows: "row-span-1",
             colsStart: "col-start-1",
-            rowsStart: `row-start-${getNextRow()}`
+            rowsStart: isMobile ? (profile.photos && profile.photos.length > 0 ? "row-start-7" : "row-start-5") : (profile.photos && profile.photos.length > 0 ? "row-start-5" : "row-start-5")
           }}
           className="bg-vice-purple/10 p-0 overflow-hidden"
         >
@@ -171,14 +146,14 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </ProfileSection>
       )}
 
-      {/* Vices - only show if exists */}
-      {hasVices && (
+      {/* Vices */}
+      {profile.vices && profile.vices.length > 0 && (
         <ProfileSection
           gridSpan={{
             cols: isMobile ? "col-span-6" : "col-span-6",
             rows: "row-span-1",
             colsStart: "col-start-1",
-            rowsStart: `row-start-${getNextRow()}`
+            rowsStart: isMobile ? (profile.photos && profile.photos.length > 0 ? "row-start-8" : "row-start-6") : (profile.photos && profile.photos.length > 0 ? "row-start-6" : "row-start-6")
           }}
           className="bg-white dark:bg-card p-4"
         >
@@ -191,14 +166,14 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </ProfileSection>
       )}
 
-      {/* Kinks - only show if exists */}
-      {hasKinks && (
+      {/* Kinks */}
+      {profile.kinks && profile.kinks.length > 0 && (
         <ProfileSection
           gridSpan={{
             cols: isMobile ? "col-span-6" : "col-span-6",
             rows: "row-span-1",
             colsStart: "col-start-1",
-            rowsStart: `row-start-${getNextRow()}`
+            rowsStart: isMobile ? (profile.photos && profile.photos.length > 0 ? "row-start-9" : "row-start-7") : (profile.photos && profile.photos.length > 0 ? "row-start-7" : "row-start-7")
           }}
           className="bg-white dark:bg-card p-4"
         >
@@ -211,14 +186,14 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </ProfileSection>
       )}
 
-      {/* Secondary Photos - only show if more than 1 photo */}
-      {hasSecondaryPhotos && (
+      {/* Secondary Photos */}
+      {profile.photos && profile.photos.length > 1 && (
         <ProfileSection
           gridSpan={{
             cols: isMobile ? "col-span-6" : "col-span-6",
             rows: "row-span-3",
             colsStart: isMobile ? "col-start-1" : "col-start-7",
-            rowsStart: isMobile ? `row-start-${getNextRow()}` : "row-start-5"
+            rowsStart: isMobile ? (profile.photos && profile.photos.length > 0 ? "row-start-10" : "row-start-8") : (profile.photos && profile.photos.length > 0 ? "row-start-5" : "row-start-5")
           }}
           className="bg-black p-0 overflow-hidden"
         >
@@ -241,14 +216,14 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </ProfileSection>
       )}
 
-      {/* Flirting Style - only show if exists */}
-      {hasFlirtingStyle && (
+      {/* Flirting Style */}
+      {profile.flirtingStyle && (
         <ProfileSection
           gridSpan={{
             cols: isMobile ? "col-span-6" : "col-span-6",
             rows: "row-span-1",
             colsStart: "col-start-1",
-            rowsStart: `row-start-${getNextRow()}`
+            rowsStart: isMobile ? (profile.photos && profile.photos.length > 0 ? "row-start-11" : "row-start-9") : (profile.photos && profile.photos.length > 0 ? "row-start-8" : "row-start-8")
           }}
           className="bg-white dark:bg-card p-4"
         >
@@ -261,14 +236,14 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </ProfileSection>
       )}
 
-      {/* Passion - only show if exists */}
-      {hasPassions && (
+      {/* Passion */}
+      {profile.passions && profile.passions.length > 0 && (
         <ProfileSection
           gridSpan={{
             cols: isMobile ? "col-span-6" : "col-span-3",
             rows: "row-span-1",
             colsStart: isMobile ? "col-start-1" : "col-start-7",
-            rowsStart: isMobile ? `row-start-${getNextRow()}` : `row-start-${(hasFlirtingStyle ? currentRow - 1 : getNextRow())}`
+            rowsStart: isMobile ? (profile.photos && profile.photos.length > 0 ? "row-start-12" : "row-start-10") : (profile.photos && profile.photos.length > 0 ? "row-start-8" : "row-start-8")
           }}
           className="bg-vice-dark-purple p-4 text-white"
         >
@@ -280,13 +255,13 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </ProfileSection>
       )}
 
-      {/* Quote - always show */}
+      {/* Quote */}
       <ProfileSection
         gridSpan={{
           cols: isMobile ? "col-span-6" : "col-span-3",
           rows: "row-span-1",
-          colsStart: isMobile ? "col-start-1" : (hasPassions ? "col-start-10" : "col-start-10"),
-          rowsStart: isMobile ? `row-start-${getNextRow()}` : (hasFlirtingStyle ? currentRow - 1 : currentRow)
+          colsStart: isMobile ? "col-start-1" : "col-start-10",
+          rowsStart: isMobile ? (profile.photos && profile.photos.length > 0 ? "row-start-13" : "row-start-11") : (profile.photos && profile.photos.length > 0 ? "row-start-8" : "row-start-8")
         }}
         className="bg-vice-orange p-4 text-white"
       >
