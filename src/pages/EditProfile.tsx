@@ -12,6 +12,7 @@ import EditProfileBio from '@/components/profile/edit/EditProfileBio';
 import EditProfilePassions from '@/components/profile/edit/EditProfilePassions';
 import VicesKinksManager from '@/components/profile/VicesKinksManager';
 import EditProfileAudio from '@/components/profile/edit/EditProfileAudio';
+import EditProfilePhotos from '@/components/profile/edit/EditProfilePhotos';
 
 const EditProfile = () => {
   const { user, updateProfile } = useAuth();
@@ -49,8 +50,6 @@ const EditProfile = () => {
     }));
   };
   
-  // We'll remove this updateAboutField function and just use updateField directly
-  
   return (
     <div className="min-h-screen pt-20 pb-28 px-4 md:px-6">
       <div className="max-w-4xl mx-auto">
@@ -80,10 +79,11 @@ const EditProfile = () => {
         <h1 className="text-2xl font-bold mb-6">Edit Your Profile</h1>
         
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-8">
+          <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-8 overflow-x-auto md:overflow-visible">
             <TabsTrigger value="basic">Basic Info</TabsTrigger>
             <TabsTrigger value="about">About Me</TabsTrigger>
-            <TabsTrigger value="bio">Bio & Style</TabsTrigger>
+            <TabsTrigger value="bio">Bio</TabsTrigger>
+            <TabsTrigger value="photos">Photos</TabsTrigger>
             <TabsTrigger value="passions">Passions</TabsTrigger>
             <TabsTrigger value="vices">Vices</TabsTrigger>
             <TabsTrigger value="kinks">Kinks</TabsTrigger>
@@ -113,6 +113,23 @@ const EditProfile = () => {
                 userData={profileData} 
                 updateField={updateField} 
               />
+              
+              <div className="mt-8 border-t pt-6">
+                <h2 className="text-lg font-semibold mb-4">Voice Intro</h2>
+                <EditProfileAudio 
+                  userData={profileData} 
+                  updateField={updateField} 
+                />
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="photos" className="mt-4">
+            <div className="bg-card rounded-lg p-6 shadow-sm">
+              <EditProfilePhotos
+                userData={profileData}
+                updateField={updateField}
+              />
             </div>
           </TabsContent>
           
@@ -137,14 +154,6 @@ const EditProfile = () => {
             </div>
           </TabsContent>
         </Tabs>
-        
-        <div className="mt-6 bg-card rounded-lg p-6 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">Voice Intro</h2>
-          <EditProfileAudio 
-            userData={profileData} 
-            updateField={updateField} 
-          />
-        </div>
         
         <div className="mt-8 flex justify-end">
           <Button 

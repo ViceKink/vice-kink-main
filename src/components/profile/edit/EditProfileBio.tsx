@@ -11,18 +11,6 @@ interface EditProfileBioProps {
 }
 
 const EditProfileBio = ({ userData, updateField }: EditProfileBioProps) => {
-  // Helper function to handle flirting style updates
-  const updateFlirtingStyle = (value: string) => {
-    // If the value is empty, set to empty string
-    if (!value) {
-      updateField('flirtingStyle', '');
-      return;
-    }
-    
-    // For regular inputs, just store the string directly
-    updateField('flirtingStyle', value);
-  };
-
   // Helper function to get length for character count
   const getCharLength = (value: any): number => {
     if (typeof value === 'string') {
@@ -33,11 +21,11 @@ const EditProfileBio = ({ userData, updateField }: EditProfileBioProps) => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold">Bio & Style</h2>
+      <h2 className="text-lg font-semibold">Bio</h2>
       
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="bio">My Story (Bio)</Label>
+          <Label htmlFor="bio">My Story</Label>
           <Textarea
             id="bio"
             value={userData.bio || ''}
@@ -48,21 +36,6 @@ const EditProfileBio = ({ userData, updateField }: EditProfileBioProps) => {
           />
           <p className="text-xs text-muted-foreground text-right">
             {getCharLength(userData.bio || '')}/500
-          </p>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="flirtingStyle">My Flirting Style</Label>
-          <Textarea
-            id="flirtingStyle"
-            value={typeof userData.flirtingStyle === 'string' ? userData.flirtingStyle : ''}
-            onChange={(e) => updateFlirtingStyle(e.target.value)}
-            placeholder="Describe your flirting style"
-            className="min-h-[80px]"
-            maxLength={200}
-          />
-          <p className="text-xs text-muted-foreground text-right">
-            {getCharLength(typeof userData.flirtingStyle === 'string' ? userData.flirtingStyle : '')}/200
           </p>
         </div>
         
