@@ -29,9 +29,19 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
   };
 
   // Parse flirtingStyle if it's a string or use default
-  const flirtingStyle: FlirtingStyle = typeof userData.flirtingStyle === 'string' && userData.flirtingStyle
-    ? JSON.parse(userData.flirtingStyle as string)
-    : (userData.flirtingStyle as FlirtingStyle) || defaultFlirtingStyle;
+  let flirtingStyle: FlirtingStyle = defaultFlirtingStyle;
+  
+  if (userData.flirtingStyle) {
+    if (typeof userData.flirtingStyle === 'string') {
+      try {
+        flirtingStyle = JSON.parse(userData.flirtingStyle) as FlirtingStyle;
+      } catch (error) {
+        console.error('Error parsing flirting style:', error);
+      }
+    } else {
+      flirtingStyle = userData.flirtingStyle as unknown as FlirtingStyle;
+    }
+  }
   
   // Handle updating a specific flirting style attribute
   const updateFlirtingStyle = (attribute: string, value: number) => {
