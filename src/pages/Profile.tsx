@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Settings, RefreshCw, Pencil } from 'lucide-react';
 import BentoProfile from '@/components/ui/BentoProfile';
-import { useAuth, UserProfile } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
+import { UserProfile } from '@/types/auth';
 
 const Profile = () => {
   const { id } = useParams();
@@ -17,8 +18,16 @@ const Profile = () => {
   const [error, setError] = useState<string | null>(null);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
+  const [fetchAttempts, setFetchAttempts] = useState(0);
   
   const isCurrentUser = !id || id === user?.id;
+  
+  useEffect(() => {
+    return () => {
+      setIsLoading(false);
+      setLoadingTimeout(false);
+    };
+  }, []);
   
   useEffect(() => {
     if (isLoading) {
@@ -31,7 +40,7 @@ const Profile = () => {
       
       const timeout = setTimeout(() => {
         setLoadingTimeout(true);
-      }, 15000);
+      }, 10000);
       
       return () => {
         clearInterval(interval);
@@ -42,61 +51,67 @@ const Profile = () => {
     }
   }, [isLoading]);
   
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    
-    console.log("Profile component loaded", {
-      id,
-      userId: user?.id,
-      isAuthenticated,
-      authLoading
-    });
-    
-    const getProfileData = async () => {
-      setIsLoading(true);
-      setError(null);
-      
-      try {
-        console.log("Attempting to fetch profile data", { id, userId: user?.id, isAuthenticated });
-        let profile = null;
-        
-        if (id && id !== user?.id) {
-          console.log("Fetching other user's profile", { id });
-          profile = await fetchProfile(id);
-        } else if (user) {
-          console.log("Using current user's profile", { userId: user.id });
-          profile = user;
-        } else if (isAuthenticated) {
-          console.log("Fetching current user's profile (authenticated but no user data)");
-          profile = await fetchProfile();
-        }
-        
-        console.log("Profile data fetched:", profile);
-        setProfileUser(profile);
-        
-        if (!profile && !authLoading && isAuthenticated) {
-          setError("Could not load profile data. Please try again.");
-          toast.error("Failed to load profile data");
-        }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-        setError("An error occurred while loading the profile.");
-        toast.error("Error loading profile");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    if (!authLoading) {
-      getProfileData();
+  const getProfileData = useCallback(async () => {
+    if (fetchAttempts > 3) {
+      console.error("Maximum fetch attempts reached");
+      setError("Failed to load profile after multiple attempts.");
+      setIsLoading(false);
+      return;
     }
-  }, [id, user, fetchProfile, isAuthenticated, authLoading]);
+    
+    setIsLoading(true);
+    setError(null);
+    console.log("Fetching profile attempt", fetchAttempts + 1);
+    
+    try {
+      let profile = null;
+      
+      if (isCurrentUser && user) {
+        console.log("Using existing user profile:", user);
+        profile = user;
+      } 
+      else {
+        console.log("Fetching profile data for", id || "current user");
+        profile = await fetchProfile(id);
+        console.log("Profile data fetched:", profile);
+      }
+      
+      setProfileUser(profile);
+      
+      if (!profile && !authLoading && isAuthenticated) {
+        setError("Could not load profile data. Please try again.");
+        toast.error("Failed to load profile data");
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      setError("An error occurred while loading the profile.");
+      toast.error("Error loading profile");
+    } finally {
+      setIsLoading(false);
+      setFetchAttempts(prev => prev + 1);
+    }
+  }, [id, user, fetchProfile, isAuthenticated, authLoading, isCurrentUser, fetchAttempts]);
+  
+  useEffect(() => {
+    if (!authLoading) {
+      if (isCurrentUser && !isAuthenticated) {
+        console.log("User not authenticated, skipping profile fetch");
+        setIsLoading(false);
+        return;
+      }
+      
+      if (!isLoading && !profileUser && fetchAttempts === 0) {
+        console.log("Initial profile fetch");
+        getProfileData();
+      }
+    }
+  }, [authLoading, getProfileData, isAuthenticated, isCurrentUser, isLoading, profileUser, fetchAttempts]);
   
   const handleRetry = () => {
     setLoadingTimeout(false);
     setIsLoading(true);
     setLoadingProgress(0);
-    window.location.reload();
+    getProfileData();
   };
   
   const handleTabChange = (tab: 'persona' | 'erotics') => {
@@ -104,7 +119,7 @@ const Profile = () => {
   };
   
   if (authLoading) {
-    console.log("Profile page: Auth loading...");
+    console.log("Auth loading...");
     return (
       <div className="flex min-h-screen items-center justify-center flex-col p-4">
         <div className="text-center mb-4 max-w-md">
@@ -141,7 +156,7 @@ const Profile = () => {
   }
   
   if (isLoading) {
-    console.log("Profile page: Profile data loading...");
+    console.log("Profile data loading...");
     return (
       <div className="flex min-h-screen items-center justify-center flex-col p-4">
         <div className="text-center mb-4 max-w-md">
@@ -163,7 +178,7 @@ const Profile = () => {
           <p className="text-foreground/70 mb-6">{error}</p>
           <Button 
             className="bg-vice-purple hover:bg-vice-dark-purple"
-            onClick={() => window.location.reload()}
+            onClick={handleRetry}
           >
             Try Again
           </Button>
@@ -210,7 +225,7 @@ const Profile = () => {
     );
   }
   
-  console.log("Profile page: Rendering profile content", { 
+  console.log("Rendering profile content", { 
     profileId: profileUser.id, 
     name: profileUser.name,
     isCurrentUser

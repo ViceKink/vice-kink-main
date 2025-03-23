@@ -15,14 +15,14 @@ type AuthContextType = {
   user: UserProfile | null;
   session: Session | null;
   isAuthenticated: boolean;
-  isLoading: boolean; // Added isLoading property
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (profileData: Partial<UserProfile>) => Promise<void>;
-  fetchProfile: (userId?: string) => Promise<UserProfile | null>; // Added fetchProfile method
-  updateUserVices?: (vices: string[]) => Promise<void>; // Added for VicesKinksManager
-  updateUserKinks?: (kinks: string[]) => Promise<void>; // Added for VicesKinksManager
+  fetchProfile: (userId?: string) => Promise<UserProfile | null>;
+  updateUserVices?: (vices: string[]) => Promise<void>;
+  updateUserKinks?: (kinks: string[]) => Promise<void>;
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,6 +40,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(userData);
       } catch (error) {
         console.error('Error fetching user profile:', error);
+        // Important: Still set loading to false even if profile fetch fails
+        // This prevents infinite loading
       }
     } else {
       setUser(null);
@@ -47,7 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }, []);
 
-  // Implement fetchProfile method
+  // Implement fetchProfile method with error handling and timeouts
   const fetchProfile = async (userId?: string): Promise<UserProfile | null> => {
     try {
       // If no userId is provided, use the current user's id
@@ -58,7 +60,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
       
-      const userData = await fetchUserProfile(targetId);
+      // Add a timeout to prevent hanging requests
+      const timeoutPromise = new Promise<null>((_, reject) => {
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 8000);
+      });
+      
+      const fetchPromise = fetchUserProfile(targetId);
+      
+      // Race between timeout and actual fetch
+      const userData = await Promise.race([fetchPromise, timeoutPromise]) as UserProfile;
       
       // If this is the current user, update the state
       if (!userId && session?.user?.id === targetId) {
@@ -73,22 +83,53 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
+    console.log("Setting up auth state listener");
+    let authStateSubscription: { unsubscribe: () => void } | null = null;
+    
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        await updateUserData(session);
+    const setupAuthListener = async () => {
+      try {
+        // Check for existing session first
+        const { data: sessionData } = await supabase.auth.getSession();
+        console.log("Initial session check:", sessionData.session ? "Session exists" : "No session");
+        setSession(sessionData.session);
+        
+        // Then set up the auth state change listener
+        const { data } = supabase.auth.onAuthStateChange(
+          async (_event, newSession) => {
+            console.log("Auth state changed:", _event, newSession ? "Session exists" : "No session");
+            setSession(newSession);
+            
+            // Only attempt to fetch user data if we have a session
+            if (newSession) {
+              await updateUserData(newSession);
+            } else {
+              setUser(null);
+              setLoading(false);
+            }
+          }
+        );
+        
+        authStateSubscription = data.subscription;
+        
+        // Update user data with initial session
+        if (sessionData.session) {
+          await updateUserData(sessionData.session);
+        } else {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error setting up auth listener:", error);
+        setLoading(false);
       }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      updateUserData(session);
-    });
-
+    };
+    
+    setupAuthListener();
+    
     return () => {
-      subscription.unsubscribe();
+      if (authStateSubscription) {
+        authStateSubscription.unsubscribe();
+      }
     };
   }, [updateUserData]);
 
@@ -163,7 +204,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Mock implementations for VicesKinksManager
+  // Mock implementations for VicesKinksManager 
   const updateUserVices = async (vices: string[]) => {
     console.log("Updating vices:", vices);
     // This would be implemented to save to Supabase

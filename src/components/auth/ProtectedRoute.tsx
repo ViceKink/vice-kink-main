@@ -13,6 +13,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const location = useLocation();
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [hasTimedOut, setHasTimedOut] = useState(false);
   
   // Simulate loading progress
   useEffect(() => {
@@ -27,7 +28,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       // Add a timeout to prevent infinite loading
       const timeout = setTimeout(() => {
         setLoadingTimeout(true);
-      }, 10000); // 10 seconds timeout
+        // If still loading after 15 seconds, assume auth failed
+        if (isLoading) {
+          setHasTimedOut(true);
+        }
+      }, 15000); // 15 seconds timeout
       
       return () => {
         clearInterval(interval);
@@ -48,9 +53,19 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       userId: user?.id,
       path: location.pathname
     });
-  }, [isLoading, isAuthenticated, user, location.pathname]);
+    
+    // Check if auth has timed out
+    if (hasTimedOut && isLoading) {
+      console.error("Authentication check has timed out");
+    }
+  }, [isLoading, isAuthenticated, user, location.pathname, hasTimedOut]);
   
-  // Show timeout message if loading takes too long
+  // Force navigation if auth has timed out
+  if (hasTimedOut) {
+    return <Navigate to="/auth" state={{ from: location }} replace />;
+  }
+  
+  // Show timeout message if loading takes too long but hasn't completely timed out
   if (loadingTimeout && isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center flex-col p-4">
@@ -73,6 +88,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
   
+  // Show loading state
   if (isLoading) {
     console.log("ProtectedRoute: Loading auth state...", { isLoading, isAuthenticated, userId: user?.id });
     return (
@@ -90,11 +106,13 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   
   console.log("ProtectedRoute: Auth check complete", { isAuthenticated, path: location.pathname });
   
+  // Redirect to auth page if not authenticated
   if (!isAuthenticated) {
     // Preserve the intended destination to return after login
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
   
+  // Render children if authenticated
   return <>{children}</>;
 };
 
