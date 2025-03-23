@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -314,7 +315,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       console.log("Updating profile with data:", profileData);
       
-      // If flirtingStyle is an object, convert it to a JSON string for storage
+      // Convert flirtingStyle to string if it's an object
       let flirtingStyleForDB: string | null = null;
       if (profileData.flirtingStyle) {
         flirtingStyleForDB = typeof profileData.flirtingStyle === 'string' 
@@ -322,21 +323,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           : JSON.stringify(profileData.flirtingStyle);
       }
       
+      // Create a database-compatible update object
+      const profileUpdateData = {
+        name: profileData.name,
+        age: profileData.age,
+        location: profileData.location,
+        bio: profileData.bio,
+        looking_for: profileData.lookingFor,
+        flirting_style: flirtingStyleForDB,
+        occupation: profileData.about?.occupation,
+        relationship_status: profileData.about?.status,
+        height: profileData.about?.height,
+        zodiac: profileData.about?.zodiac,
+        religion: profileData.about?.religion,
+      };
+      
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({
-          name: profileData.name,
-          age: profileData.age,
-          location: profileData.location,
-          bio: profileData.bio,
-          looking_for: profileData.lookingFor,
-          flirting_style: flirtingStyleForDB,
-          occupation: profileData.about?.occupation,
-          relationship_status: profileData.about?.status,
-          height: profileData.about?.height,
-          zodiac: profileData.about?.zodiac,
-          religion: profileData.about?.religion,
-        })
+        .update(profileUpdateData)
         .eq('id', session.user.id);
         
       if (profileError) throw profileError;
