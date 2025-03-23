@@ -1,13 +1,11 @@
-
 import React, { useEffect, useState } from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Settings, RefreshCw } from 'lucide-react';
+import { ChevronLeft, Settings, RefreshCw, Pencil } from 'lucide-react';
 import BentoProfile from '@/components/ui/BentoProfile';
 import { useAuth, UserProfile } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { Skeleton } from '@/components/ui/skeleton';
 
 const Profile = () => {
   const { id } = useParams();
@@ -22,7 +20,6 @@ const Profile = () => {
   
   const isCurrentUser = !id || id === user?.id;
   
-  // Add loading progress simulation
   useEffect(() => {
     if (isLoading) {
       const interval = setInterval(() => {
@@ -32,10 +29,9 @@ const Profile = () => {
         });
       }, 400);
       
-      // Add a timeout to prevent infinite loading
       const timeout = setTimeout(() => {
         setLoadingTimeout(true);
-      }, 15000); // 15 seconds timeout
+      }, 15000);
       
       return () => {
         clearInterval(interval);
@@ -47,10 +43,8 @@ const Profile = () => {
   }, [isLoading]);
   
   useEffect(() => {
-    // Scroll to top when component mounts
     window.scrollTo(0, 0);
     
-    // Debug information
     console.log("Profile component loaded", {
       id,
       userId: user?.id,
@@ -58,7 +52,6 @@ const Profile = () => {
       authLoading
     });
     
-    // If viewing another user's profile, fetch their data
     const getProfileData = async () => {
       setIsLoading(true);
       setError(null);
@@ -68,15 +61,12 @@ const Profile = () => {
         let profile = null;
         
         if (id && id !== user?.id) {
-          // Fetch other user's profile
           console.log("Fetching other user's profile", { id });
           profile = await fetchProfile(id);
         } else if (user) {
-          // Use current user's profile
           console.log("Using current user's profile", { userId: user.id });
           profile = user;
         } else if (isAuthenticated) {
-          // Fetch current user's profile if not available
           console.log("Fetching current user's profile (authenticated but no user data)");
           profile = await fetchProfile();
         }
@@ -109,7 +99,6 @@ const Profile = () => {
     window.location.reload();
   };
   
-  // Show loading state while authentication is being checked
   if (authLoading) {
     console.log("Profile page: Auth loading...");
     return (
@@ -123,7 +112,6 @@ const Profile = () => {
     );
   }
   
-  // Show timeout state if loading takes too long
   if (loadingTimeout && isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center flex-col p-4">
@@ -143,7 +131,6 @@ const Profile = () => {
     );
   }
   
-  // Show loading state while profile data is being fetched
   if (isLoading) {
     console.log("Profile page: Profile data loading...");
     return (
@@ -157,7 +144,6 @@ const Profile = () => {
     );
   }
   
-  // Show error state
   if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
@@ -175,7 +161,6 @@ const Profile = () => {
     );
   }
   
-  // If trying to view the current user's profile but not authenticated
   if (isCurrentUser && !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
@@ -195,7 +180,6 @@ const Profile = () => {
     );
   }
   
-  // If no profile data was found
   if (!profileUser) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
@@ -215,7 +199,6 @@ const Profile = () => {
     );
   }
   
-  // If we made it here, we have a valid profile to display
   console.log("Profile page: Rendering profile content", { 
     profileId: profileUser.id, 
     name: profileUser.name,
@@ -248,10 +231,10 @@ const Profile = () => {
           
           {isCurrentUser && (
             <NavLink
-              to="/settings"
+              to="/edit-profile"
               className="flex items-center text-foreground/70 hover:text-foreground transition-colors"
             >
-              <Settings className="w-5 h-5 mr-1" />
+              <Pencil className="w-5 h-5 mr-1" />
               Edit Profile
             </NavLink>
           )}

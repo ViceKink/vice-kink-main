@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -54,6 +53,7 @@ interface AuthContextType {
   fetchProfile: (userId?: string) => Promise<UserProfile | null>;
   updateUserVices: (viceIds: string[]) => Promise<void>;
   updateUserKinks: (kinkIds: string[]) => Promise<void>;
+  updateProfile: (profileData: Partial<UserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -65,7 +65,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         console.log("Auth state changed:", event);
@@ -82,7 +81,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
       console.log("Got session:", currentSession);
       setSession(currentSession);
@@ -191,7 +189,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('User not authenticated');
       }
       
-      // First delete existing vices
       const { error: deleteError } = await supabase
         .from('profile_vices')
         .delete()
@@ -199,7 +196,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
       if (deleteError) throw deleteError;
       
-      // Then insert new vices
       if (viceIds.length > 0) {
         const viceInserts = viceIds.map(viceId => ({
           profile_id: session.user.id,
@@ -213,9 +209,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (insertError) throw insertError;
       }
       
-      // Update user in state
       if (user) {
-        // Fetch updated vices
         const { data: vicesData } = await supabase
           .from('profile_vices')
           .select('vices(name)')
@@ -243,7 +237,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('User not authenticated');
       }
       
-      // First delete existing kinks
       const { error: deleteError } = await supabase
         .from('profile_kinks')
         .delete()
@@ -251,7 +244,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
       if (deleteError) throw deleteError;
       
-      // Then insert new kinks
       if (kinkIds.length > 0) {
         const kinkInserts = kinkIds.map(kinkId => ({
           profile_id: session.user.id,
@@ -265,9 +257,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (insertError) throw insertError;
       }
       
-      // Update user in state
       if (user) {
-        // Fetch updated kinks
         const { data: kinksData } = await supabase
           .from('profile_kinks')
           .select('kinks(name)')
@@ -289,13 +279,103 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateProfile = async (profileData: Partial<UserProfile>) => {
+    try {
+      if (!session?.user?.id) {
+        throw new Error('User not authenticated');
+      }
+      
+      console.log("Updating profile with data:", profileData);
+      
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          name: profileData.name,
+          age: profileData.age,
+          location: profileData.location,
+          bio: profileData.bio,
+          looking_for: profileData.lookingFor,
+          flirting_style: profileData.flirtingStyle,
+          occupation: profileData.about?.occupation,
+          relationship_status: profileData.about?.status,
+          height: profileData.about?.height,
+          zodiac: profileData.about?.zodiac,
+          religion: profileData.about?.religion,
+        })
+        .eq('id', session.user.id);
+        
+      if (profileError) throw profileError;
+      
+      if (profileData.passions && profileData.passions.length > 0) {
+        const { error: deletePassionsError } = await supabase
+          .from('profile_passions')
+          .delete()
+          .eq('profile_id', session.user.id);
+          
+        if (deletePassionsError) throw deletePassionsError;
+        
+        const passionInserts = profileData.passions.map(passion => ({
+          profile_id: session.user.id,
+          passion: passion
+        }));
+        
+        const { error: insertPassionsError } = await supabase
+          .from('profile_passions')
+          .insert(passionInserts);
+          
+        if (insertPassionsError) throw insertPassionsError;
+      }
+      
+      if (profileData.audio) {
+        const { data: existingAudio } = await supabase
+          .from('profile_audio')
+          .select('id')
+          .eq('profile_id', session.user.id)
+          .single();
+          
+        if (existingAudio) {
+          const { error: audioError } = await supabase
+            .from('profile_audio')
+            .update({
+              title: profileData.audio.title,
+              url: profileData.audio.url
+            })
+            .eq('profile_id', session.user.id);
+            
+          if (audioError) throw audioError;
+        } else {
+          const { error: audioError } = await supabase
+            .from('profile_audio')
+            .insert({
+              profile_id: session.user.id,
+              title: profileData.audio.title,
+              url: profileData.audio.url
+            });
+            
+          if (audioError) throw audioError;
+        }
+      }
+      
+      const updatedProfile = await fetchProfile();
+      if (updatedProfile) {
+        setUser(updatedProfile);
+      }
+      
+      toast.success('Profile updated successfully');
+      return;
+    } catch (error: any) {
+      console.error("Error updating profile:", error.message);
+      toast.error(error.message || 'Failed to update profile');
+      throw error;
+    }
+  };
+
   const fetchProfile = async (userId?: string): Promise<UserProfile | null> => {
     try {
       if (!userId && !session?.user?.id) return null;
       
       const profileId = userId || session?.user?.id;
       
-      // Fetch the basic profile
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -305,39 +385,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (profileError) throw profileError;
       if (!profileData) return null;
       
-      // Fetch profile photos
       const { data: photosData } = await supabase
         .from('profile_photos')
         .select('url')
         .eq('profile_id', profileId)
         .order('order_index', { ascending: true });
         
-      // Fetch vices
       const { data: vicesData } = await supabase
         .from('profile_vices')
         .select('vices(name)')
         .eq('profile_id', profileId);
         
-      // Fetch kinks
       const { data: kinksData } = await supabase
         .from('profile_kinks')
         .select('kinks(name)')
         .eq('profile_id', profileId);
         
-      // Fetch audio
       const { data: audioData } = await supabase
         .from('profile_audio')
         .select('*')
         .eq('profile_id', profileId)
         .single();
         
-      // Fetch passions
       const { data: passionsData } = await supabase
         .from('profile_passions')
         .select('passion')
         .eq('profile_id', profileId);
         
-      // Construct the complete user profile
       const userProfile: UserProfile = {
         id: profileData.id,
         name: profileData.name,
@@ -353,7 +427,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           zodiac: profileData.zodiac,
           religion: profileData.religion,
           lifestyle: {
-            // These would come from additional tables if we had them
             smoking: false,
             drinking: 'occasionally',
             exercise: 'regularly',
@@ -392,6 +465,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         fetchProfile,
         updateUserVices,
         updateUserKinks,
+        updateProfile,
       }}
     >
       {children}
