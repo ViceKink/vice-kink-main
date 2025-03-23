@@ -32,6 +32,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
   const hasSecondaryPhotos = profile.photos && profile.photos.length > 1;
   const hasVices = hasContent(profile.vices);
   const hasKinks = hasContent(profile.kinks);
+  const hasVicesOrKinks = hasVices || hasKinks; // Combined check
   const hasPassions = hasContent(profile.passions);
   const hasFlirtingStyle = !!profile.flirtingStyle;
   const hasBio = !!profile.bio;
@@ -46,7 +47,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
   
   return (
     <div className="bento-grid max-w-[60%] mx-auto">
-      {/* Header Section with Main Photo and User Info */}
+      {/* Header Section with Main Photo and User Info - removed name from info section */}
       <ProfileHeader 
         profile={profile}
         isCurrentUser={isCurrentUser}
@@ -97,6 +98,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           photos={profile.photos}
           name={profile.name}
           currentRow={getNextRow()}
+          hasVicesOrKinks={hasVicesOrKinks}
         />
       )}
 

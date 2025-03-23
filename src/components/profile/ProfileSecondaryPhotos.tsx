@@ -7,17 +7,18 @@ interface ProfileSecondaryPhotosProps {
   photos: string[];
   name: string;
   currentRow: number;
+  hasVicesOrKinks: boolean; // New prop to check if vices or kinks exist
 }
 
-const ProfileSecondaryPhotos = ({ photos, name, currentRow }: ProfileSecondaryPhotosProps) => {
+const ProfileSecondaryPhotos = ({ photos, name, currentRow, hasVicesOrKinks }: ProfileSecondaryPhotosProps) => {
   const isMobile = useIsMobile();
   
   return (
     <ProfileSection
       gridSpan={{
-        cols: isMobile ? "col-span-6" : "col-span-6",
+        cols: isMobile ? "col-span-6" : hasVicesOrKinks ? "col-span-6" : "col-span-12",
         rows: "row-span-3",
-        colsStart: isMobile ? "col-start-1" : "col-start-7",
+        colsStart: isMobile ? "col-start-1" : hasVicesOrKinks ? "col-start-7" : "col-start-1",
         rowsStart: isMobile ? `row-start-${currentRow.toString()}` : "row-start-5"
       }}
       className="bg-black p-0 overflow-hidden"

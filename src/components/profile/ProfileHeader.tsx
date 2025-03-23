@@ -60,7 +60,11 @@ const ProfileHeader = ({ profile, isCurrentUser, hasPhotos, currentRow }: Profil
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">{profile.name} <span className="text-vice-purple">{profile.age}</span></h3>
+            {/* Remove duplicate name, just show age */}
+            <h3 className="text-lg font-semibold">
+              {!hasPhotos && <span>{profile.name} </span>}
+              <span className="text-vice-purple">{profile.age}</span>
+            </h3>
             {!isCurrentUser && (
               <button className="rounded-full p-2 bg-vice-purple/10 hover:bg-vice-purple/20 text-vice-purple transition-all">
                 <Heart className="w-4 h-4" />

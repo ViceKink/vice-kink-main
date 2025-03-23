@@ -3,6 +3,7 @@ import React from 'react';
 import { UserProfile } from '@/context/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { AlertCircle } from 'lucide-react';
 
 interface EditProfileBasicProps {
   userData: Partial<UserProfile>;
@@ -49,13 +50,22 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
         </div>
         
         <div className="space-y-2">
-          <Label htmlFor="email">Email (cannot be changed)</Label>
-          <Input
-            id="email"
-            value={userData.email || ''}
-            disabled
-            className="bg-muted"
-          />
+          <div className="flex items-center gap-2">
+            <Label htmlFor="email">Email</Label>
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Read only</span>
+          </div>
+          <div className="relative">
+            <Input
+              id="email"
+              value={userData.email || ''}
+              disabled
+              className="bg-muted pr-10"
+            />
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">Email cannot be changed and will not be included in profile updates.</p>
         </div>
       </div>
     </div>

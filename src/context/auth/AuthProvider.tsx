@@ -1,4 +1,3 @@
-
 import { 
   createContext, 
   useState, 
@@ -182,7 +181,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Process remaining properties
       Object.entries(profileData).forEach(([key, value]) => {
-        if (key === 'flirtingStyle') {
+        // Explicitly exclude the email field from updates
+        if (key === 'email') {
+          return; // Skip email field
+        }
+        else if (key === 'flirtingStyle') {
           profileUpdateData['flirting_style'] = typeof value === 'object' 
             ? JSON.stringify(value) 
             : value;
