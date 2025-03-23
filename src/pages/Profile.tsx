@@ -5,14 +5,18 @@ import { ChevronLeft, Settings } from 'lucide-react';
 import BentoProfile from '@/components/ui/BentoProfile';
 import { useAuth, UserProfile } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Profile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, fetchProfile, isAuthenticated } = useAuth();
-  const [profileUser, setProfileUser] = useState<UserProfile | null>(user);
+  const { user, fetchProfile, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [profileUser, setProfileUser] = useState<UserProfile | null>(null);
   const [activeTab, setActiveTab] = useState<'persona' | 'erotics'>('persona');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const isCurrentUser = !id || id === user?.id;
   
@@ -20,34 +24,93 @@ const Profile = () => {
     // Scroll to top when component mounts
     window.scrollTo(0, 0);
     
+    // Debug information
+    console.log("Profile component loaded", {
+      id,
+      user: user?.id,
+      isAuthenticated,
+      authLoading
+    });
+    
     // If viewing another user's profile, fetch their data
     const getProfileData = async () => {
-      if (id && id !== user?.id) {
-        setIsLoading(true);
-        try {
-          const profile = await fetchProfile(id);
-          if (profile) {
-            setProfileUser(profile);
-          }
-        } catch (error) {
-          console.error("Error fetching profile:", error);
-        } finally {
-          setIsLoading(false);
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        let profile = null;
+        
+        if (id && id !== user?.id) {
+          // Fetch other user's profile
+          profile = await fetchProfile(id);
+        } else if (user) {
+          // Use current user's profile
+          profile = user;
+        } else if (isAuthenticated) {
+          // Fetch current user's profile if not available
+          profile = await fetchProfile();
         }
-      } else {
-        setProfileUser(user);
+        
+        console.log("Profile data fetched:", profile);
+        setProfileUser(profile);
+        
+        if (!profile && !authLoading && isAuthenticated) {
+          setError("Could not load profile data. Please try again.");
+          toast.error("Failed to load profile data");
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        setError("An error occurred while loading the profile.");
+        toast.error("Error loading profile");
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    getProfileData();
-  }, [id, user, fetchProfile]);
+    if (!authLoading) {
+      getProfileData();
+    }
+  }, [id, user, fetchProfile, isAuthenticated, authLoading]);
   
-  if (isLoading || !profileUser) {
+  // Show loading state while authentication is being checked
+  if (authLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
+      <div className="flex min-h-screen items-center justify-center flex-col p-4">
+        <div className="text-center mb-4">
           <h2 className="text-2xl font-semibold mb-2">Loading Profile...</h2>
-          <p className="text-sm text-foreground/70">Please wait a moment</p>
+          <p className="text-sm text-foreground/70 mb-4">Checking authentication</p>
+          <Progress value={25} className="w-60 h-2" />
+        </div>
+      </div>
+    );
+  }
+  
+  // Show loading state while profile data is being fetched
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center flex-col p-4">
+        <div className="text-center mb-4">
+          <h2 className="text-2xl font-semibold mb-2">Loading Profile...</h2>
+          <p className="text-sm text-foreground/70 mb-4">Please wait a moment</p>
+          <Progress value={60} className="w-60 h-2" />
+        </div>
+      </div>
+    );
+  }
+  
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-semibold mb-4">Something went wrong</h2>
+          <p className="text-foreground/70 mb-6">{error}</p>
+          <Button 
+            className="bg-vice-purple hover:bg-vice-dark-purple"
+            onClick={() => window.location.reload()}
+          >
+            Try Again
+          </Button>
         </div>
       </div>
     );
@@ -67,6 +130,26 @@ const Profile = () => {
             onClick={() => navigate('/auth')}
           >
             Sign In
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  // If no profile data was found
+  if (!profileUser) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-semibold mb-4">Profile Not Found</h2>
+          <p className="text-foreground/70 mb-6">
+            We couldn't find the profile you're looking for.
+          </p>
+          <Button 
+            className="bg-vice-purple hover:bg-vice-dark-purple"
+            onClick={() => navigate('/discover')}
+          >
+            Back to Discover
           </Button>
         </div>
       </div>
