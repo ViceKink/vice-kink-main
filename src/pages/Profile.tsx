@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Settings, RefreshCw, Pencil } from 'lucide-react';
@@ -233,7 +232,7 @@ const Profile = () => {
   });
   
   return (
-    <div className="min-h-screen pt-20 pb-20 px-2.5">
+    <div className="min-h-screen pt-16 pb-20 px-2">
       <div className="w-full mx-auto">
         <div className="flex justify-between items-center mb-4">
           {!isCurrentUser ? (
