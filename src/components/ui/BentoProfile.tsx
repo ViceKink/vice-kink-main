@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { UserProfile } from '@/types/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -38,9 +39,9 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
   
   return (
     <div className="bento-grid w-full mx-auto">
-      {/* Main Container with 60/40 split */}
+      {/* Main Container with 60/40 split maintained on both desktop and mobile */}
       <div className="bento-main-container">
-        {/* Left side - Main Photo - 60% width on desktop */}
+        {/* Left side - Main Photo - 60% width on both desktop and mobile */}
         <div className="main-photo-container">
           <div className="main-photo">
             {hasPhotos ? (
@@ -64,19 +65,19 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           </div>
         </div>
 
-        {/* Right side - User Info & Bio - 40% width on desktop */}
+        {/* Right side - User Info & Bio - 40% width on both desktop and mobile */}
         <div className="user-details-container">
           {/* User Info Card */}
           <div className="bento-section user-info rounded-2xl">
             <div className="flex flex-col">
               <div className="flex items-baseline">
-                <h2 className="text-xl font-bold">{profile.name}</h2>
+                <h2 className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>{profile.name}</h2>
                 {profile.verified && (
                   <span className="ml-1 text-blue-500">✓</span>
                 )}
               </div>
               
-              <div className="text-xl">{profile.age}</div>
+              <div className={isMobile ? 'text-lg' : 'text-xl'}>{profile.age}</div>
               
               {profile.location && (
                 <div className="text-sm text-foreground/70 mt-2 flex items-center">
@@ -112,7 +113,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           {/* Bio Section */}
           {hasBio && (
             <div className="bento-section bio rounded-2xl">
-              <p className="text-sm">{profile.bio}</p>
+              <p className={`${isMobile ? 'text-xs' : 'text-sm'}`}>{profile.bio}</p>
             </div>
           )}
         </div>
