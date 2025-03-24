@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Settings, RefreshCw, Pencil } from 'lucide-react';
@@ -226,15 +227,15 @@ const Profile = () => {
   }
   
   console.log("Rendering profile content", { 
-    profileId: profileUser.id, 
-    name: profileUser.name,
+    profileId: profileUser?.id, 
+    name: profileUser?.name,
     isCurrentUser
   });
   
   return (
-    <div className="min-h-screen pt-20 pb-28 px-4 md:px-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+    <div className="min-h-screen pt-20 pb-20 px-2.5">
+      <div className="w-full mx-auto">
+        <div className="flex justify-between items-center mb-4">
           {!isCurrentUser ? (
             <NavLink
               to="/discover"
@@ -263,33 +264,33 @@ const Profile = () => {
         </div>
         
         <div className="mb-4">
-          <div className="flex space-x-4">
+          <div className="flex space-x-2">
             <button 
               className={`px-4 py-2 rounded-full ${activeTab === 'persona' ? 'bg-secondary text-foreground/80' : 'bg-secondary/50 text-foreground/80 hover:bg-secondary/80'} transition-colors`}
-              onClick={() => handleTabChange('persona')}
+              onClick={() => setActiveTab('persona')}
             >
               Persona
             </button>
             <button 
               className={`px-4 py-2 rounded-full ${activeTab === 'erotics' ? 'bg-secondary text-foreground/80' : 'bg-secondary/50 text-foreground/80 hover:bg-secondary/80'} transition-colors`}
-              onClick={() => handleTabChange('erotics')}
+              onClick={() => setActiveTab('erotics')}
             >
               Erotics
             </button>
           </div>
         </div>
         
-        {activeTab === 'persona' ? (
+        {activeTab === 'persona' && profileUser ? (
           <BentoProfile 
             profile={profileUser}
             isCurrentUser={isCurrentUser}
           />
-        ) : (
+        ) : activeTab === 'erotics' ? (
           <div className="p-8 bg-white dark:bg-card rounded-2xl shadow-md text-center">
             <h3 className="text-xl font-bold mb-4">Erotics Profile</h3>
             <p className="text-foreground/70">This section is still under development. Coming soon!</p>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
