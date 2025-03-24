@@ -29,6 +29,11 @@
   gap: 1rem;
 }
 
+/* Make the user info and bio take 50% height each on desktop */
+.user-info, .bio {
+  flex: 1;
+}
+
 .bento-section {
   display: flex;
   flex-direction: column;
@@ -110,4 +115,38 @@
   .main-photo {
     min-height: 250px;
   }
+}
+
+/* Audio and profile details card styles */
+.audio-card {
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.profile-details-card {
+  margin-top: 1rem;
+  width: 100%;
+  background: white;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.details-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.details-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.details-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9b87f5;
 }

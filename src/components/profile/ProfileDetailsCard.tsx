@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { UserProfile } from '@/context/AuthContext';
+import { UserProfile } from '@/types/auth';
 import { cn } from '@/lib/utils';
+import { Ruler, Sun, Church, Languages, Heart, Search, Cigarette, Wine } from 'lucide-react';
 
 interface ProfileDetailsCardProps {
   profile: UserProfile;
@@ -9,78 +10,97 @@ interface ProfileDetailsCardProps {
 }
 
 const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => {
-  const getLifestyleIcon = (type: string) => {
+  const getIcon = (type: string) => {
     switch (type) {
       case 'height':
-        return '📏';
+        return <Ruler className="w-4 h-4" />;
       case 'zodiac':
-        return '☀️';
+        return <Sun className="w-4 h-4" />;
       case 'religion':
-        return '🙏';
+        return <Church className="w-4 h-4" />;
       case 'language':
-        return '🔤';
+        return <Languages className="w-4 h-4" />;
       case 'smoking':
-        return profile.about?.lifestyle?.smoking ? '🚬' : '🚭';
+        return <Cigarette className="w-4 h-4" />;
       case 'drinking':
-        return '🍷';
+        return <Wine className="w-4 h-4" />;
+      case 'flirting':
+        return <Heart className="w-4 h-4" />;
       case 'looking':
-        return '👁️';
-      case 'kids':
-        return '👶';
+        return <Search className="w-4 h-4" />;
       default:
-        return '•';
+        return null;
     }
   };
   
   return (
-    <div className={cn("bg-white dark:bg-card p-4", className)}>
-      <div className="flex flex-wrap gap-3">
+    <div className={cn("bg-white dark:bg-card p-4 rounded-2xl", className)}>
+      {/* Row 1: Height, Zodiac, Religion, Language */}
+      <div className="details-row">
         {profile.about?.height && (
-          <div className="flex items-center text-sm">
-            <span className="mr-1">{getLifestyleIcon('height')}</span>
-            <span>{profile.about.height}</span>
+          <div className="details-item">
+            <span className="details-icon">{getIcon('height')}</span>
+            <span className="text-sm">{profile.about.height}</span>
           </div>
         )}
         
         {profile.about?.zodiac && (
-          <div className="flex items-center text-sm">
-            <span className="mr-1">{getLifestyleIcon('zodiac')}</span>
-            <span>{profile.about.zodiac}</span>
+          <div className="details-item">
+            <span className="details-icon">{getIcon('zodiac')}</span>
+            <span className="text-sm">{profile.about.zodiac}</span>
           </div>
         )}
         
         {profile.about?.religion && (
-          <div className="flex items-center text-sm">
-            <span className="mr-1">{getLifestyleIcon('religion')}</span>
-            <span>{profile.about.religion}</span>
+          <div className="details-item">
+            <span className="details-icon">{getIcon('religion')}</span>
+            <span className="text-sm">{profile.about.religion}</span>
           </div>
         )}
         
         {profile.about?.languages && profile.about.languages.length > 0 && (
-          <div className="flex items-center text-sm">
-            <span className="mr-1">{getLifestyleIcon('language')}</span>
-            <span>{profile.about.languages.join(', ')}</span>
+          <div className="details-item">
+            <span className="details-icon">{getIcon('language')}</span>
+            <span className="text-sm">{profile.about.languages.join(', ')}</span>
           </div>
         )}
-        
+      </div>
+      
+      {/* Row 2: Flirting Style */}
+      {profile.flirtingStyle && (
+        <div className="details-row">
+          <div className="details-item">
+            <span className="details-icon">{getIcon('flirting')}</span>
+            <span className="text-sm">
+              {typeof profile.flirtingStyle === 'string' ? profile.flirtingStyle : 'Playful and fun'}
+            </span>
+          </div>
+        </div>
+      )}
+      
+      {/* Row 3: Looking For */}
+      {profile.lookingFor && (
+        <div className="details-row">
+          <div className="details-item">
+            <span className="details-icon">{getIcon('looking')}</span>
+            <span className="text-sm">{profile.lookingFor}</span>
+          </div>
+        </div>
+      )}
+      
+      {/* Additional lifestyle items if needed */}
+      <div className="details-row">
         {profile.about?.lifestyle?.smoking !== undefined && (
-          <div className="flex items-center text-sm">
-            <span className="mr-1">{getLifestyleIcon('smoking')}</span>
-            <span>{profile.about.lifestyle.smoking ? 'smoker' : 'non-smoker'}</span>
+          <div className="details-item">
+            <span className="details-icon">{getIcon('smoking')}</span>
+            <span className="text-sm">{profile.about.lifestyle.smoking ? 'smoker' : 'non-smoker'}</span>
           </div>
         )}
         
         {profile.about?.lifestyle?.drinking && (
-          <div className="flex items-center text-sm">
-            <span className="mr-1">{getLifestyleIcon('drinking')}</span>
-            <span>{profile.about.lifestyle.drinking}</span>
-          </div>
-        )}
-        
-        {profile.lookingFor && (
-          <div className="flex items-center text-sm">
-            <span className="mr-1">{getLifestyleIcon('looking')}</span>
-            <span>{profile.lookingFor}</span>
+          <div className="details-item">
+            <span className="details-icon">{getIcon('drinking')}</span>
+            <span className="text-sm">{profile.about.lifestyle.drinking}</span>
           </div>
         )}
       </div>

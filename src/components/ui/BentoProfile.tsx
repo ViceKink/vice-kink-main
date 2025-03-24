@@ -33,6 +33,8 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
     profile.about?.zodiac || 
     profile.about?.religion || 
     profile.about?.languages?.length || 
+    profile.lookingFor ||
+    profile.flirtingStyle ||
     profile.about?.lifestyle?.smoking !== undefined || 
     profile.about?.lifestyle?.drinking
   );
@@ -69,7 +71,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         <div className="user-details-container">
           {/* User Info Card */}
           <div className="bento-section user-info rounded-2xl">
-            <div className="flex flex-col">
+            <div className="flex flex-col h-full">
               <div className="flex items-baseline">
                 <h2 className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>{profile.name}</h2>
                 {profile.verified && (
@@ -119,10 +121,9 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </div>
       </div>
 
-      {/* Remaining sections (kept for other parts of the profile) */}
-      {/* Audio Player Section */}
+      {/* Audio Player Section - Stacked after main container */}
       {hasAudio && profile.audio && (
-        <div className="bento-section audio rounded-2xl bg-vice-purple/10 p-0 overflow-hidden">
+        <div className="bento-section audio-card rounded-2xl bg-vice-purple/10 p-0 overflow-hidden">
           <div className="w-full bg-vice-purple/10 p-4">
             <div className="flex items-center gap-3">
               <div className="bg-vice-purple text-white rounded-full p-2 flex-shrink-0">
@@ -140,14 +141,15 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </div>
       )}
 
-      {/* User Details Section */}
+      {/* User Details Section - Stacked after audio or main container */}
       {hasAboutDetails && (
         <ProfileDetailsCard 
           profile={profile}
-          className="bento-section details rounded-2xl"
+          className="profile-details-card"
         />
       )}
 
+      {/* Remaining sections (kept for other parts of the profile) */}
       {/* Vices Section */}
       {hasVices && (
         <div className="bento-section vices bg-white dark:bg-card p-4 rounded-2xl">
