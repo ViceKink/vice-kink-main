@@ -9,10 +9,9 @@ interface ProfileAudioProps {
     url: string;
     title: string;
   };
-  currentRow: number;
 }
 
-const ProfileAudio = ({ audio, currentRow }: ProfileAudioProps) => {
+const ProfileAudio = ({ audio }: ProfileAudioProps) => {
   const isMobile = useIsMobile();
   
   // Safety check for audio data
@@ -27,20 +26,12 @@ const ProfileAudio = ({ audio, currentRow }: ProfileAudioProps) => {
   });
   
   return (
-    <ProfileSection
-      gridSpan={{
-        cols: isMobile ? "col-span-6" : "col-span-4",
-        rows: "row-span-1",
-        colsStart: "col-start-1",
-        rowsStart: `row-start-${currentRow.toString()}`
-      }}
-      className="bg-vice-purple/10 p-0 overflow-hidden"
-    >
+    <div className="bg-vice-purple/10 p-0 overflow-hidden rounded-2xl">
       <AudioPlayer 
         audioUrl={audio.url}
         title={audio.title}
       />
-    </ProfileSection>
+    </div>
   );
 };
 

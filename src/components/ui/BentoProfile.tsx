@@ -1,17 +1,9 @@
 
 import React from 'react';
-import { UserProfile } from '@/context/AuthContext';
+import { UserProfile } from '@/types/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
-import ProfileHeader from '@/components/profile/ProfileHeader';
-import ProfileBio from '@/components/profile/ProfileBio';
-import ProfileAudio from '@/components/profile/ProfileAudio';
-import ProfileTagsSection from '@/components/profile/ProfileTagsSection';
-import ProfileSecondaryPhotos from '@/components/profile/ProfileSecondaryPhotos';
-import ProfileFlirtingStyle from '@/components/profile/ProfileFlirtingStyle';
-import ProfilePassion from '@/components/profile/ProfilePassion';
-import ProfileQuote from '@/components/profile/ProfileQuote';
-import ProfileDetailsCard from '@/components/profile/ProfileDetailsCard';
 import { MapPin } from 'lucide-react';
+import ProfileDetailsCard from '@/components/profile/ProfileDetailsCard';
 
 interface BentoProfileProps {
   profile: UserProfile;
@@ -45,48 +37,50 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
   );
   
   return (
-    <div className="bento-grid px-2.5 w-full mx-auto">
-      {/* Main Container - 60/40 split */}
-      <div className="bento-container flex flex-col md:flex-row md:gap-4 w-full">
-        {/* Main Photo - 60% width on desktop */}
-        <div className="bento-section main-photo md:w-[60%] rounded-2xl overflow-hidden relative">
-          {hasPhotos ? (
-            <>
-              <img
-                src={profile.photos[0]}
-                alt={profile.name}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent text-white">
-                <div className="flex items-baseline">
-                  <h2 className="text-2xl font-bold">{profile.name}</h2>
-                  <span className="ml-2">{profile.age}</span>
-                  {profile.verified && (
-                    <span className="ml-1 text-vice-purple">●</span>
+    <div className="bento-grid w-full mx-auto">
+      {/* Main Container with 60/40 split */}
+      <div className="bento-main-container">
+        {/* Left side - Main Photo - 60% width on desktop */}
+        <div className="main-photo-container">
+          <div className="main-photo relative">
+            {hasPhotos ? (
+              <>
+                <img
+                  src={profile.photos[0]}
+                  alt={profile.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent text-white">
+                  <div className="flex items-baseline">
+                    <h2 className="text-2xl font-bold">{profile.name}</h2>
+                    <span className="ml-2">{profile.age}</span>
+                    {profile.verified && (
+                      <span className="ml-1 text-vice-purple">●</span>
+                    )}
+                  </div>
+                  {profile.location && (
+                    <div className="flex items-center text-sm mt-1">
+                      <MapPin className="w-3.5 h-3.5 mr-1" />
+                      <span>{profile.location}</span>
+                    </div>
                   )}
                 </div>
-                {profile.location && (
-                  <div className="flex items-center text-sm mt-1">
-                    <MapPin className="w-3.5 h-3.5 mr-1" />
-                    <span>{profile.location}</span>
+                {hasSecondaryPhotos && (
+                  <div className="absolute bottom-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-xs">
+                    {profile.photos.length} photos
                   </div>
                 )}
+              </>
+            ) : (
+              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                <span className="text-gray-500">No photo available</span>
               </div>
-              {hasSecondaryPhotos && (
-                <div className="absolute bottom-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-xs">
-                  {profile.photos.length} photos
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-              <span className="text-gray-500">No photo available</span>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* Right side content - 40% width on desktop */}
-        <div className="bento-right-column md:w-[40%] flex flex-col gap-4">
+        {/* Right side - User Info & Bio - 40% width on desktop */}
+        <div className="user-details-container">
           {/* User Info Card */}
           <div className="bento-section user-info bg-white dark:bg-card rounded-2xl p-4">
             <div className="flex flex-col">
@@ -103,6 +97,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
                 </div>
               )}
               
+              {/* Relationship status */}
               {profile.about?.status && (
                 <span className={`self-start inline-flex items-center px-2 py-1 rounded-full text-xs mt-2 ${
                   profile.about?.status === 'single' ? 'bg-vice-purple/10 text-vice-purple' : 
@@ -113,6 +108,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
                 </span>
               )}
               
+              {/* Occupation */}
               {profile.about?.occupation && (
                 <div className="mt-3">
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-secondary text-secondary-foreground">
@@ -121,7 +117,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
                 </div>
               )}
               
-              {/* Display zodiac here instead of in its own box */}
+              {/* Zodiac */}
               {profile.about?.zodiac && (
                 <div className="mt-3 flex items-center text-sm">
                   <span className="mr-1">☀️</span>
@@ -142,9 +138,23 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
       </div>
 
       {/* Audio Player Section */}
-      {hasAudio && (
-        <div className="bento-section audio col-span-12 row-span-1 rounded-2xl bg-vice-purple/10 p-0 overflow-hidden mt-4">
-          <ProfileAudio audio={profile.audio} />
+      {hasAudio && profile.audio && (
+        <div className="bento-section audio rounded-2xl bg-vice-purple/10 p-0 overflow-hidden">
+          {/* Manually implementing audio player to avoid ProfileAudio component with currentRow */}
+          <div className="w-full bg-vice-purple/10 p-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-vice-purple text-white rounded-full p-2 flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                  <path d="M12 18.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13Z"></path>
+                  <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path>
+                </svg>
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-medium">{profile.audio.title || "Voice Note"}</div>
+                <div className="text-xs text-foreground/60">Tap to play</div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -152,13 +162,13 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
       {hasAboutDetails && (
         <ProfileDetailsCard 
           profile={profile}
-          className="bento-section details col-span-12 row-span-1 rounded-2xl mt-4"
+          className="bento-section details rounded-2xl"
         />
       )}
 
       {/* Vices Section */}
       {hasVices && (
-        <div className="bento-section vices col-span-6 bg-white dark:bg-card p-4 rounded-2xl mt-4">
+        <div className="bento-section vices bg-white dark:bg-card p-4 rounded-2xl">
           <h3 className="text-base font-semibold mb-2">Vices</h3>
           <div className="flex flex-wrap gap-2">
             {profile.vices.map((vice, index) => (
@@ -172,7 +182,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
 
       {/* Kinks Section */}
       {hasKinks && (
-        <div className="bento-section kinks col-span-6 bg-white dark:bg-card p-4 rounded-2xl mt-4">
+        <div className="bento-section kinks bg-white dark:bg-card p-4 rounded-2xl">
           <h3 className="text-base font-semibold mb-2">Kinks</h3>
           <div className="flex flex-wrap gap-2">
             {profile.kinks.map((kink, index) => (
@@ -186,7 +196,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
 
       {/* Secondary Photos Section */}
       {hasSecondaryPhotos && (
-        <div className="bento-section photos col-span-6 row-span-3 bg-black rounded-2xl overflow-hidden mt-4">
+        <div className="bento-section photos bg-black rounded-2xl overflow-hidden">
           <div className="grid grid-cols-2 grid-rows-2 gap-1 h-full">
             {profile.photos.slice(1, 5).map((photo, index) => (
               <div key={index} className="relative overflow-hidden">
@@ -208,7 +218,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
 
       {/* Flirting Style Section */}
       {hasFlirtingStyle && (
-        <div className="bento-section flirting col-span-12 bg-white dark:bg-card p-4 rounded-2xl mt-4">
+        <div className="bento-section flirting bg-white dark:bg-card p-4 rounded-2xl">
           <div className="flex flex-col h-full justify-center">
             <p className="text-base">
               <span className="font-medium">My idea of flirting is: </span>
@@ -220,7 +230,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
 
       {/* Passion Section */}
       {hasPassions && (
-        <div className="bento-section passion col-span-6 bg-vice-orange p-4 text-white rounded-2xl mt-4">
+        <div className="bento-section passion bg-vice-orange p-4 text-white rounded-2xl">
           <div className="flex flex-col h-full justify-center">
             <p className="text-sm">
               I am passionate about: <span className="font-medium">{profile.passions[0]}</span>
@@ -230,7 +240,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
       )}
 
       {/* Quote Section */}
-      <div className="bento-section quote col-span-6 bg-vice-orange p-4 text-white rounded-2xl mt-4">
+      <div className="bento-section quote bg-vice-orange p-4 text-white rounded-2xl">
         <div className="flex flex-col h-full justify-center">
           <p className="text-sm italic">
             "I'm such a Virgo, even my horoscope tells me to stop worrying about being a Virgo"
