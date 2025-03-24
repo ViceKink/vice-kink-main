@@ -1,6 +1,5 @@
 
 import React from 'react';
-import ProfileSection from '@/components/profile/ProfileSection';
 import AudioPlayer from '@/components/ui/AudioPlayer';
 import { useIsMobile } from '@/hooks/use-mobile';
 

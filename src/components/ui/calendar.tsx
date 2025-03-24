@@ -73,9 +73,9 @@ function Calendar({
                   const newMonth = parseInt(value);
                   const newDate = new Date(month);
                   newDate.setMonth(newMonth);
-                  // Use the more specific type from react-day-picker
-                  if (props.onMonthChange) {
-                    props.onMonthChange(newDate);
+                  // Fixed TypeScript error by checking if goToMonth exists
+                  if (props.goToMonth) {
+                    props.goToMonth(newDate);
                   }
                 }}
               >
@@ -97,9 +97,9 @@ function Calendar({
                   const newYear = parseInt(value);
                   const newDate = new Date(month);
                   newDate.setFullYear(newYear);
-                  // Use the more specific type from react-day-picker
-                  if (props.onMonthChange) {
-                    props.onMonthChange(newDate);
+                  // Fixed TypeScript error by checking if goToMonth exists
+                  if (props.goToMonth) {
+                    props.goToMonth(newDate);
                   }
                 }}
               >

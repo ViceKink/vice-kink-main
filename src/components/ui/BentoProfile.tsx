@@ -36,6 +36,13 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
     profile.about?.lifestyle?.drinking
   );
   
+  console.log("BentoProfile rendering:", {
+    name: profile.name,
+    hasPhoto: hasPhotos,
+    hasBio,
+    hasZodiac: profile.about?.zodiac
+  });
+  
   return (
     <div className="bento-grid w-full mx-auto">
       {/* Main Container with 60/40 split */}
@@ -97,7 +104,15 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
                 </div>
               )}
               
-              {/* Relationship status */}
+              {/* Zodiac - Moved here from separate box */}
+              {profile.about?.zodiac && (
+                <div className="mt-3 flex items-center text-sm">
+                  <span className="mr-1">☀️</span>
+                  <span>{profile.about.zodiac}</span>
+                </div>
+              )}
+              
+              {/* Relationship status - Moved here from separate box */}
               {profile.about?.status && (
                 <span className={`self-start inline-flex items-center px-2 py-1 rounded-full text-xs mt-2 ${
                   profile.about?.status === 'single' ? 'bg-vice-purple/10 text-vice-purple' : 
@@ -116,14 +131,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
                   </span>
                 </div>
               )}
-              
-              {/* Zodiac */}
-              {profile.about?.zodiac && (
-                <div className="mt-3 flex items-center text-sm">
-                  <span className="mr-1">☀️</span>
-                  <span>{profile.about.zodiac}</span>
-                </div>
-              )}
             </div>
           </div>
 
@@ -140,7 +147,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
       {/* Audio Player Section */}
       {hasAudio && profile.audio && (
         <div className="bento-section audio rounded-2xl bg-vice-purple/10 p-0 overflow-hidden">
-          {/* Manually implementing audio player to avoid ProfileAudio component with currentRow */}
           <div className="w-full bg-vice-purple/10 p-4">
             <div className="flex items-center gap-3">
               <div className="bg-vice-purple text-white rounded-full p-2 flex-shrink-0">
