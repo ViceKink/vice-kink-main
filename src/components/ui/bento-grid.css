@@ -93,13 +93,14 @@
   transition: transform 0.2s ease-in-out;
 }
 
-/* Rest of the CSS remains unchanged */
+/* Audio card styles */
 .audio-card {
   grid-column: span 12;
   margin-top: 0.3125rem; /* 5px */
   width: 100%;
 }
 
+/* Profile details card styles */
 .profile-details-card {
   grid-column: span 12;
   margin-top: 0.3125rem; /* 5px */
@@ -109,6 +110,7 @@
   padding: 1rem;
 }
 
+/* Container for tags and photos */
 .bento-tags-photo-container {
   display: flex;
   flex-direction: row;
@@ -118,6 +120,7 @@
   min-height: 300px; /* Ensure container has enough height */
 }
 
+/* Tags container for vices and kinks */
 .tags-container {
   display: flex;
   flex-direction: column;
@@ -125,11 +128,13 @@
   width: 50%;
 }
 
+/* Secondary photo container */
 .secondary-photo-container {
   width: 50%;
   height: 100%; /* Make it full height */
 }
 
+/* Generic bento card */
 .bento-card {
   overflow: hidden;
   border-radius: 0.75rem;
@@ -137,23 +142,27 @@
   transition: transform 0.2s ease-in-out;
 }
 
+/* Secondary photo styles */
 .secondary-photo {
   overflow: hidden;
   height: 100%;
   border-radius: 0.75rem;
 }
 
+/* Vices card styles */
 .vices-card {
   background: white;
   flex: 1;
   margin-bottom: 0.3125rem; /* Add margin between cards */
 }
 
+/* Kinks card styles */
 .kinks-card {
   background: white;
   flex: 1;
 }
 
+/* Secondary photo card styles */
 .secondary-photo-card {
   background: black;
   height: 100%; /* Make it full height */
