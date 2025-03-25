@@ -15,6 +15,7 @@
   width: 100%;
   gap: 0.3125rem; /* 5px */
   margin-bottom: 0.3125rem; /* 5px */
+  max-height: min(50vh, 450px); /* Reduced height for desktop view */
 }
 
 /* Left photo container */
@@ -125,12 +126,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.3125rem; /* 5px */
-  width: 30%; /* Changed from 50% to 30% for desktop */
+  width: 30%; /* 30% for desktop */
 }
 
 /* Secondary photo container */
 .secondary-photo-container {
-  width: 70%; /* Changed from 50% to 70% for desktop */
+  width: 70%; /* 70% for desktop */
   height: 100%; /* Make it full height */
 }
 
@@ -195,9 +196,10 @@
   background-color: #9b87f5;
 }
 
-/* Third, fifth and sixth photos - increased height */
-.bg-black.p-0.rounded-2xl.col-span-12.mt-\[0\.3125rem\].overflow-hidden.h-\[400px\] {
-  height: 500px; /* Increased from 400px to 500px */
+/* Make images 3, 5, 6 square with responsive sizing */
+.square-photo-container {
+  aspect-ratio: 1/1;
+  width: 100%;
 }
 
 /* Mobile layout adjustments */
@@ -206,9 +208,10 @@
     grid-template-columns: repeat(6, 1fr);
   }
   
-  /* Keep the 60/40 split for mobile too */
+  /* Keep the 60/40 split for mobile but no max height constraint */
   .bento-main-container {
     grid-template-columns: 60% 40%;
+    max-height: none;
   }
   
   .bento-tags-photo-container {

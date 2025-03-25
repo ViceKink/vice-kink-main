@@ -25,7 +25,7 @@ const ProfileSecondaryPhotos = ({ photos, name, currentRow, hasVicesOrKinks }: P
     >
       <div className="grid grid-cols-2 grid-rows-2 gap-1 h-full">
         {photos.slice(1, 5).map((photo, index) => (
-          <div key={index} className="relative overflow-hidden">
+          <div key={index} className="relative overflow-hidden square-photo-container">
             <img
               src={photo}
               alt={`${name} photo ${index + 2}`}

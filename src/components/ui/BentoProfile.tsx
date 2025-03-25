@@ -163,9 +163,9 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           </div>
         )}
         
-        {/* Third photo after flirting style */}
+        {/* Third photo after flirting style - with square aspect ratio */}
         {hasThirdPhoto && (
-          <div className="bg-black p-0 rounded-2xl col-span-12 mt-[0.3125rem] overflow-hidden h-[500px]">
+          <div className="bg-black p-0 rounded-2xl col-span-12 mt-[0.3125rem] overflow-hidden square-photo-container">
             <img
               src={profile.photos[2]}
               alt={`${profile.name} third photo`}
@@ -198,16 +198,16 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             )}
             
             {hasPassions && profile.passions && profile.passions.length > 0 && (
-              <ProfilePassion passion={profile.passions[0]} />
+              <ProfilePassion passion={profile.passions} />
             )}
           </div>
         )}
         
-        {/* Fifth and sixth photos stacked */}
+        {/* Fifth and sixth photos stacked - with square aspect ratio */}
         {(hasFifthPhoto || hasSixthPhoto) && (
           <div className="flex flex-col gap-[0.3125rem] col-span-12 mt-[0.3125rem]">
             {hasFifthPhoto && (
-              <div className="bg-black p-0 rounded-2xl overflow-hidden h-[500px]">
+              <div className="bg-black p-0 rounded-2xl overflow-hidden square-photo-container">
                 <img
                   src={profile.photos[4]}
                   alt={`${profile.name} fifth photo`}
@@ -217,7 +217,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             )}
             
             {hasSixthPhoto && (
-              <div className="bg-black p-0 rounded-2xl overflow-hidden h-[500px] mt-[0.3125rem]">
+              <div className="bg-black p-0 rounded-2xl overflow-hidden square-photo-container mt-[0.3125rem]">
                 <img
                   src={profile.photos[5]}
                   alt={`${profile.name} sixth photo`}
