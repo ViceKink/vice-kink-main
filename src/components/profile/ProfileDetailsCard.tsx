@@ -84,7 +84,7 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
         )}
       </div>
       
-      {/* Row A2: Flirting Style */}
+      {/* Row 2: Flirting Style */}
       {profile.flirtingStyle && (
         <div className="details-row">
           <div className="details-item">

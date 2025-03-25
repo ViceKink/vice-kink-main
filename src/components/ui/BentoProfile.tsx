@@ -223,11 +223,12 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </div>
       )}
 
-      {/* Quote Section */}
+      {/* Quote Section - renamed to Favorite Quote */}
       <div className="bento-section quote bg-vice-orange p-4 text-white rounded-2xl">
         <div className="flex flex-col h-full justify-center">
+          <h3 className="text-sm font-semibold mb-1">Favorite Quote</h3>
           <p className="text-sm italic">
-            "I'm such a Virgo, even my horoscope tells me to stop worrying about being a Virgo"
+            {profile.quote || "I'm such a Virgo, even my horoscope tells me to stop worrying about being a Virgo"}
           </p>
         </div>
       </div>

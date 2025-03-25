@@ -7,9 +7,10 @@ interface ProfileQuoteProps {
   currentRow: number;
   hasFlirtingStyle: boolean;
   hasPassions: boolean;
+  quote?: string;
 }
 
-const ProfileQuote = ({ currentRow, hasFlirtingStyle, hasPassions }: ProfileQuoteProps) => {
+const ProfileQuote = ({ currentRow, hasFlirtingStyle, hasPassions, quote }: ProfileQuoteProps) => {
   const isMobile = useIsMobile();
   
   return (
@@ -23,8 +24,9 @@ const ProfileQuote = ({ currentRow, hasFlirtingStyle, hasPassions }: ProfileQuot
       className="bg-vice-orange p-4 text-white"
     >
       <div className="flex flex-col h-full justify-center">
+        <h3 className="text-sm font-semibold mb-1">Favorite Quote</h3>
         <p className="text-sm italic">
-          "I'm such a Virgo, even my horoscope tells me to stop worrying about being a Virgo"
+          {quote || "I'm such a Virgo, even my horoscope tells me to stop worrying about being a Virgo"}
         </p>
       </div>
     </ProfileSection>
