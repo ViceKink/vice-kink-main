@@ -167,11 +167,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user?.id) return;
 
     try {
+      console.log('Update profile called with data:', profileData);
+      
+      // Create a clean profile update object
       const profileUpdateData: Record<string, any> = {};
       
-      // Process profile properties first
+      // Process top-level profile properties
       Object.entries(profileData).forEach(([key, value]) => {
-        // Skip certain fields that are handled separately
+        // Skip fields that are handled separately
         if (key !== 'email' && key !== 'about' && key !== 'passions' && 
             key !== 'vices' && key !== 'kinks' && key !== 'photos' && 
             key !== 'audio') {
@@ -179,32 +182,50 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       });
       
-      // Handle the about object separately
+      // Handle the about object separately to avoid nested objects
       if (profileData.about) {
-        // Spread the about object properties into main level properties
         const { occupation, status, height, religion, sexuality, languages } = profileData.about;
         
-        if (occupation !== undefined) profileUpdateData.about = { ...(profileUpdateData.about || {}), occupation };
-        if (status !== undefined) profileUpdateData.about = { ...(profileUpdateData.about || {}), status };
-        if (height !== undefined) profileUpdateData.about = { ...(profileUpdateData.about || {}), height };
-        if (religion !== undefined) profileUpdateData.about = { ...(profileUpdateData.about || {}), religion };
-        if (sexuality !== undefined) profileUpdateData.about = { ...(profileUpdateData.about || {}), sexuality };
-        if (languages !== undefined) profileUpdateData.about = { ...(profileUpdateData.about || {}), languages };
+        if (occupation !== undefined) profileUpdateData.occupation = occupation;
+        if (status !== undefined) profileUpdateData.relationship_status = status;
+        if (height !== undefined) profileUpdateData.height = height;
+        if (religion !== undefined) profileUpdateData.religion = religion;
+        if (sexuality !== undefined) profileUpdateData.sexuality = sexuality;
       }
+      
+      console.log('Cleaned profile update data:', profileUpdateData);
       
       // Only update if there are properties to update
       if (Object.keys(profileUpdateData).length > 0) {
-        try {
-          console.log('Updating profile with data:', profileUpdateData);
-          await updateUserProfile(user.id, profileUpdateData);
-        } catch (error: any) {
-          console.error('Error updating profile fields:', error);
-          throw error;
-        }
+        await updateUserProfile(user.id, profileUpdateData);
       }
       
-      // Update local state
-      setUser(prev => prev ? { ...prev, ...profileData } : null);
+      // Update languages separately if they exist
+      if (profileData.about?.languages) {
+        await updateUserProfile(user.id, { languages: profileData.about.languages });
+      }
+      
+      // Update local state - make sure to merge objects properly
+      setUser(prev => {
+        if (!prev) return null;
+        
+        const updatedUser = { ...prev };
+        
+        // Update top-level properties
+        Object.entries(profileData).forEach(([key, value]) => {
+          if (key !== 'about') {
+            (updatedUser as any)[key] = value;
+          }
+        });
+        
+        // Update about properties
+        if (profileData.about) {
+          updatedUser.about = { ...(updatedUser.about || {}), ...profileData.about };
+        }
+        
+        return updatedUser;
+      });
+      
     } catch (error) {
       console.error('Error updating profile:', error);
       throw error;

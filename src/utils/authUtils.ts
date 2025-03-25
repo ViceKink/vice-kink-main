@@ -248,13 +248,12 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
   try {
     console.log('Updating profile with data:', profileData);
     
-    // Ensure we're not trying to update non-existent columns
-    const sanitizedData = { ...profileData };
-    
-    // Convert any camelCase to snake_case for database compatibility
+    // Split data into main profile fields and languages
+    const { languages, ...mainProfileData } = profileData;
     const finalData: Record<string, any> = {};
     
-    Object.entries(sanitizedData).forEach(([key, value]) => {
+    // Convert any camelCase to snake_case for database compatibility
+    Object.entries(mainProfileData).forEach(([key, value]) => {
       // Skip certain fields
       if (key === 'email') {
         return; // Skip email field
@@ -267,43 +266,18 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
           ? JSON.stringify(value) 
           : value;
       } 
-      else if (key !== 'passions' && key !== 'vices' && key !== 'kinks' && key !== 'photos' && key !== 'audio') {
+      else {
         const snakeCaseKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
         finalData[snakeCaseKey] = value;
       }
     });
     
-    // Handle about fields separately
-    if (sanitizedData.about) {
-      const about = sanitizedData.about;
-      
-      if (about.occupation) finalData['occupation'] = about.occupation;
-      if (about.status) finalData['relationship_status'] = about.status;
-      if (about.height) finalData['height'] = about.height;
-      // Zodiac is computed from birthdate, so we don't need to update it here
-      if (about.religion) finalData['religion'] = about.religion;
-      if (about.sexuality) finalData['sexuality'] = about.sexuality;
-      
-      // Debug logging
-      console.log('Updating profile fields:', {
-        occupation: about.occupation,
-        relationship_status: about.status,
-        height: about.height,
-        religion: about.religion,
-        sexuality: about.sexuality
-      });
-      
-      // Handle lifestyle fields
-      if (about.lifestyle) {
-        if (about.lifestyle.smoking !== undefined) finalData['smoking'] = about.lifestyle.smoking;
-        if (about.lifestyle.drinking) finalData['drinking'] = about.lifestyle.drinking;
-      }
-    }
+    // Debug logging
+    console.log('Final profile update data for Supabase:', finalData);
     
     // Only update if there are properties to update
     if (Object.keys(finalData).length > 0) {
       try {
-        console.log('Updating profile with final data:', finalData);
         const { error } = await supabase
           .from('profiles')
           .update(finalData)
@@ -333,10 +307,10 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
       }
     }
     
-    // Update languages separately
-    if (sanitizedData.about && sanitizedData.about.languages) {
+    // Update languages separately if they exist
+    if (languages) {
       try {
-        console.log('Updating languages:', sanitizedData.about.languages);
+        console.log('Updating languages:', languages);
         
         // First delete existing languages
         const { error: deleteError } = await supabase
@@ -350,8 +324,8 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
         }
         
         // Then insert new languages if we have any
-        if (sanitizedData.about.languages.length > 0) {
-          const languageInserts = sanitizedData.about.languages.map((language: string) => ({
+        if (languages.length > 0) {
+          const languageInserts = languages.map((language: string) => ({
             profile_id: userId,
             language: language
           }));

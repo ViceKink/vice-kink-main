@@ -118,7 +118,7 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
           />
         </div>
         
-        {/* Religion */}
+        {/* Religion - Restored as dropdown */}
         <div className="space-y-2">
           <Label htmlFor="religion">Religion</Label>
           <Select

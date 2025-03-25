@@ -255,6 +255,7 @@ export type Database = {
           created_at: string | null
           flirting_style: string | null
           height: string | null
+          hometown: string | null
           id: string
           location: string | null
           looking_for: string | null
@@ -274,6 +275,7 @@ export type Database = {
           created_at?: string | null
           flirting_style?: string | null
           height?: string | null
+          hometown?: string | null
           id: string
           location?: string | null
           looking_for?: string | null
@@ -293,6 +295,7 @@ export type Database = {
           created_at?: string | null
           flirting_style?: string | null
           height?: string | null
+          hometown?: string | null
           id?: string
           location?: string | null
           looking_for?: string | null
