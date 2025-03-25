@@ -106,7 +106,7 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
           <Label htmlFor="height">Height</Label>
           <Input
             id="height"
-            placeholder='e.g., 5\'10" or 178cm'
+            placeholder="e.g., 5'10&quot; or 178cm"
             value={userData?.about?.height || ''}
             onChange={(e) => updateField('about', { ...userData.about, height: e.target.value })}
           />
