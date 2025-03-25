@@ -125,12 +125,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.3125rem; /* 5px */
-  width: 50%;
+  width: 30%; /* Changed from 50% to 30% for desktop */
 }
 
 /* Secondary photo container */
 .secondary-photo-container {
-  width: 50%;
+  width: 70%; /* Changed from 50% to 70% for desktop */
   height: 100%; /* Make it full height */
 }
 
@@ -195,6 +195,11 @@
   background-color: #9b87f5;
 }
 
+/* Third, fifth and sixth photos - increased height */
+.bg-black.p-0.rounded-2xl.col-span-12.mt-\[0\.3125rem\].overflow-hidden.h-\[400px\] {
+  height: 500px; /* Increased from 400px to 500px */
+}
+
 /* Mobile layout adjustments */
 @media (max-width: 767px) {
   .bento-grid {
@@ -211,7 +216,7 @@
   }
   
   .tags-container, .secondary-photo-container {
-    width: 50%; /* Keep 50/50 split */
+    width: 50%; /* Keep 50/50 split for mobile */
   }
 }
 

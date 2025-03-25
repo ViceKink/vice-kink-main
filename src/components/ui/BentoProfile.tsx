@@ -165,7 +165,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         
         {/* Third photo after flirting style */}
         {hasThirdPhoto && (
-          <div className="bg-black p-0 rounded-2xl col-span-12 mt-[0.3125rem] overflow-hidden h-[400px]">
+          <div className="bg-black p-0 rounded-2xl col-span-12 mt-[0.3125rem] overflow-hidden h-[500px]">
             <img
               src={profile.photos[2]}
               alt={`${profile.name} third photo`}
@@ -207,7 +207,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         {(hasFifthPhoto || hasSixthPhoto) && (
           <div className="flex flex-col gap-[0.3125rem] col-span-12 mt-[0.3125rem]">
             {hasFifthPhoto && (
-              <div className="bg-black p-0 rounded-2xl overflow-hidden h-[400px]">
+              <div className="bg-black p-0 rounded-2xl overflow-hidden h-[500px]">
                 <img
                   src={profile.photos[4]}
                   alt={`${profile.name} fifth photo`}
@@ -217,7 +217,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             )}
             
             {hasSixthPhoto && (
-              <div className="bg-black p-0 rounded-2xl overflow-hidden h-[400px] mt-[0.3125rem]">
+              <div className="bg-black p-0 rounded-2xl overflow-hidden h-[500px] mt-[0.3125rem]">
                 <img
                   src={profile.photos[5]}
                   alt={`${profile.name} sixth photo`}

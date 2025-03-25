@@ -17,6 +17,7 @@ const EditProfilePassions = ({ userData, updateField }: EditProfilePassionsProps
   const [newPassion, setNewPassion] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const MAX_PASSIONS = 5;
 
   useEffect(() => {
     if (userData?.passions) {
@@ -30,6 +31,14 @@ const EditProfilePassions = ({ userData, updateField }: EditProfilePassionsProps
     // Check if passion already exists
     if (passions.includes(newPassion.trim())) {
       toast.error('This passion is already in your list');
+      return;
+    }
+    
+    // Check if maximum passions limit reached
+    if (passions.length >= MAX_PASSIONS) {
+      toast.error(`You can only add up to ${MAX_PASSIONS} passions`);
+      setNewPassion('');
+      setIsAdding(false);
       return;
     }
     
@@ -104,7 +113,7 @@ const EditProfilePassions = ({ userData, updateField }: EditProfilePassionsProps
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Add things you're passionate about to help others get to know you better.
+        Add things you're passionate about to help others get to know you better. (Maximum {MAX_PASSIONS})
       </p>
       
       <div className="flex flex-wrap gap-2">
@@ -166,12 +175,18 @@ const EditProfilePassions = ({ userData, updateField }: EditProfilePassionsProps
           <button
             onClick={() => setIsAdding(true)}
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            disabled={passions.length >= MAX_PASSIONS}
           >
             <Plus className="h-4 w-4" />
             Add passion
           </button>
         )}
       </div>
+      {passions.length >= MAX_PASSIONS && !isAdding && (
+        <p className="text-xs text-amber-600">
+          You've reached the maximum of {MAX_PASSIONS} passions.
+        </p>
+      )}
     </div>
   );
 };
