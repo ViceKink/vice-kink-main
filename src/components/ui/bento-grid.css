@@ -128,13 +128,25 @@
   padding: 1rem;
 }
 
-/* Layout for cards in a bento-style grid */
-.bento-cards-layout {
+/* Layout for the tags and secondary photo section in desktop */
+.bento-tags-photo-container {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: 6fr 6fr;
   grid-column: span 12;
   gap: 0.3125rem; /* 5px */
   margin-top: 0.3125rem; /* 5px */
+}
+
+/* Left side container for vices and kinks */
+.tags-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem; /* 5px */
+}
+
+/* Right side for secondary photo */
+.secondary-photo-container {
+  grid-column: span 6;
 }
 
 /* Bento card styles for vices and kinks */
@@ -152,39 +164,34 @@
   border-radius: 0.75rem;
 }
 
-/* Vices and Kinks grid layout */
+/* Vices and Kinks specific styles */
 .vices-card {
-  grid-column: span 6;
-  grid-row: span 1;
   background: white;
+  margin-bottom: 0.3125rem; /* 5px */
 }
 
 .kinks-card {
-  grid-column: span 6;
-  grid-row: span 1;
   background: white;
 }
 
 .secondary-photo-card {
-  grid-column: span 12;
-  grid-row: span 1;
   background: black;
-  margin-top: 0.3125rem; /* 5px */
   min-height: 300px;
 }
 
+/* Mobile layout adjustments */
 @media (max-width: 767px) {
-  .vices-card, .kinks-card {
-    grid-column: span 6;
+  .bento-tags-photo-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .tags-container, .secondary-photo-container {
+    grid-column: span 12;
   }
   
   .secondary-photo-card {
-    grid-column: span 12;
     min-height: 250px;
-  }
-  
-  .bento-cards-layout {
-    grid-template-columns: repeat(6, 1fr);
+    margin-top: 0.3125rem; /* 5px */
   }
 }
 
