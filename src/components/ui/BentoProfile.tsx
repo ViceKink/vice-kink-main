@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { UserProfile } from '@/types/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -5,6 +6,11 @@ import { MapPin } from 'lucide-react';
 import ProfileDetailsCard from '@/components/profile/ProfileDetailsCard';
 import ProfileAudio from '@/components/profile/ProfileAudio';
 import ProfileTag from '@/components/ui/ProfileTag';
+import ProfileBio from '@/components/profile/ProfileBio';
+import ProfileQuote from '@/components/profile/ProfileQuote';
+import ProfileFlirtingStyle from '@/components/profile/ProfileFlirtingStyle';
+import ProfilePassion from '@/components/profile/ProfilePassion';
+import ProfileSecondaryPhotos from '@/components/profile/ProfileSecondaryPhotos';
 import '../ui/bento-grid.css';
 
 interface BentoProfileProps {
@@ -21,12 +27,18 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
   
   const hasPhotos = hasContent(profile.photos);
   const hasSecondPhoto = profile.photos && profile.photos.length > 1;
+  const hasThirdPhoto = profile.photos && profile.photos.length > 2;
+  const hasFourthPhoto = profile.photos && profile.photos.length > 3;
+  const hasFifthPhoto = profile.photos && profile.photos.length > 4;
+  const hasSixthPhoto = profile.photos && profile.photos.length > 5;
   const hasVices = hasContent(profile.vices);
   const hasKinks = hasContent(profile.kinks);
   const hasPassions = hasContent(profile.passions);
   const hasFlirtingStyle = !!profile.flirtingStyle;
   const hasBio = !!profile.bio;
+  const hasQuote = !!profile.quote;
   const hasAudio = !!profile.audio;
+  const hasVicesOrKinks = hasVices || hasKinks;
   const hasAboutDetails = !!(
     profile.about?.height || 
     profile.about?.zodiac || 
@@ -38,6 +50,9 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
     profile.about?.lifestyle?.drinking ||
     profile.about?.status
   );
+  
+  // Row tracking for responsive layout
+  let currentRow = 1;
   
   return (
     <div className="w-full mx-auto">
@@ -78,12 +93,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           </div>
 
           <div className="quote-card">
-            <h3 className="text-sm font-semibold mb-1">Favorite Quote</h3>
-            <div className="quote-content">
-              <p className={`${isMobile ? 'text-xs' : 'text-sm'} italic`}>
-                {profile.quote || "https://www.linkedin.com/in/tejasv-kumar/"}
-              </p>
-            </div>
+            <ProfileQuote quote={profile.quote || "https://www.linkedin.com/in/tejasv-kumar/"} />
           </div>
         </div>
       </div>
@@ -103,7 +113,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           />
         )}
 
-        {(hasVices || hasKinks || hasSecondPhoto) && (
+        {(hasVicesOrKinks || hasSecondPhoto) && (
           <div className="bento-tags-photo-container">
             {(hasVices || hasKinks) && (
               <div className="tags-container">
@@ -111,7 +121,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
                   <div className="vices-card bento-card p-4">
                     <h3 className="text-base font-semibold mb-2">Vices</h3>
                     <div className="flex flex-wrap gap-2">
-                      {profile.vices.map((vice, index) => (
+                      {profile.vices?.map((vice, index) => (
                         <ProfileTag key={index} label={vice} type="vice" />
                       ))}
                     </div>
@@ -122,7 +132,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
                   <div className="kinks-card bento-card p-4">
                     <h3 className="text-base font-semibold mb-2">Kinks</h3>
                     <div className="flex flex-wrap gap-2">
-                      {profile.kinks.map((kink, index) => (
+                      {profile.kinks?.map((kink, index) => (
                         <ProfileTag key={index} label={kink} type="kink" />
                       ))}
                     </div>
@@ -155,25 +165,80 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             </div>
           </div>
         )}
-
-        {hasPassions && (
-          <div className="bg-vice-orange p-4 text-white rounded-2xl col-span-6 mt-[0.3125rem]">
-            <div className="flex flex-col h-full justify-center">
-              <p className="text-sm">
-                I am passionate about: <span className="font-medium">{profile.passions[0]}</span>
-              </p>
-            </div>
+        
+        {/* Third photo after flirting style */}
+        {hasThirdPhoto && (
+          <div className="bg-black p-0 rounded-2xl col-span-12 mt-[0.3125rem] overflow-hidden h-[300px]">
+            <img
+              src={profile.photos[2]}
+              alt={`${profile.name} third photo`}
+              className="w-full h-full object-cover"
+            />
           </div>
         )}
-
-        <div className="bg-vice-orange p-4 text-white rounded-2xl col-span-6 mt-[0.3125rem]">
-          <div className="flex flex-col h-full justify-center">
-            <h3 className="text-sm font-semibold mb-1">Favorite Quote</h3>
-            <p className="text-sm italic">
-              {profile.quote || "https://www.linkedin.com/in/tejasv-kumar/"}
+        
+        {/* Bio section (My Story) */}
+        {hasBio && (
+          <div className="bg-vice-red p-4 rounded-2xl col-span-12 mt-[0.3125rem] text-white">
+            <h3 className="text-xl font-semibold mb-2">My story</h3>
+            <p className="text-base">
+              {profile.bio}
             </p>
           </div>
-        </div>
+        )}
+        
+        {/* Fourth photo with passion (50/50 split) */}
+        {(hasFourthPhoto || hasPassions) && (
+          <div className="flex flex-row gap-[0.3125rem] w-full col-span-12 mt-[0.3125rem]">
+            {hasFourthPhoto && (
+              <div className="w-1/2 bg-black rounded-2xl overflow-hidden h-[300px]">
+                <img
+                  src={profile.photos[3]}
+                  alt={`${profile.name} fourth photo`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            
+            {hasPassions && (
+              <div className="w-1/2 bg-vice-dark-purple p-4 rounded-2xl flex flex-col justify-center text-white">
+                <p className="text-sm mb-2">I am passionate about:</p>
+                <div className="flex flex-wrap gap-2">
+                  {profile.passions?.slice(0, 1).map((passion, index) => (
+                    <div key={index} className="bg-white text-vice-dark-purple px-3 py-1 rounded-full text-sm inline-block">
+                      {passion}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Fifth and sixth photos stacked */}
+        {(hasFifthPhoto || hasSixthPhoto) && (
+          <div className="flex flex-col gap-[0.3125rem] col-span-12 mt-[0.3125rem]">
+            {hasFifthPhoto && (
+              <div className="bg-black p-0 rounded-2xl overflow-hidden h-[300px]">
+                <img
+                  src={profile.photos[4]}
+                  alt={`${profile.name} fifth photo`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            
+            {hasSixthPhoto && (
+              <div className="bg-black p-0 rounded-2xl overflow-hidden h-[300px] mt-[0.3125rem]">
+                <img
+                  src={profile.photos[5]}
+                  alt={`${profile.name} sixth photo`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

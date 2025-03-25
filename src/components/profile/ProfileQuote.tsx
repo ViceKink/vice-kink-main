@@ -12,10 +12,10 @@ const ProfileQuote = ({ quote }: ProfileQuoteProps) => {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex items-start space-x-2">
-        <Quote className="text-vice-purple h-5 w-5 flex-shrink-0" />
-        <div className="flex-1">
+        <Quote className="text-white h-5 w-5 flex-shrink-0" />
+        <div className="flex-1 overflow-hidden">
           <div className="text-sm font-medium mb-1">Favorite Quote</div>
-          <p className="text-foreground/80 italic text-sm break-words overflow-auto">{quote}</p>
+          <p className="text-white/90 italic text-sm break-words overflow-auto">{quote}</p>
         </div>
       </div>
     </div>

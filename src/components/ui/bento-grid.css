@@ -20,6 +20,8 @@
 /* Left photo container */
 .main-photo-container {
   width: 100%;
+  height: 100%;
+  display: flex;
   overflow: hidden;
 }
 
@@ -30,7 +32,8 @@
   border-radius: 0.75rem;
   overflow: hidden;
   position: relative;
-  display: block;
+  display: flex;
+  flex: 1;
 }
 
 .main-photo img {
@@ -38,6 +41,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  flex: 1;
 }
 
 /* Right side container for user info and bio */
@@ -64,6 +68,8 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  height: auto;
 }
 
 /* Quote content container to ensure proper display */
@@ -72,6 +78,8 @@
   word-wrap: break-word;
   word-break: break-word;
   hyphens: auto;
+  flex: 1;
+  overflow: auto;
 }
 
 .quote-content p {
@@ -151,6 +159,31 @@
   height: 100%; /* Make it full height */
   border-radius: 0.75rem;
   overflow: hidden;
+  display: flex;
+}
+
+.secondary-photo-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Colors for different sections */
+.vice-red {
+  background-color: #B30000;
+}
+
+.vice-dark-purple {
+  background-color: #6E59A5;
+}
+
+.vice-orange {
+  background-color: #f26646;
+}
+
+.vice-purple {
+  background-color: #9b87f5;
 }
 
 /* Mobile layout adjustments */
