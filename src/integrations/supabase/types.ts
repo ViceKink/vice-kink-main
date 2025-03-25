@@ -89,6 +89,35 @@ export type Database = {
           },
         ]
       }
+      profile_languages: {
+        Row: {
+          created_at: string | null
+          id: string
+          language: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          language: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          language?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_languages_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_passions: {
         Row: {
           created_at: string | null
@@ -234,6 +263,7 @@ export type Database = {
           quote: string | null
           relationship_status: string | null
           religion: string | null
+          sexuality: string | null
           verified: boolean | null
           zodiac: string | null
         }
@@ -252,6 +282,7 @@ export type Database = {
           quote?: string | null
           relationship_status?: string | null
           religion?: string | null
+          sexuality?: string | null
           verified?: boolean | null
           zodiac?: string | null
         }
@@ -270,6 +301,7 @@ export type Database = {
           quote?: string | null
           relationship_status?: string | null
           religion?: string | null
+          sexuality?: string | null
           verified?: boolean | null
           zodiac?: string | null
         }

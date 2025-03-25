@@ -141,12 +141,14 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
     
     // Fetch languages with error handling
     try {
-      const { data: languagesData } = await supabase
+      const { data: languagesData, error: languagesError } = await supabase
         .from('profile_languages')
         .select('language')
         .eq('profile_id', userId);
-        
-      if (languagesData && languagesData.length > 0) {
+      
+      if (languagesError) {
+        console.error('Error fetching languages:', languagesError);
+      } else if (languagesData && languagesData.length > 0) {
         if (!userProfile.about) userProfile.about = {};
         userProfile.about.languages = languagesData.map(item => item.language);
       }

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { UserProfile, FlirtingStyle } from '@/types/auth';
 import { Label } from '@/components/ui/label';
@@ -7,6 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { XCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface EditProfileAboutProps {
   userData: Partial<UserProfile>;
@@ -196,6 +196,16 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
               ))}
             </SelectContent>
           </Select>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="occupation">Occupation</Label>
+          <Input
+            id="occupation"
+            value={userData.about?.occupation || ''}
+            onChange={(e) => handleAboutFieldChange('occupation', e.target.value)}
+            placeholder="What do you do for work?"
+          />
         </div>
         
         <div className="space-y-2">

@@ -20,6 +20,8 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
         return <Church className="w-4 h-4" />;
       case 'language':
         return <Languages className="w-4 h-4" />;
+      case 'sexuality':
+        return <Heart className="w-4 h-4" />;
       case 'smoking':
         return <Cigarette className="w-4 h-4" />;
       case 'drinking':
@@ -69,7 +71,7 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
         
         {profile.about?.sexuality && (
           <div className="details-item">
-            <span className="details-icon">{getIcon('heart')}</span>
+            <span className="details-icon">{getIcon('sexuality')}</span>
             <span className="text-sm">{profile.about.sexuality}</span>
           </div>
         )}
@@ -82,7 +84,7 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
         )}
       </div>
       
-      {/* Row 2: Flirting Style */}
+      {/* Row A2: Flirting Style */}
       {profile.flirtingStyle && (
         <div className="details-row">
           <div className="details-item">
