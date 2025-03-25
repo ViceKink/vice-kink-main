@@ -98,7 +98,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           <div className="bento-section quote-card rounded-2xl">
             <h3 className="text-sm font-semibold mb-1">Favorite Quote</h3>
             <p className={`${isMobile ? 'text-xs' : 'text-sm'} italic`}>
-              {profile.quote || "I'm such a Virgo, even my horoscope tells me to stop worrying about being a Virgo"}
+              {profile.quote || "https://www.linkedin.com/in/tejasv-kumar/"}
             </p>
           </div>
         </div>
@@ -191,7 +191,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           <div className="flex flex-col h-full justify-center">
             <h3 className="text-sm font-semibold mb-1">Favorite Quote</h3>
             <p className="text-sm italic">
-              {profile.quote || "I'm such a Virgo, even my horoscope tells me to stop worrying about being a Virgo"}
+              {profile.quote || "https://www.linkedin.com/in/tejasv-kumar/"}
             </p>
           </div>
         </div>

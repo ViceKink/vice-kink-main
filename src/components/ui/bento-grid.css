@@ -65,27 +65,27 @@
   min-height: 150px;
 }
 
-/* Mobile styles */
+/* Mobile styles - Now maintaining the same layout as desktop */
 @media (max-width: 767px) {
   .bento-grid {
     grid-template-columns: repeat(6, 1fr);
   }
   
+  /* Keep the same horizontal layout on mobile */
   .bento-main-container {
-    flex-direction: column;
+    flex-direction: row;
   }
   
   .main-photo-container {
-    width: 100%;
+    width: 60%;
   }
   
   .user-details-container {
-    width: 100%;
-    margin-top: 0.3125rem; /* 5px */
+    width: 40%;
   }
   
   .main-photo {
-    min-height: 300px;
+    min-height: 250px;
   }
   
   .user-info, .quote-card {
@@ -108,7 +108,7 @@
   }
   
   .main-photo {
-    min-height: 250px;
+    min-height: 200px;
   }
 }
 
@@ -187,9 +187,9 @@
   overflow: hidden;
 }
 
-/* Mobile layout adjustments */
+/* Mobile layout adjustments - maintain the same layout */
 @media (max-width: 767px) {
-  /* Keep the side-by-side layout on all mobile views */
+  /* Keep the side-by-side layout on mobile */
   .bento-tags-photo-container {
     flex-direction: row; /* Keep side by side */
   }
