@@ -15,8 +15,7 @@
   width: 100%;
   gap: 0.3125rem; /* 5px */
   margin-bottom: 0.3125rem; /* 5px */
-  max-height: min(40vh, 350px); /* Significantly reduced height for desktop view */
-  min-height: 250px; /* Ensure minimum height */
+  max-height: 400px; /* Reduced height for desktop */
 }
 
 /* Left photo container */
@@ -52,7 +51,6 @@
   grid-template-rows: auto 1fr;
   gap: 0.3125rem; /* 5px */
   height: 100%;
-  max-height: 100%; /* Ensure it doesn't exceed container */
 }
 
 /* User info card */
@@ -60,7 +58,6 @@
   background: white;
   padding: 1rem;
   border-radius: 0.75rem;
-  overflow: hidden;
 }
 
 /* Quote card with scrolling */
@@ -73,7 +70,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  max-height: 150px; /* Set maximum height */
+  height: auto;
 }
 
 /* Quote content container to ensure proper display */
@@ -88,25 +85,6 @@
 
 .quote-content p {
   margin: 0;
-}
-
-/* Square photos with 1:1 aspect ratio */
-.square-photo-container {
-  aspect-ratio: 1/1;
-  width: 100%;
-}
-
-/* Make all photo containers have equal aspect ratio */
-.bg-black.p-0.rounded-2xl.col-span-12.mt-\[0\.3125rem\].overflow-hidden.square-photo-container,
-.bg-black.p-0.rounded-2xl.col-span-12.mt-\[0\.3125rem\].overflow-hidden {
-  aspect-ratio: 1/1;
-  width: 100%;
-}
-
-/* CSS for the fourth photo */
-.w-1\/2.bg-black.rounded-2xl.overflow-hidden.h-\[300px\] {
-  height: auto !important;
-  aspect-ratio: 1/1;
 }
 
 /* Generic bento section styles */
@@ -141,6 +119,7 @@
   gap: 0.3125rem; /* 5px */
   margin-top: 0.3125rem; /* 5px */
   min-height: 300px; /* Ensure container has enough height */
+  max-height: 400px; /* Reduced height for desktop */
 }
 
 /* Tags container for vices and kinks */
@@ -148,12 +127,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.3125rem; /* 5px */
-  width: 30%; /* 30% for desktop */
+  width: 30%; /* Changed from 50% to 30% for desktop */
 }
 
 /* Secondary photo container */
 .secondary-photo-container {
-  width: 70%; /* 70% for desktop */
+  width: 70%; /* Changed from 50% to 70% for desktop */
   height: 100%; /* Make it full height */
 }
 
@@ -192,7 +171,6 @@
   border-radius: 0.75rem;
   overflow: hidden;
   display: flex;
-  aspect-ratio: 1/1; /* Ensure second photo is square */
 }
 
 .secondary-photo-card img {
@@ -219,30 +197,30 @@
   background-color: #9b87f5;
 }
 
+/* Third, fifth and sixth photos - increased height */
+.bg-black.p-0.rounded-2xl.col-span-12.mt-\[0\.3125rem\].overflow-hidden.h-\[400px\] {
+  height: 500px; /* Increased from 400px to 500px */
+}
+
 /* Mobile layout adjustments */
 @media (max-width: 767px) {
   .bento-grid {
     grid-template-columns: repeat(6, 1fr);
   }
   
-  /* Adjust for mobile */
+  /* Keep the 60/40 split for mobile too */
   .bento-main-container {
     grid-template-columns: 60% 40%;
-    max-height: none; /* No max height constraint on mobile */
-    min-height: 200px;
+    max-height: none; /* Remove max-height limitation for mobile */
   }
   
   .bento-tags-photo-container {
     flex-direction: row; /* Keep side by side */
+    max-height: none; /* Remove max-height limitation for mobile */
   }
   
   .tags-container, .secondary-photo-container {
     width: 50%; /* Keep 50/50 split for mobile */
-  }
-  
-  /* Quote card on mobile */
-  .quote-card {
-    max-height: none;
   }
 }
 

@@ -219,9 +219,9 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
         
         {reachedMaxLanguages && (
           <Alert variant="default" className="mb-3">
-            <AlertTitle>Language selection limited</AlertTitle>
+            <AlertCircle className="h-4 w-4 mr-2" />
             <AlertDescription>
-              You can select a maximum of 5 languages.
+              You've reached the maximum of {MAX_LANGUAGES} languages
             </AlertDescription>
           </Alert>
         )}

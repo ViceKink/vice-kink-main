@@ -163,7 +163,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         )}
         
         {hasThirdPhoto && (
-          <div className="bg-black p-0 rounded-2xl col-span-12 mt-[0.3125rem] overflow-hidden square-photo-container">
+          <div className="bg-black p-0 rounded-2xl col-span-12 mt-[0.3125rem] overflow-hidden h-[500px]">
             <img
               src={profile.photos[2]}
               alt={`${profile.name} third photo`}
@@ -184,7 +184,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         {(hasFourthPhoto || hasPassions) && (
           <div className="flex flex-row gap-[0.3125rem] w-full col-span-12 mt-[0.3125rem]">
             {hasFourthPhoto && (
-              <div className="w-1/2 bg-black rounded-2xl overflow-hidden square-photo-container">
+              <div className="w-1/2 bg-black rounded-2xl overflow-hidden h-[300px]">
                 <img
                   src={profile.photos[3]}
                   alt={`${profile.name} fourth photo`}
@@ -194,7 +194,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             )}
             
             {hasPassions && profile.passions && profile.passions.length > 0 && (
-              <ProfilePassion passion={profile.passions} />
+              <ProfilePassion passions={profile.passions} />
             )}
           </div>
         )}
@@ -202,7 +202,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         {(hasFifthPhoto || hasSixthPhoto) && (
           <div className="flex flex-col gap-[0.3125rem] col-span-12 mt-[0.3125rem]">
             {hasFifthPhoto && (
-              <div className="bg-black p-0 rounded-2xl overflow-hidden square-photo-container">
+              <div className="bg-black p-0 rounded-2xl overflow-hidden h-[500px]">
                 <img
                   src={profile.photos[4]}
                   alt={`${profile.name} fifth photo`}
@@ -212,7 +212,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             )}
             
             {hasSixthPhoto && (
-              <div className="bg-black p-0 rounded-2xl overflow-hidden square-photo-container mt-[0.3125rem]">
+              <div className="bg-black p-0 rounded-2xl overflow-hidden h-[500px] mt-[0.3125rem]">
                 <img
                   src={profile.photos[5]}
                   alt={`${profile.name} sixth photo`}

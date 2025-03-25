@@ -22,7 +22,7 @@ const ProfileHeader = ({ profile, isCurrentUser, hasPhotos, currentRow }: Profil
         <ProfileSection 
           gridSpan={{
             cols: isMobile ? "col-span-6" : "col-span-7",
-            rows: "row-span-4",
+            rows: isMobile ? "row-span-4" : "row-span-3", // Reduced from row-span-4 to row-span-3 for desktop
             colsStart: "col-start-1",
             rowsStart: `row-start-${currentRow.toString()}`
           }}
