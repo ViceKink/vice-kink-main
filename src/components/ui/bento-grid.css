@@ -15,7 +15,8 @@
   width: 100%;
   gap: 0.3125rem; /* 5px */
   margin-bottom: 0.3125rem; /* 5px */
-  max-height: min(50vh, 450px); /* Reduced height for desktop view */
+  max-height: min(40vh, 350px); /* Significantly reduced height for desktop view */
+  min-height: 250px; /* Ensure minimum height */
 }
 
 /* Left photo container */
@@ -51,6 +52,7 @@
   grid-template-rows: auto 1fr;
   gap: 0.3125rem; /* 5px */
   height: 100%;
+  max-height: 100%; /* Ensure it doesn't exceed container */
 }
 
 /* User info card */
@@ -58,6 +60,7 @@
   background: white;
   padding: 1rem;
   border-radius: 0.75rem;
+  overflow: hidden;
 }
 
 /* Quote card with scrolling */
@@ -70,7 +73,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  height: auto;
+  max-height: 150px; /* Set maximum height */
 }
 
 /* Quote content container to ensure proper display */
@@ -85,6 +88,25 @@
 
 .quote-content p {
   margin: 0;
+}
+
+/* Square photos with 1:1 aspect ratio */
+.square-photo-container {
+  aspect-ratio: 1/1;
+  width: 100%;
+}
+
+/* Make all photo containers have equal aspect ratio */
+.bg-black.p-0.rounded-2xl.col-span-12.mt-\[0\.3125rem\].overflow-hidden.square-photo-container,
+.bg-black.p-0.rounded-2xl.col-span-12.mt-\[0\.3125rem\].overflow-hidden {
+  aspect-ratio: 1/1;
+  width: 100%;
+}
+
+/* CSS for the fourth photo */
+.w-1\/2.bg-black.rounded-2xl.overflow-hidden.h-\[300px\] {
+  height: auto !important;
+  aspect-ratio: 1/1;
 }
 
 /* Generic bento section styles */
@@ -170,6 +192,7 @@
   border-radius: 0.75rem;
   overflow: hidden;
   display: flex;
+  aspect-ratio: 1/1; /* Ensure second photo is square */
 }
 
 .secondary-photo-card img {
@@ -196,22 +219,17 @@
   background-color: #9b87f5;
 }
 
-/* Make images 3, 5, 6 square with responsive sizing */
-.square-photo-container {
-  aspect-ratio: 1/1;
-  width: 100%;
-}
-
 /* Mobile layout adjustments */
 @media (max-width: 767px) {
   .bento-grid {
     grid-template-columns: repeat(6, 1fr);
   }
   
-  /* Keep the 60/40 split for mobile but no max height constraint */
+  /* Adjust for mobile */
   .bento-main-container {
     grid-template-columns: 60% 40%;
-    max-height: none;
+    max-height: none; /* No max height constraint on mobile */
+    min-height: 200px;
   }
   
   .bento-tags-photo-container {
@@ -220,6 +238,11 @@
   
   .tags-container, .secondary-photo-container {
     width: 50%; /* Keep 50/50 split for mobile */
+  }
+  
+  /* Quote card on mobile */
+  .quote-card {
+    max-height: none;
   }
 }
 

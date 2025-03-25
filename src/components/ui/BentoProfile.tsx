@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { UserProfile } from '@/types/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -163,7 +162,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           </div>
         )}
         
-        {/* Third photo after flirting style - with square aspect ratio */}
         {hasThirdPhoto && (
           <div className="bg-black p-0 rounded-2xl col-span-12 mt-[0.3125rem] overflow-hidden square-photo-container">
             <img
@@ -174,7 +172,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           </div>
         )}
         
-        {/* Bio section (My Story) */}
         {hasBio && (
           <div className="bg-vice-red p-4 rounded-2xl col-span-12 mt-[0.3125rem] text-white">
             <h3 className="text-xl font-semibold mb-2">My story</h3>
@@ -184,11 +181,10 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           </div>
         )}
         
-        {/* Fourth photo with passion (50/50 split) */}
         {(hasFourthPhoto || hasPassions) && (
           <div className="flex flex-row gap-[0.3125rem] w-full col-span-12 mt-[0.3125rem]">
             {hasFourthPhoto && (
-              <div className="w-1/2 bg-black rounded-2xl overflow-hidden h-[300px]">
+              <div className="w-1/2 bg-black rounded-2xl overflow-hidden square-photo-container">
                 <img
                   src={profile.photos[3]}
                   alt={`${profile.name} fourth photo`}
@@ -203,7 +199,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           </div>
         )}
         
-        {/* Fifth and sixth photos stacked - with square aspect ratio */}
         {(hasFifthPhoto || hasSixthPhoto) && (
           <div className="flex flex-col gap-[0.3125rem] col-span-12 mt-[0.3125rem]">
             {hasFifthPhoto && (
