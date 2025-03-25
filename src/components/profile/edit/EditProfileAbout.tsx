@@ -1,4 +1,3 @@
-
 // This is a new file created based on your requirements
 import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
@@ -11,7 +10,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
 interface AboutFormData {
@@ -219,7 +218,7 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
         </p>
         
         {reachedMaxLanguages && (
-          <Alert variant="warning" className="mb-3">
+          <Alert variant="default" className="mb-3">
             <AlertCircle className="h-4 w-4 mr-2" />
             <AlertDescription>
               You've reached the maximum of {MAX_LANGUAGES} languages

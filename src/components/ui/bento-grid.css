@@ -15,6 +15,7 @@
   width: 100%;
   gap: 0.3125rem; /* 5px */
   margin-bottom: 0.3125rem; /* 5px */
+  max-height: 400px; /* Reduced height for desktop */
 }
 
 /* Left photo container */
@@ -118,6 +119,7 @@
   gap: 0.3125rem; /* 5px */
   margin-top: 0.3125rem; /* 5px */
   min-height: 300px; /* Ensure container has enough height */
+  max-height: 400px; /* Reduced height for desktop */
 }
 
 /* Tags container for vices and kinks */
@@ -209,10 +211,12 @@
   /* Keep the 60/40 split for mobile too */
   .bento-main-container {
     grid-template-columns: 60% 40%;
+    max-height: none; /* Remove max-height limitation for mobile */
   }
   
   .bento-tags-photo-container {
     flex-direction: row; /* Keep side by side */
+    max-height: none; /* Remove max-height limitation for mobile */
   }
   
   .tags-container, .secondary-photo-container {

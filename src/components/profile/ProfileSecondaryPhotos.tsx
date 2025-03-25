@@ -17,7 +17,7 @@ const ProfileSecondaryPhotos = ({ photos, name, currentRow, hasVicesOrKinks }: P
     <ProfileSection
       gridSpan={{
         cols: isMobile ? "col-span-6" : hasVicesOrKinks ? "col-span-6" : "col-span-12",
-        rows: "row-span-3",
+        rows: isMobile ? "row-span-3" : "row-span-2", // Reduced from row-span-3 to row-span-2 for desktop
         colsStart: isMobile ? "col-start-1" : hasVicesOrKinks ? "col-start-7" : "col-start-1",
         rowsStart: isMobile ? `row-start-${currentRow.toString()}` : "row-start-5"
       }}
