@@ -128,25 +128,28 @@
   padding: 1rem;
 }
 
-/* Layout for the tags and secondary photo section in desktop */
+/* Layout for the tags and secondary photo section in desktop - UPDATED to side-by-side */
 .bento-tags-photo-container {
   display: grid;
   grid-template-columns: 6fr 6fr;
   grid-column: span 12;
   gap: 0.3125rem; /* 5px */
   margin-top: 0.3125rem; /* 5px */
+  min-height: 300px; /* Ensure container has enough height */
 }
 
-/* Left side container for vices and kinks */
+/* Left side container for vices and kinks - UPDATED for stacked layout */
 .tags-container {
   display: flex;
   flex-direction: column;
   gap: 0.3125rem; /* 5px */
+  grid-column: span 6;
 }
 
 /* Right side for secondary photo */
 .secondary-photo-container {
   grid-column: span 6;
+  height: 100%; /* Make it full height */
 }
 
 /* Bento card styles for vices and kinks */
@@ -157,26 +160,29 @@
   transition: transform 0.2s ease-in-out;
 }
 
-/* Secondary photo container */
+/* Secondary photo container - UPDATED to make it full height */
 .secondary-photo {
   overflow: hidden;
   height: 100%;
   border-radius: 0.75rem;
+  display: flex; /* Added to ensure image fills the container */
 }
 
 /* Vices and Kinks specific styles */
 .vices-card {
   background: white;
-  margin-bottom: 0.3125rem; /* 5px */
+  flex: 1; /* Take up half the space */
 }
 
 .kinks-card {
   background: white;
+  flex: 1; /* Take up half the space */
 }
 
 .secondary-photo-card {
   background: black;
-  min-height: 300px;
+  height: 100%; /* Make it full height */
+  display: flex; /* Added to ensure image fills the container */
 }
 
 /* Mobile layout adjustments */
