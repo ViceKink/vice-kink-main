@@ -39,7 +39,7 @@ const Navbar = () => {
           scrolled ? 'bg-background/80 backdrop-blur-lg shadow-sm' : 'bg-transparent'
         }`}
       >
-        <div className="container mx-auto px-4 md:px-6">
+        <div className="container mx-auto px-2 md:px-4">
           <div className="flex h-16 items-center justify-between">
             <NavLink to="/" className="text-xl font-semibold flex items-center">
               <span className="text-vice-purple mr-1 transition-all duration-300 hover:text-vice-dark-purple">Vice</span>

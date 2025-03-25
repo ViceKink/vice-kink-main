@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Post {
   id: string;
@@ -105,80 +106,75 @@ const Home = () => {
   
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section (reduced size for logged-in users) */}
-      <section 
-        className={cn(
-          "relative flex items-center justify-center overflow-hidden",
-          isAuthenticated ? "h-40" : "h-screen"
-        )}
-      >
-        {/* Background gradient */}
-        <div 
-          className="absolute inset-0 bg-gradient-to-br from-vice-purple/30 to-vice-dark-purple/30 dark:from-vice-purple/10 dark:to-vice-black"
-          style={{
-            transform: `translateY(${scrollY * 0.2}px)`,
-          }}
-        ></div>
-        
-        <div 
-          className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1603697257125-e4989f4ece13?q=80&w=1964&auto=format&fit=crop')] bg-cover bg-center opacity-20 dark:opacity-10"
-          style={{
-            transform: `scale(${1 + scrollY * 0.0005})`,
-          }}
-        ></div>
-        
-        <div className="container relative z-10 px-4 md:px-6 text-center">
+      {/* Hero Section (only for non-authenticated users) */}
+      {!isAuthenticated && (
+        <section 
+          className="relative h-screen flex items-center justify-center overflow-hidden"
+        >
+          {/* Background gradient */}
           <div 
-            className="animate-fade-in"
+            className="absolute inset-0 bg-gradient-to-br from-vice-purple/30 to-vice-dark-purple/30 dark:from-vice-purple/10 dark:to-vice-black"
             style={{
-              animationDelay: '0.3s',
-              opacity: 0,
-              animationFillMode: 'forwards',
+              transform: `translateY(${scrollY * 0.2}px)`,
             }}
-          >
-            <h1 className="text-3xl md:text-5xl font-bold mb-2 md:mb-4">
-              <span className="text-vice-purple">Vice</span> Kink
-            </h1>
-            
-            {!isAuthenticated && (
-              <>
-                <p className="text-lg md:text-xl max-w-2xl mx-auto mb-8 text-foreground/80">
-                  Find someone who gets your kinks, or spice up your marriage through creative erotic expression
-                </p>
+          ></div>
+          
+          <div 
+            className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1603697257125-e4989f4ece13?q=80&w=1964&auto=format&fit=crop')] bg-cover bg-center opacity-20 dark:opacity-10"
+            style={{
+              transform: `scale(${1 + scrollY * 0.0005})`,
+            }}
+          ></div>
+          
+          <div className="container relative z-10 px-4 md:px-6 text-center">
+            <div 
+              className="animate-fade-in"
+              style={{
+                animationDelay: '0.3s',
+                opacity: 0,
+                animationFillMode: 'forwards',
+              }}
+            >
+              <h1 className="text-3xl md:text-5xl font-bold mb-2 md:mb-4">
+                <span className="text-vice-purple">Vice</span> Kink
+              </h1>
+              
+              <p className="text-lg md:text-xl max-w-2xl mx-auto mb-8 text-foreground/80">
+                Find someone who gets your kinks, or spice up your marriage through creative erotic expression
+              </p>
+              
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <NavLink 
+                  to="/discover" 
+                  className={cn(
+                    "px-6 py-3 rounded-lg bg-vice-purple text-white transition-all duration-300",
+                    "hover:bg-vice-dark-purple shadow-md hover:shadow-lg transform hover:-translate-y-1",
+                    "focus:outline-none focus:ring-2 focus:ring-vice-purple focus:ring-opacity-50"
+                  )}
+                >
+                  Start Discovering
+                </NavLink>
                 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <NavLink 
-                    to="/discover" 
-                    className={cn(
-                      "px-6 py-3 rounded-lg bg-vice-purple text-white transition-all duration-300",
-                      "hover:bg-vice-dark-purple shadow-md hover:shadow-lg transform hover:-translate-y-1",
-                      "focus:outline-none focus:ring-2 focus:ring-vice-purple focus:ring-opacity-50"
-                    )}
-                  >
-                    Start Discovering
-                  </NavLink>
-                  
-                  <NavLink 
-                    to="/auth" 
-                    className={cn(
-                      "px-6 py-3 rounded-lg bg-transparent border border-vice-purple/50 text-foreground",
-                      "transition-all duration-300 hover:bg-vice-purple/10 hover:border-vice-purple",
-                      "focus:outline-none focus:ring-2 focus:ring-vice-purple focus:ring-opacity-50"
-                    )}
-                  >
-                    Sign In
-                  </NavLink>
-                </div>
-              </>
-            )}
+                <NavLink 
+                  to="/auth" 
+                  className={cn(
+                    "px-6 py-3 rounded-lg bg-transparent border border-vice-purple/50 text-foreground",
+                    "transition-all duration-300 hover:bg-vice-purple/10 hover:border-vice-purple",
+                    "focus:outline-none focus:ring-2 focus:ring-vice-purple focus:ring-opacity-50"
+                  )}
+                >
+                  Sign In
+                </NavLink>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
       
       {/* Social Feed Section */}
       {isAuthenticated && (
-        <section className="py-10 px-4 md:px-6 bg-background">
-          <div className="container mx-auto max-w-3xl">
+        <section className="py-6 px-2 md:px-4 bg-background mt-16 md:mt-16">
+          <div className="container mx-auto max-w-2xl">
             {/* Create Post Box */}
             <div className="bg-card rounded-xl shadow-md mb-6 overflow-hidden border border-border">
               {!isCreatingPost ? (
@@ -350,6 +346,7 @@ const PostCard = ({ post }: PostCardProps) => {
   const { user } = useAuth();
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
+  const isMobile = useIsMobile();
   
   const toggleLike = () => {
     setLiked(!liked);
@@ -458,7 +455,7 @@ const PostCard = ({ post }: PostCardProps) => {
           onClick={toggleLike}
         >
           <Heart className={cn("h-5 w-5", liked && "fill-current")} />
-          Like
+          {!isMobile && "Like"}
         </Button>
         
         <Button 
@@ -466,7 +463,7 @@ const PostCard = ({ post }: PostCardProps) => {
           className="flex-1 flex items-center justify-center gap-2"
         >
           <MessageSquare className="h-5 w-5" />
-          Comment
+          {!isMobile && "Comment"}
         </Button>
         
         <Button 
@@ -475,7 +472,7 @@ const PostCard = ({ post }: PostCardProps) => {
           onClick={toggleSave}
         >
           <Bookmark className={cn("h-5 w-5", saved && "fill-current")} />
-          Save
+          {!isMobile && "Save"}
         </Button>
       </div>
       
