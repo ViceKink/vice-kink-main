@@ -90,21 +90,17 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
                 </div>
               )}
               
-              {profile.about?.occupation && (
-                <div className="mt-3">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-secondary text-secondary-foreground">
-                    {profile.about?.occupation}
-                  </span>
-                </div>
-              )}
+              {/* Removed occupation from here as it's shown in the details card */}
             </div>
           </div>
 
-          {hasBio && (
-            <div className="bento-section bio rounded-2xl">
-              <p className={`${isMobile ? 'text-xs' : 'text-sm'}`}>{profile.bio}</p>
-            </div>
-          )}
+          {/* Quote Card - replaced bio with quote */}
+          <div className="bento-section quote-card rounded-2xl">
+            <h3 className="text-sm font-semibold mb-1">Favorite Quote</h3>
+            <p className={`${isMobile ? 'text-xs' : 'text-sm'} italic`}>
+              {profile.quote || "I'm such a Virgo, even my horoscope tells me to stop worrying about being a Virgo"}
+            </p>
+          </div>
         </div>
       </div>
 

@@ -31,7 +31,7 @@
 }
 
 /* Make the user info and bio take 50% height each on desktop */
-.user-info, .bio {
+.user-info, .quote-card {
   flex: 1;
 }
 
@@ -58,7 +58,7 @@
   padding: 1rem;
 }
 
-.bio {
+.quote-card {
   background: #f26646;
   color: white;
   padding: 1rem;
@@ -88,7 +88,7 @@
     min-height: 300px;
   }
   
-  .user-info, .bio {
+  .user-info, .quote-card {
     padding: 0.75rem;
   }
   
@@ -96,7 +96,7 @@
     min-height: 80px;
   }
   
-  .bio {
+  .quote-card {
     min-height: 120px;
   }
 }
@@ -129,7 +129,7 @@
   padding: 1rem;
 }
 
-/* NEW CONTAINER FOR TAGS AND PHOTO - using flexbox instead of grid */
+/* CONTAINER FOR TAGS AND PHOTO - using flexbox instead of grid */
 .bento-tags-photo-container {
   display: flex;
   flex-direction: row;
