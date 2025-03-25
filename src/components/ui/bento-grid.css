@@ -8,83 +8,62 @@
   padding: 0 10px;
 }
 
-/* Main container with 60/40 split */
+/* Main container with 60/40 split - using grid instead of flex */
 .bento-main-container {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: 60% 40%;
   width: 100%;
   gap: 0.3125rem; /* 5px */
   margin-bottom: 0.3125rem; /* 5px */
-  min-height: 300px; /* Set minimum height for larger screens */
-  height: auto; /* Allow container to adjust height based on content */
 }
 
-/* Left photo container - 60% width on desktop */
+/* Left photo container */
 .main-photo-container {
-  width: 60%;
-  height: 100%; /* Make sure this takes full height of parent */
-  display: flex; /* Use flexbox to ensure child elements fill height */
-}
-
-/* Right side container for user info and bio - 40% width on desktop */
-.user-details-container {
-  width: 40%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.3125rem; /* 5px */
-  height: 100%; /* Ensure this takes up the full height */
-}
-
-/* Make the user info and bio take appropriate heights */
-.user-info {
-  flex: 0 0 auto; /* Don't grow, don't shrink, auto height */
-}
-
-.quote-card {
-  flex: 1; /* Take remaining space */
-  min-height: 0; /* Allow container to shrink if needed */
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto; /* Add scroll for overflow */
-}
-
-.bento-section {
-  display: flex;
-  flex-direction: column;
-  border-radius: 0.75rem;
+  width: 100%;
   overflow: hidden;
-  transition: transform 0.2s ease-in-out;
 }
 
-/* Custom styles for specific sections */
+/* Main photo with proper aspect ratio */
 .main-photo {
   width: 100%;
-  height: 100%; /* Fill the entire container */
+  height: 100%;
   border-radius: 0.75rem;
   overflow: hidden;
   position: relative;
-  display: flex; /* Use flexbox for child elements */
-  flex-direction: column;
+  display: block;
 }
 
 .main-photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  flex: 1; /* Make image take all available space */
+  display: block;
 }
 
+/* Right side container for user info and bio */
+.user-details-container {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.3125rem; /* 5px */
+  height: 100%;
+}
+
+/* User info card */
 .user-info {
-  min-height: 100px;
   background: white;
   padding: 1rem;
+  border-radius: 0.75rem;
 }
 
+/* Quote card with scrolling */
 .quote-card {
   background: #f26646;
   color: white;
   padding: 1rem;
-  overflow-y: auto; /* Add scroll if content overflows */
+  border-radius: 0.75rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Quote content container to ensure proper display */
@@ -93,59 +72,26 @@
   word-wrap: break-word;
   word-break: break-word;
   hyphens: auto;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
 }
 
 .quote-content p {
-  margin: 0; /* Remove default paragraph margin */
+  margin: 0;
 }
 
-/* Mobile styles - maintain same layout as desktop but with adjusted heights */
-@media (max-width: 767px) {
-  .bento-grid {
-    grid-template-columns: repeat(6, 1fr);
-  }
-  
-  .bento-main-container {
-    flex-direction: row;
-    min-height: 200px; /* Smaller minimum height on mobile */
-  }
-  
-  .main-photo-container {
-    width: 60%;
-    height: 100%;
-  }
-  
-  .user-details-container {
-    width: 40%;
-  }
-  
-  .user-info, .quote-card {
-    padding: 0.75rem;
-  }
-  
-  .user-info {
-    min-height: 80px;
-  }
+/* Generic bento section styles */
+.bento-section {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  transition: transform 0.2s ease-in-out;
 }
 
-/* Smaller mobile screens adjustments */
-@media (max-width: 480px) {
-  .bento-grid {
-    padding: 0 5px;
-  }
-}
-
-/* Audio card styles */
+/* Rest of the CSS remains unchanged */
 .audio-card {
   grid-column: span 12;
   margin-top: 0.3125rem; /* 5px */
   width: 100%;
 }
 
-/* Profile details card styles */
 .profile-details-card {
   grid-column: span 12;
   margin-top: 0.3125rem; /* 5px */
@@ -155,7 +101,6 @@
   padding: 1rem;
 }
 
-/* CONTAINER FOR TAGS AND PHOTO - using flexbox instead of grid */
 .bento-tags-photo-container {
   display: flex;
   flex-direction: row;
@@ -165,7 +110,6 @@
   min-height: 300px; /* Ensure container has enough height */
 }
 
-/* Left side container for vices and kinks - 50% width */
 .tags-container {
   display: flex;
   flex-direction: column;
@@ -173,13 +117,11 @@
   width: 50%;
 }
 
-/* Right side for secondary photo - 50% width */
 .secondary-photo-container {
   width: 50%;
   height: 100%; /* Make it full height */
 }
 
-/* Bento card styles for vices and kinks */
 .bento-card {
   overflow: hidden;
   border-radius: 0.75rem;
@@ -187,14 +129,12 @@
   transition: transform 0.2s ease-in-out;
 }
 
-/* Secondary photo container */
 .secondary-photo {
   overflow: hidden;
   height: 100%;
   border-radius: 0.75rem;
 }
 
-/* Vices and Kinks specific styles */
 .vices-card {
   background: white;
   flex: 1;
@@ -213,8 +153,17 @@
   overflow: hidden;
 }
 
-/* Mobile layout adjustments - maintain the same layout */
+/* Mobile layout adjustments */
 @media (max-width: 767px) {
+  .bento-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  
+  /* Keep the 60/40 split for mobile too */
+  .bento-main-container {
+    grid-template-columns: 60% 40%;
+  }
+  
   .bento-tags-photo-container {
     flex-direction: row; /* Keep side by side */
   }
@@ -222,13 +171,12 @@
   .tags-container, .secondary-photo-container {
     width: 50%; /* Keep 50/50 split */
   }
-  
-  .secondary-photo-card {
-    min-height: 200px;
-  }
-  
-  .vices-card, .kinks-card {
-    min-height: 100px;
+}
+
+/* Smaller mobile screens adjustments */
+@media (max-width: 480px) {
+  .bento-grid {
+    padding: 0 5px;
   }
 }
 

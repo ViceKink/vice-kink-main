@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { UserProfile } from '@/types/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { MapPin, Play } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import ProfileDetailsCard from '@/components/profile/ProfileDetailsCard';
 import ProfileAudio from '@/components/profile/ProfileAudio';
 import ProfileTag from '@/components/ui/ProfileTag';
@@ -37,7 +36,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
     profile.flirtingStyle ||
     profile.about?.lifestyle?.smoking !== undefined || 
     profile.about?.lifestyle?.drinking ||
-    profile.about?.status // Added status to details card
+    profile.about?.status
   );
   
   return (
@@ -50,7 +49,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
               <img
                 src={profile.photos[0]}
                 alt={profile.name}
-                className="w-full h-full object-cover"
               />
             ) : (
               <div className="w-full h-full bg-gray-200 flex items-center justify-center">
@@ -61,28 +59,25 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </div>
 
         <div className="user-details-container">
-          <div className="bento-section user-info rounded-2xl">
-            <div className="flex flex-col h-full">
-              <div className="flex items-baseline">
-                <h2 className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>{profile.name}</h2>
-                {profile.verified && (
-                  <span className="ml-1 text-blue-500">✓</span>
-                )}
-              </div>
-              
-              <div className={isMobile ? 'text-lg' : 'text-xl'}>{profile.age}</div>
-              
-              {profile.location && (
-                <div className="text-sm text-foreground/70 mt-2 flex items-center">
-                  <MapPin className="w-3.5 h-3.5 mr-1 text-red-400" />
-                  {profile.location}
-                </div>
+          <div className="user-info">
+            <div className="flex items-baseline">
+              <h2 className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>{profile.name}</h2>
+              {profile.verified && (
+                <span className="ml-1 text-blue-500">✓</span>
               )}
             </div>
+            
+            <div className={isMobile ? 'text-lg' : 'text-xl'}>{profile.age}</div>
+            
+            {profile.location && (
+              <div className="text-sm text-foreground/70 mt-2 flex items-center">
+                <MapPin className="w-3.5 h-3.5 mr-1 text-red-400" />
+                {profile.location}
+              </div>
+            )}
           </div>
 
-          {/* Quote Card - with improved overflow handling */}
-          <div className="bento-section quote-card rounded-2xl">
+          <div className="quote-card">
             <h3 className="text-sm font-semibold mb-1">Favorite Quote</h3>
             <div className="quote-content">
               <p className={`${isMobile ? 'text-xs' : 'text-sm'} italic`}>
@@ -108,13 +103,10 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           />
         )}
 
-        {/* Vices/Kinks on left, Photo on right - side by side */}
         {(hasVices || hasKinks || hasSecondPhoto) && (
           <div className="bento-tags-photo-container">
-            {/* Left side: Vices and Kinks stacked in column */}
             {(hasVices || hasKinks) && (
               <div className="tags-container">
-                {/* Vices card */}
                 {hasVices && (
                   <div className="vices-card bento-card p-4">
                     <h3 className="text-base font-semibold mb-2">Vices</h3>
@@ -126,7 +118,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
                   </div>
                 )}
 
-                {/* Kinks card */}
                 {hasKinks && (
                   <div className="kinks-card bento-card p-4">
                     <h3 className="text-base font-semibold mb-2">Kinks</h3>
@@ -140,7 +131,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
               </div>
             )}
 
-            {/* Right side: Secondary photo */}
             {hasSecondPhoto && (
               <div className="secondary-photo-container">
                 <div className="secondary-photo-card">
