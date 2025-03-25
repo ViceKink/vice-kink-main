@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { UserProfile } from '@/types/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { MapPin } from 'lucide-react';
+import { MapPin, Play } from 'lucide-react';
 import ProfileDetailsCard from '@/components/profile/ProfileDetailsCard';
 import ProfileAudio from '@/components/profile/ProfileAudio';
+import ProfileTag from '@/components/ui/ProfileTag';
 import '../ui/bento-grid.css';
 
 interface BentoProfileProps {
@@ -38,7 +40,8 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
   );
   
   return (
-    <div className="bento-grid w-full mx-auto">
+    <div className="w-full mx-auto">
+      {/* Top section with main photo and user details */}
       <div className="bento-main-container">
         <div className="main-photo-container">
           <div className="main-photo">
@@ -112,93 +115,93 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </div>
       </div>
 
-      {hasAudio && profile.audio && (
-        <div className="bento-section audio-card rounded-2xl p-0 overflow-hidden">
-          <ProfileAudio audio={profile.audio} />
-        </div>
-      )}
-
-      {hasAboutDetails && (
-        <ProfileDetailsCard 
-          profile={profile}
-          className="profile-details-card"
-        />
-      )}
-
-      {hasVices && (
-        <div className="bento-section vices bg-white dark:bg-card p-4 rounded-2xl">
-          <h3 className="text-base font-semibold mb-2">Vices</h3>
-          <div className="flex flex-wrap gap-2">
-            {profile.vices.map((vice, index) => (
-              <span key={index} className="inline-flex items-center px-3 py-1.5 rounded-full border border-[#ff52b1]/20 bg-[#ff52b1]/10 text-foreground/70 text-sm">
-                {vice}
-              </span>
-            ))}
+      {/* Grid layout for the bento cards */}
+      <div className="bento-grid">
+        {hasAudio && profile.audio && (
+          <div className="audio-card">
+            <ProfileAudio audio={profile.audio} />
           </div>
-        </div>
-      )}
+        )}
 
-      {hasKinks && (
-        <div className="bento-section kinks bg-white dark:bg-card p-4 rounded-2xl">
-          <h3 className="text-base font-semibold mb-2">Kinks</h3>
-          <div className="flex flex-wrap gap-2">
-            {profile.kinks.map((kink, index) => (
-              <span key={index} className="inline-flex items-center px-3 py-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 text-foreground/70 text-sm">
-                {kink}
-              </span>
-            ))}
+        {hasAboutDetails && (
+          <ProfileDetailsCard 
+            profile={profile}
+            className="profile-details-card"
+          />
+        )}
+
+        {/* Bento layout for vices, kinks, and secondary photos */}
+        {hasVices && (
+          <div className="vices-card bento-card p-4">
+            <h3 className="text-base font-semibold mb-2">Vices</h3>
+            <div className="flex flex-wrap gap-2">
+              {profile.vices.map((vice, index) => (
+                <ProfileTag key={index} label={vice} type="vice" />
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {hasSecondaryPhotos && (
-        <div className="bento-section photos bg-black rounded-2xl overflow-hidden">
-          <div className="grid grid-cols-2 grid-rows-2 gap-1 h-full">
-            {profile.photos.slice(1, 5).map((photo, index) => (
-              <div key={index} className="relative overflow-hidden">
-                <img
-                  src={photo}
-                  alt={`${profile.name} photo ${index + 2}`}
-                  className="w-full h-full object-cover"
-                />
-                {index === 2 && profile.photos.length > 5 && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white">
-                    <span className="text-lg font-semibold">+{profile.photos.length - 4} photos</span>
-                  </div>
-                )}
-              </div>
-            ))}
+        {hasKinks && (
+          <div className="kinks-card bento-card p-4">
+            <h3 className="text-base font-semibold mb-2">Kinks</h3>
+            <div className="flex flex-wrap gap-2">
+              {profile.kinks.map((kink, index) => (
+                <ProfileTag key={index} label={kink} type="kink" />
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {hasFlirtingStyle && (
-        <div className="bento-section flirting bg-white dark:bg-card p-4 rounded-2xl">
+        {hasSecondaryPhotos && (
+          <div className="photos-card">
+            <div className="secondary-photos">
+              {profile.photos.length > 1 && (
+                <div className="relative w-full h-full">
+                  <img
+                    src={profile.photos[1]}
+                    alt={`${profile.name} photo 2`}
+                    className="w-full h-full object-cover"
+                  />
+                  {profile.photos.length > 2 && (
+                    <div className="absolute bottom-4 right-4 bg-white/90 px-2 py-1 rounded-lg text-sm text-black">
+                      {profile.photos.length} photos
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {hasFlirtingStyle && (
+          <div className="bg-white dark:bg-card p-4 rounded-2xl col-span-12">
+            <div className="flex flex-col h-full justify-center">
+              <p className="text-base">
+                <span className="font-medium">My idea of flirting is: </span>
+                {typeof profile.flirtingStyle === 'string' ? profile.flirtingStyle : 'to be playful and fun'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {hasPassions && (
+          <div className="bg-vice-orange p-4 text-white rounded-2xl col-span-6">
+            <div className="flex flex-col h-full justify-center">
+              <p className="text-sm">
+                I am passionate about: <span className="font-medium">{profile.passions[0]}</span>
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-vice-orange p-4 text-white rounded-2xl col-span-6">
           <div className="flex flex-col h-full justify-center">
-            <p className="text-base">
-              <span className="font-medium">My idea of flirting is: </span>
-              {typeof profile.flirtingStyle === 'string' ? profile.flirtingStyle : 'to be playful and fun'}
+            <h3 className="text-sm font-semibold mb-1">Favorite Quote</h3>
+            <p className="text-sm italic">
+              {profile.quote || "I'm such a Virgo, even my horoscope tells me to stop worrying about being a Virgo"}
             </p>
           </div>
-        </div>
-      )}
-
-      {hasPassions && (
-        <div className="bento-section passion bg-vice-orange p-4 text-white rounded-2xl">
-          <div className="flex flex-col h-full justify-center">
-            <p className="text-sm">
-              I am passionate about: <span className="font-medium">{profile.passions[0]}</span>
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="bento-section quote bg-vice-orange p-4 text-white rounded-2xl">
-        <div className="flex flex-col h-full justify-center">
-          <h3 className="text-sm font-semibold mb-1">Favorite Quote</h3>
-          <p className="text-sm italic">
-            {profile.quote || "I'm such a Virgo, even my horoscope tells me to stop worrying about being a Virgo"}
-          </p>
         </div>
       </div>
     </div>

@@ -1,8 +1,8 @@
 
 /* Bento grid layout styles */
 .bento-grid {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
   gap: 0.3125rem; /* 5px */
   max-width: 100%;
   padding: 0 10px;
@@ -14,6 +14,7 @@
   flex-direction: row;
   width: 100%;
   gap: 0.3125rem; /* 5px */
+  margin-bottom: 0.3125rem; /* 5px */
 }
 
 /* Left photo container - 60% width on desktop */
@@ -77,6 +78,10 @@
 
 /* Mobile styles */
 @media (max-width: 767px) {
+  .bento-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  
   .bento-main-container {
     flex-direction: row;
   }
@@ -117,18 +122,61 @@
   }
 }
 
-/* Audio and profile details card styles */
+/* Audio card styles */
 .audio-card {
+  grid-column: span 12;
   margin-top: 0.3125rem; /* 5px */
   width: 100%;
 }
 
+/* Profile details card styles */
 .profile-details-card {
+  grid-column: span 12;
   margin-top: 0.3125rem; /* 5px */
   width: 100%;
   background: white;
   border-radius: 0.75rem;
   padding: 1rem;
+}
+
+/* Bento card styles for vices and kinks */
+.bento-card {
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: white;
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Secondary photos container */
+.secondary-photos {
+  overflow: hidden;
+  height: 100%;
+  border-radius: 0.75rem;
+}
+
+/* Vices and Kinks grid layout */
+.vices-card {
+  grid-column: span 6;
+  grid-row: span 1;
+  background: white;
+}
+
+.kinks-card {
+  grid-column: span 6;
+  grid-row: span 1;
+  background: white;
+}
+
+.photos-card {
+  grid-column: span 6;
+  grid-row: span 2;
+  background: black;
+}
+
+@media (max-width: 767px) {
+  .vices-card, .kinks-card, .photos-card {
+    grid-column: span 6;
+  }
 }
 
 .details-row {
