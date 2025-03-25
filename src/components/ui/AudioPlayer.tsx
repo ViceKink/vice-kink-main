@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect } from 'react';
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, ChevronRight } from 'lucide-react';
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -27,14 +27,21 @@ const AudioPlayer = ({ audioUrl, title, className = '' }: AudioPlayerProps) => {
       setCurrentTime(audio.currentTime);
     };
 
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+
     // Events
     audio.addEventListener('loadedmetadata', setAudioData);
     audio.addEventListener('timeupdate', setAudioTime);
+    audio.addEventListener('ended', handleEnded);
 
     // Cleanup
     return () => {
       audio.removeEventListener('loadedmetadata', setAudioData);
       audio.removeEventListener('timeupdate', setAudioTime);
+      audio.removeEventListener('ended', handleEnded);
     };
   }, [audioRef]);
 
@@ -45,7 +52,13 @@ const AudioPlayer = ({ audioUrl, title, className = '' }: AudioPlayerProps) => {
     if (isPlaying) {
       audio.pause();
     } else {
-      audio.play();
+      // Make sure to set the correct currentTime if it was reset
+      if (currentTime === 0 && audio.currentTime !== 0) {
+        audio.currentTime = 0;
+      }
+      audio.play().catch(err => {
+        console.error("Error playing audio:", err);
+      });
     }
     setIsPlaying(!isPlaying);
   };
@@ -77,6 +90,7 @@ const AudioPlayer = ({ audioUrl, title, className = '' }: AudioPlayerProps) => {
         <button 
           onClick={togglePlay} 
           className="w-8 h-8 rounded-full bg-vice-purple text-white flex items-center justify-center transition-transform hover:scale-105"
+          aria-label={isPlaying ? "Pause" : "Play"}
         >
           {isPlaying ? <Pause size={14} /> : <Play size={14} />}
         </button>

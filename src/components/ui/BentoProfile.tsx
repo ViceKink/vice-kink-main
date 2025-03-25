@@ -3,6 +3,7 @@ import { UserProfile } from '@/types/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MapPin } from 'lucide-react';
 import ProfileDetailsCard from '@/components/profile/ProfileDetailsCard';
+import ProfileAudio from '@/components/profile/ProfileAudio';
 import '../ui/bento-grid.css';
 
 interface BentoProfileProps {
@@ -112,21 +113,8 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
       </div>
 
       {hasAudio && profile.audio && (
-        <div className="bento-section audio-card rounded-2xl bg-vice-purple/10 p-0 overflow-hidden">
-          <div className="w-full bg-vice-purple/10 p-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-vice-purple text-white rounded-full p-2 flex-shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                  <path d="M12 18.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13Z"></path>
-                  <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path>
-                </svg>
-              </div>
-              <div className="flex-1">
-                <div className="text-sm font-medium">{profile.audio.title || "Voice Note"}</div>
-                <div className="text-xs text-foreground/60">Tap to play</div>
-              </div>
-            </div>
-          </div>
+        <div className="bento-section audio-card rounded-2xl p-0 overflow-hidden">
+          <ProfileAudio audio={profile.audio} />
         </div>
       )}
 
