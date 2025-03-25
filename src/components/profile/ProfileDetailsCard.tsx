@@ -2,7 +2,7 @@
 import React from 'react';
 import { UserProfile } from '@/types/auth';
 import { cn } from '@/lib/utils';
-import { Ruler, Sun, Church, Languages, Heart, Search, Cigarette, Wine } from 'lucide-react';
+import { Ruler, Sun, Church, Languages, Heart, Search, Cigarette, Wine, Briefcase } from 'lucide-react';
 
 interface ProfileDetailsCardProps {
   profile: UserProfile;
@@ -28,6 +28,8 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
         return <Heart className="w-4 h-4" />;
       case 'looking':
         return <Search className="w-4 h-4" />;
+      case 'occupation':
+        return <Briefcase className="w-4 h-4" />;
       default:
         return null;
     }
@@ -35,7 +37,7 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
   
   return (
     <div className={cn("bg-white dark:bg-card p-4 rounded-2xl", className)}>
-      {/* Row 1: Height, Zodiac, Religion, Language */}
+      {/* Row 1: Height, Zodiac, Religion, Language, Sexuality */}
       <div className="details-row">
         {profile.about?.height && (
           <div className="details-item">
@@ -62,6 +64,20 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
           <div className="details-item">
             <span className="details-icon">{getIcon('language')}</span>
             <span className="text-sm">{profile.about.languages.join(', ')}</span>
+          </div>
+        )}
+        
+        {profile.about?.sexuality && (
+          <div className="details-item">
+            <span className="details-icon">{getIcon('heart')}</span>
+            <span className="text-sm">{profile.about.sexuality}</span>
+          </div>
+        )}
+        
+        {profile.about?.occupation && (
+          <div className="details-item">
+            <span className="details-icon">{getIcon('occupation')}</span>
+            <span className="text-sm">{profile.about.occupation}</span>
           </div>
         )}
       </div>

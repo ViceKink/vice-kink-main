@@ -38,6 +38,12 @@ const formatProfile = (profile: any): UserProfile => {
       height: profile.height || undefined,
       zodiac: profile.zodiac || undefined,
       religion: profile.religion || undefined,
+      sexuality: profile.sexuality || undefined,
+      languages: [],
+      lifestyle: {
+        smoking: profile.smoking || undefined,
+        drinking: profile.drinking || undefined,
+      }
     }
   };
   
@@ -131,6 +137,22 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
     } catch (passionsError) {
       console.error('Error fetching profile passions:', passionsError);
       // Continue without passions
+    }
+    
+    // Fetch languages with error handling
+    try {
+      const { data: languagesData } = await supabase
+        .from('profile_languages')
+        .select('language')
+        .eq('profile_id', userId);
+        
+      if (languagesData && languagesData.length > 0) {
+        if (!userProfile.about) userProfile.about = {};
+        userProfile.about.languages = languagesData.map(item => item.language);
+      }
+    } catch (languagesError) {
+      console.error('Error fetching profile languages:', languagesError);
+      // Continue without languages
     }
     
     // Fetch audio with error handling
@@ -248,6 +270,24 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
       }
     });
     
+    // Handle about fields separately
+    if (sanitizedData.about) {
+      const about = sanitizedData.about;
+      
+      if (about.occupation) finalData['occupation'] = about.occupation;
+      if (about.status) finalData['relationship_status'] = about.status;
+      if (about.height) finalData['height'] = about.height;
+      if (about.zodiac) finalData['zodiac'] = about.zodiac;
+      if (about.religion) finalData['religion'] = about.religion;
+      if (about.sexuality) finalData['sexuality'] = about.sexuality;
+      
+      // Handle lifestyle fields
+      if (about.lifestyle) {
+        if (about.lifestyle.smoking !== undefined) finalData['smoking'] = about.lifestyle.smoking;
+        if (about.lifestyle.drinking) finalData['drinking'] = about.lifestyle.drinking;
+      }
+    }
+    
     // Only update if there are properties to update
     if (Object.keys(finalData).length > 0) {
       try {
@@ -273,6 +313,31 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
         }
         
         throw new Error(errorMessage);
+      }
+    }
+    
+    // Update languages separately
+    if (sanitizedData.about && sanitizedData.about.languages && sanitizedData.about.languages.length > 0) {
+      try {
+        // First delete existing languages
+        await supabase
+          .from('profile_languages')
+          .delete()
+          .eq('profile_id', userId);
+        
+        // Then insert new languages
+        const languageInserts = sanitizedData.about.languages.map((language: string) => ({
+          profile_id: userId,
+          language: language
+        }));
+        
+        if (languageInserts.length > 0) {
+          await supabase
+            .from('profile_languages')
+            .insert(languageInserts);
+        }
+      } catch (error: any) {
+        console.error('Error updating languages:', error);
       }
     }
     
