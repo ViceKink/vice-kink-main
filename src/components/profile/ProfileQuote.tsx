@@ -1,35 +1,22 @@
 
 import React from 'react';
-import ProfileSection from '@/components/profile/ProfileSection';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Quote } from 'lucide-react';
 
 interface ProfileQuoteProps {
-  currentRow: number;
-  hasFlirtingStyle: boolean;
-  hasPassions: boolean;
-  quote?: string;
+  quote: string;
 }
 
-const ProfileQuote = ({ currentRow, hasFlirtingStyle, hasPassions, quote }: ProfileQuoteProps) => {
-  const isMobile = useIsMobile();
+const ProfileQuote = ({ quote }: ProfileQuoteProps) => {
+  if (!quote) return null;
   
   return (
-    <ProfileSection
-      gridSpan={{
-        cols: isMobile ? "col-span-6" : "col-span-3",
-        rows: "row-span-1",
-        colsStart: isMobile ? "col-start-1" : (hasPassions ? "col-start-10" : "col-start-10"),
-        rowsStart: isMobile ? `row-start-${currentRow.toString()}` : (hasFlirtingStyle ? currentRow - 1 : currentRow).toString()
-      }}
-      className="bg-vice-orange p-4 text-white"
-    >
-      <div className="flex flex-col h-full justify-center">
-        <h3 className="text-sm font-semibold mb-1">Favorite Quote</h3>
-        <p className="text-sm italic">
-          {quote || "I'm such a Virgo, even my horoscope tells me to stop worrying about being a Virgo"}
-        </p>
+    <div className="flex items-start space-x-2 py-3">
+      <Quote className="text-vice-purple h-5 w-5 flex-shrink-0 mt-1" />
+      <div>
+        <div className="text-sm font-medium mb-1">Favorite Quote</div>
+        <p className="text-foreground/80 italic text-sm">"{quote}"</p>
       </div>
-    </ProfileSection>
+    </div>
   );
 };
 

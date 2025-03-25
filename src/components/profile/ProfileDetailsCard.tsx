@@ -38,7 +38,7 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
   };
   
   // Add debug logging for troubleshooting
-  console.log("Profile details:", {
+  console.log("Profile details card data:", {
     height: profile.about?.height,
     zodiac: profile.about?.zodiac,
     religion: profile.about?.religion,
@@ -50,45 +50,45 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
   return (
     <div className={cn("bg-white dark:bg-card p-4 rounded-2xl", className)}>
       {/* Row 1: Height, Zodiac, Religion, Language, Sexuality, Occupation */}
-      <div className="details-row">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {profile.about?.height && (
-          <div className="details-item">
-            <span className="details-icon">{getIcon('height')}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-vice-purple">{getIcon('height')}</span>
             <span className="text-sm">{profile.about.height}</span>
           </div>
         )}
         
         {profile.about?.zodiac && (
-          <div className="details-item">
-            <span className="details-icon">{getIcon('zodiac')}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-vice-purple">{getIcon('zodiac')}</span>
             <span className="text-sm">{profile.about.zodiac}</span>
           </div>
         )}
         
         {profile.about?.religion && (
-          <div className="details-item">
-            <span className="details-icon">{getIcon('religion')}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-vice-purple">{getIcon('religion')}</span>
             <span className="text-sm">{profile.about.religion}</span>
           </div>
         )}
         
         {profile.about?.languages && profile.about.languages.length > 0 && (
-          <div className="details-item">
-            <span className="details-icon">{getIcon('language')}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-vice-purple">{getIcon('language')}</span>
             <span className="text-sm">{profile.about.languages.join(', ')}</span>
           </div>
         )}
         
         {profile.about?.sexuality && (
-          <div className="details-item">
-            <span className="details-icon">{getIcon('sexuality')}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-vice-purple">{getIcon('sexuality')}</span>
             <span className="text-sm">{profile.about.sexuality}</span>
           </div>
         )}
         
         {profile.about?.occupation && (
-          <div className="details-item">
-            <span className="details-icon">{getIcon('occupation')}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-vice-purple">{getIcon('occupation')}</span>
             <span className="text-sm">{profile.about.occupation}</span>
           </div>
         )}
@@ -96,9 +96,9 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
       
       {/* Row 2: Flirting Style */}
       {profile.flirtingStyle && (
-        <div className="details-row">
-          <div className="details-item">
-            <span className="details-icon">{getIcon('flirting')}</span>
+        <div className="mt-4">
+          <div className="flex items-center gap-2">
+            <span className="text-vice-purple">{getIcon('flirting')}</span>
             <span className="text-sm">
               {typeof profile.flirtingStyle === 'string' ? profile.flirtingStyle : 'Playful and fun'}
             </span>
@@ -108,26 +108,26 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
       
       {/* Row 3: Looking For */}
       {profile.lookingFor && (
-        <div className="details-row">
-          <div className="details-item">
-            <span className="details-icon">{getIcon('looking')}</span>
+        <div className="mt-4">
+          <div className="flex items-center gap-2">
+            <span className="text-vice-purple">{getIcon('looking')}</span>
             <span className="text-sm">{profile.lookingFor}</span>
           </div>
         </div>
       )}
       
       {/* Additional lifestyle items if needed */}
-      <div className="details-row">
+      <div className="mt-4 grid grid-cols-2 gap-4">
         {profile.about?.lifestyle?.smoking !== undefined && (
-          <div className="details-item">
-            <span className="details-icon">{getIcon('smoking')}</span>
-            <span className="text-sm">{profile.about.lifestyle.smoking ? 'smoker' : 'non-smoker'}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-vice-purple">{getIcon('smoking')}</span>
+            <span className="text-sm">{profile.about.lifestyle.smoking ? 'Smoker' : 'Non-smoker'}</span>
           </div>
         )}
         
         {profile.about?.lifestyle?.drinking && (
-          <div className="details-item">
-            <span className="details-icon">{getIcon('drinking')}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-vice-purple">{getIcon('drinking')}</span>
             <span className="text-sm">{profile.about.lifestyle.drinking}</span>
           </div>
         )}

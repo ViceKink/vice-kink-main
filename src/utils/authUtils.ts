@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, FlirtingStyle } from '@/types/auth';
 
@@ -148,8 +149,13 @@ export const fetchUserProfile = async (userId: string): Promise<UserProfile> => 
       if (languagesError) {
         console.error('Error fetching languages:', languagesError);
       } else if (languagesData && languagesData.length > 0) {
-        if (!userProfile.about) userProfile.about = {};
+        userProfile.about = userProfile.about || {};
         userProfile.about.languages = languagesData.map(item => item.language);
+        
+        // Debug logging for languages
+        console.log('Retrieved languages from database:', userProfile.about.languages);
+      } else {
+        console.log('No languages found for user:', userId);
       }
     } catch (languagesError) {
       console.error('Error fetching profile languages:', languagesError);
@@ -282,6 +288,16 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
       if (about.religion) finalData['religion'] = about.religion;
       if (about.sexuality) finalData['sexuality'] = about.sexuality;
       
+      // Debug logging
+      console.log('Updating profile fields:', {
+        occupation: about.occupation,
+        relationship_status: about.status,
+        height: about.height,
+        zodiac: about.zodiac,
+        religion: about.religion,
+        sexuality: about.sexuality
+      });
+      
       // Handle lifestyle fields
       if (about.lifestyle) {
         if (about.lifestyle.smoking !== undefined) finalData['smoking'] = about.lifestyle.smoking;
@@ -293,10 +309,15 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
     if (Object.keys(finalData).length > 0) {
       try {
         console.log('Updating profile with data:', finalData);
-        await supabase
+        const { error } = await supabase
           .from('profiles')
           .update(finalData)
           .eq('id', userId);
+          
+        if (error) {
+          console.error('Error updating profile fields:', error);
+          throw error;
+        }
       } catch (error: any) {
         console.error('Error updating profile fields:', error);
         let errorMessage = 'Failed to update profile';
@@ -318,7 +339,7 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
     }
     
     // Update languages separately
-    if (sanitizedData.about && sanitizedData.about.languages && Array.isArray(sanitizedData.about.languages)) {
+    if (sanitizedData.about && sanitizedData.about.languages) {
       try {
         console.log('Updating languages:', sanitizedData.about.languages);
         
@@ -339,6 +360,8 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
             profile_id: userId,
             language: language
           }));
+          
+          console.log('Inserting languages:', languageInserts);
           
           const { error: insertError } = await supabase
             .from('profile_languages')

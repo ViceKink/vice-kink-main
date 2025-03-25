@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,12 +26,28 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
     userData?.about?.languages || []
   );
   
+  // Debug logging
+  console.log('EditProfileAbout - Initial userData:', userData);
+  console.log('EditProfileAbout - Initial selectedLanguages:', selectedLanguages);
+  
+  useEffect(() => {
+    // This ensures the component updates when userData changes from parent
+    if (userData?.about?.languages) {
+      setSelectedLanguages(userData.about.languages);
+    }
+  }, [userData?.about?.languages]);
+  
   const handleLanguageToggle = (language: string) => {
     setSelectedLanguages(prev => {
       const newLanguages = prev.includes(language)
         ? prev.filter(l => l !== language)
         : [...prev, language];
       
+      // Debug logging
+      console.log('Language toggled:', language);
+      console.log('New languages array:', newLanguages);
+      
+      // Update the userData.about.languages directly
       updateField('about', {
         ...userData.about,
         languages: newLanguages
@@ -42,6 +58,9 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
   };
   
   const handleSexualityChange = (value: string) => {
+    // Debug logging
+    console.log('Sexuality changed to:', value);
+    
     updateField('about', {
       ...userData.about,
       sexuality: value
@@ -77,7 +96,7 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
             <SelectContent>
               <SelectItem value="single">Single</SelectItem>
               <SelectItem value="married">Married</SelectItem>
-              <SelectItem value="it's complicated">It's complicated</SelectItem>
+              <SelectItem value="it's complicated">It&apos;s complicated</SelectItem>
             </SelectContent>
           </Select>
         </div>
