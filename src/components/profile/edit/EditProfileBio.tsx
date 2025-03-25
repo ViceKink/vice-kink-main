@@ -40,6 +40,20 @@ const EditProfileBio = ({ userData, updateField }: EditProfileBioProps) => {
         </div>
         
         <div className="space-y-2">
+          <Label htmlFor="quote">Favorite Quote</Label>
+          <Input
+            id="quote"
+            value={userData.quote || ''}
+            onChange={(e) => updateField('quote', e.target.value)}
+            placeholder="Share your favorite quote"
+            maxLength={150}
+          />
+          <p className="text-xs text-muted-foreground text-right">
+            {getCharLength(userData.quote || '')}/150
+          </p>
+        </div>
+        
+        <div className="space-y-2">
           <Label htmlFor="lookingFor">Looking For</Label>
           <Input
             id="lookingFor"

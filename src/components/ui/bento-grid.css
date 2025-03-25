@@ -1,4 +1,3 @@
-
 /* Bento grid layout styles */
 .bento-grid {
   display: grid;
@@ -15,6 +14,7 @@
   width: 100%;
   gap: 0.3125rem; /* 5px */
   margin-bottom: 0.3125rem; /* 5px */
+  min-height: 300px; /* Set minimum height to prevent small containers */
 }
 
 /* Left photo container - 60% width on desktop */
@@ -78,9 +78,9 @@
     grid-template-columns: repeat(6, 1fr);
   }
   
-  /* Keep the same horizontal layout on mobile */
   .bento-main-container {
     flex-direction: row;
+    min-height: 250px; /* Smaller minimum height on mobile */
   }
   
   .main-photo-container {
@@ -189,7 +189,6 @@
 
 /* Mobile layout adjustments - maintain the same layout */
 @media (max-width: 767px) {
-  /* Keep the side-by-side layout on mobile */
   .bento-tags-photo-container {
     flex-direction: row; /* Keep side by side */
   }
