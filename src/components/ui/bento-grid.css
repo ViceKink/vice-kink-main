@@ -65,17 +65,6 @@
   min-height: 150px;
 }
 
-.photo-count {
-  position: absolute;
-  bottom: 1rem;
-  right: 1rem;
-  background: rgba(0, 0, 0, 0.5);
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  font-size: 0.75rem;
-}
-
 /* Mobile styles */
 @media (max-width: 767px) {
   .bento-grid {
@@ -139,6 +128,15 @@
   padding: 1rem;
 }
 
+/* Layout for cards in a bento-style grid */
+.bento-cards-layout {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-column: span 12;
+  gap: 0.3125rem; /* 5px */
+  margin-top: 0.3125rem; /* 5px */
+}
+
 /* Bento card styles for vices and kinks */
 .bento-card {
   overflow: hidden;
@@ -159,14 +157,12 @@
   grid-column: span 6;
   grid-row: span 1;
   background: white;
-  margin-top: 0.3125rem; /* 5px */
 }
 
 .kinks-card {
   grid-column: span 6;
   grid-row: span 1;
   background: white;
-  margin-top: 0.3125rem; /* 5px */
 }
 
 .secondary-photo-card {
@@ -185,6 +181,10 @@
   .secondary-photo-card {
     grid-column: span 12;
     min-height: 250px;
+  }
+  
+  .bento-cards-layout {
+    grid-template-columns: repeat(6, 1fr);
   }
 }
 

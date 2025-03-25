@@ -46,13 +46,11 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         <div className="main-photo-container">
           <div className="main-photo">
             {hasPhotos ? (
-              <>
-                <img
-                  src={profile.photos[0]}
-                  alt={profile.name}
-                  className="w-full h-full object-cover"
-                />
-              </>
+              <img
+                src={profile.photos[0]}
+                alt={profile.name}
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                 <span className="text-gray-500">No photo available</span>
@@ -125,42 +123,44 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           />
         )}
 
-        {/* Vices card */}
-        {hasVices && (
-          <div className="vices-card bento-card p-4">
-            <h3 className="text-base font-semibold mb-2">Vices</h3>
-            <div className="flex flex-wrap gap-2">
-              {profile.vices.map((vice, index) => (
-                <ProfileTag key={index} label={vice} type="vice" />
-              ))}
+        <div className="bento-cards-layout">
+          {/* Vices card */}
+          {hasVices && (
+            <div className="vices-card bento-card p-4">
+              <h3 className="text-base font-semibold mb-2">Vices</h3>
+              <div className="flex flex-wrap gap-2">
+                {profile.vices.map((vice, index) => (
+                  <ProfileTag key={index} label={vice} type="vice" />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Kinks card */}
-        {hasKinks && (
-          <div className="kinks-card bento-card p-4">
-            <h3 className="text-base font-semibold mb-2">Kinks</h3>
-            <div className="flex flex-wrap gap-2">
-              {profile.kinks.map((kink, index) => (
-                <ProfileTag key={index} label={kink} type="kink" />
-              ))}
+          {/* Kinks card */}
+          {hasKinks && (
+            <div className="kinks-card bento-card p-4">
+              <h3 className="text-base font-semibold mb-2">Kinks</h3>
+              <div className="flex flex-wrap gap-2">
+                {profile.kinks.map((kink, index) => (
+                  <ProfileTag key={index} label={kink} type="kink" />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Secondary photo */}
-        {hasSecondPhoto && (
-          <div className="secondary-photo-card">
-            <div className="secondary-photo">
-              <img
-                src={profile.photos[1]}
-                alt={`${profile.name} second photo`}
-                className="w-full h-full object-cover"
-              />
+          {/* Secondary photo */}
+          {hasSecondPhoto && (
+            <div className="secondary-photo-card">
+              <div className="secondary-photo">
+                <img
+                  src={profile.photos[1]}
+                  alt={`${profile.name} second photo`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {hasFlirtingStyle && (
           <div className="bg-white dark:bg-card p-4 rounded-2xl col-span-12 mt-[0.3125rem]">
