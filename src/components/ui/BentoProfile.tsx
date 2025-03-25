@@ -78,17 +78,17 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
                   {profile.location}
                 </div>
               )}
-              
-              {/* Relationship status moved to the details card */}
             </div>
           </div>
 
-          {/* Quote Card */}
+          {/* Quote Card - with improved overflow handling */}
           <div className="bento-section quote-card rounded-2xl">
             <h3 className="text-sm font-semibold mb-1">Favorite Quote</h3>
-            <p className={`${isMobile ? 'text-xs' : 'text-sm'} italic`}>
-              {profile.quote || "https://www.linkedin.com/in/tejasv-kumar/"}
-            </p>
+            <div className="quote-content">
+              <p className={`${isMobile ? 'text-xs' : 'text-sm'} italic`}>
+                {profile.quote || "https://www.linkedin.com/in/tejasv-kumar/"}
+              </p>
+            </div>
           </div>
         </div>
       </div>

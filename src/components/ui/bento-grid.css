@@ -14,7 +14,7 @@
   width: 100%;
   gap: 0.3125rem; /* 5px */
   margin-bottom: 0.3125rem; /* 5px */
-  min-height: 300px; /* Set minimum height to prevent small containers */
+  min-height: 300px; /* Set minimum height for larger screens */
 }
 
 /* Left photo container - 60% width on desktop */
@@ -31,9 +31,16 @@
   gap: 0.3125rem; /* 5px */
 }
 
-/* Make the user info and bio take 50% height each on desktop */
-.user-info, .quote-card {
-  flex: 1;
+/* Make the user info and bio take appropriate heights */
+.user-info {
+  flex: 0 0 auto; /* Don't grow, don't shrink, auto height */
+}
+
+.quote-card {
+  flex: 1; /* Take remaining space */
+  min-height: 0; /* Allow container to shrink if needed */
+  display: flex;
+  flex-direction: column;
 }
 
 .bento-section {
@@ -69,10 +76,19 @@
   background: #f26646;
   color: white;
   padding: 1rem;
-  min-height: 150px;
+  overflow-y: auto; /* Add scroll if content overflows */
 }
 
-/* Mobile styles - Now maintaining the same layout as desktop */
+/* Quote content container to ensure proper display */
+.quote-content {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+  flex: 1;
+}
+
+/* Mobile styles - maintain same layout as desktop but with adjusted heights */
 @media (max-width: 767px) {
   .bento-grid {
     grid-template-columns: repeat(6, 1fr);
@@ -80,7 +96,7 @@
   
   .bento-main-container {
     flex-direction: row;
-    min-height: 250px; /* Smaller minimum height on mobile */
+    min-height: 200px; /* Smaller minimum height on mobile */
   }
   
   .main-photo-container {
@@ -98,10 +114,6 @@
   
   .user-info {
     min-height: 80px;
-  }
-  
-  .quote-card {
-    min-height: 120px;
   }
 }
 
@@ -206,6 +218,7 @@
   }
 }
 
+/* Details row styling */
 .details-row {
   display: flex;
   flex-wrap: wrap;

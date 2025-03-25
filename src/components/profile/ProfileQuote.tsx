@@ -12,9 +12,9 @@ const ProfileQuote = ({ quote }: ProfileQuoteProps) => {
   return (
     <div className="flex items-start space-x-2 py-3">
       <Quote className="text-vice-purple h-5 w-5 flex-shrink-0 mt-1" />
-      <div>
+      <div className="overflow-hidden">
         <div className="text-sm font-medium mb-1">Favorite Quote</div>
-        <p className="text-foreground/80 italic text-sm">"{quote}"</p>
+        <p className="text-foreground/80 italic text-sm break-words overflow-wrap-anywhere">{quote}</p>
       </div>
     </div>
   );
