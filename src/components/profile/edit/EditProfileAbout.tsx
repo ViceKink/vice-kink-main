@@ -16,6 +16,12 @@ const SEXUALITY_OPTIONS = [
   'Straight', 'Gay', 'Lesbian', 'Bisexual', 'Pansexual', 'Asexual', 'Queer', 'Questioning', 'Other'
 ];
 
+// Religion options
+const RELIGION_OPTIONS = [
+  'Christianity', 'Islam', 'Hinduism', 'Buddhism', 'Judaism', 
+  'Sikhism', 'Atheism', 'Agnosticism', 'Spiritual', 'Other', 'Prefer not to say'
+];
+
 interface EditProfileAboutProps {
   userData: any;
   updateField: (field: string, value: any) => void;
@@ -112,42 +118,22 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
           />
         </div>
         
-        {/* Zodiac */}
-        <div className="space-y-2">
-          <Label htmlFor="zodiac">Zodiac Sign</Label>
-          <Select
-            value={userData?.about?.zodiac || ''}
-            onValueChange={(value) => updateField('about', { ...userData.about, zodiac: value })}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select zodiac sign" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Aries">Aries</SelectItem>
-              <SelectItem value="Taurus">Taurus</SelectItem>
-              <SelectItem value="Gemini">Gemini</SelectItem>
-              <SelectItem value="Cancer">Cancer</SelectItem>
-              <SelectItem value="Leo">Leo</SelectItem>
-              <SelectItem value="Virgo">Virgo</SelectItem>
-              <SelectItem value="Libra">Libra</SelectItem>
-              <SelectItem value="Scorpio">Scorpio</SelectItem>
-              <SelectItem value="Sagittarius">Sagittarius</SelectItem>
-              <SelectItem value="Capricorn">Capricorn</SelectItem>
-              <SelectItem value="Aquarius">Aquarius</SelectItem>
-              <SelectItem value="Pisces">Pisces</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
         {/* Religion */}
         <div className="space-y-2">
           <Label htmlFor="religion">Religion</Label>
-          <Input
-            id="religion"
-            placeholder="Religion"
+          <Select
             value={userData?.about?.religion || ''}
-            onChange={(e) => updateField('about', { ...userData.about, religion: e.target.value })}
-          />
+            onValueChange={(value) => updateField('about', { ...userData.about, religion: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select religion" />
+            </SelectTrigger>
+            <SelectContent>
+              {RELIGION_OPTIONS.map(option => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         {/* Sexuality */}

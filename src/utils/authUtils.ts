@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, FlirtingStyle } from '@/types/auth';
 
@@ -250,19 +249,17 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
     console.log('Updating profile with data:', profileData);
     
     // Ensure we're not trying to update non-existent columns
-    const columnsToIgnore = ['about', 'email'];
     const sanitizedData = { ...profileData };
     
     // Convert any camelCase to snake_case for database compatibility
     const finalData: Record<string, any> = {};
     
     Object.entries(sanitizedData).forEach(([key, value]) => {
-      // Explicitly exclude the email field from updates
+      // Skip certain fields
       if (key === 'email') {
         return; // Skip email field
       }
       else if (key === 'birthDate') {
-        // Ensure we're using the correct field name that matches the database column
         finalData['birth_date'] = value;
       }
       else if (key === 'flirtingStyle') {
@@ -271,7 +268,6 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
           : value;
       } 
       else if (key !== 'passions' && key !== 'vices' && key !== 'kinks' && key !== 'photos' && key !== 'audio') {
-        // Skip certain fields that are handled separately
         const snakeCaseKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
         finalData[snakeCaseKey] = value;
       }
@@ -284,7 +280,7 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
       if (about.occupation) finalData['occupation'] = about.occupation;
       if (about.status) finalData['relationship_status'] = about.status;
       if (about.height) finalData['height'] = about.height;
-      if (about.zodiac) finalData['zodiac'] = about.zodiac;
+      // Zodiac is computed from birthdate, so we don't need to update it here
       if (about.religion) finalData['religion'] = about.religion;
       if (about.sexuality) finalData['sexuality'] = about.sexuality;
       
@@ -293,7 +289,6 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
         occupation: about.occupation,
         relationship_status: about.status,
         height: about.height,
-        zodiac: about.zodiac,
         religion: about.religion,
         sexuality: about.sexuality
       });
@@ -308,7 +303,7 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
     // Only update if there are properties to update
     if (Object.keys(finalData).length > 0) {
       try {
-        console.log('Updating profile with data:', finalData);
+        console.log('Updating profile with final data:', finalData);
         const { error } = await supabase
           .from('profiles')
           .update(finalData)

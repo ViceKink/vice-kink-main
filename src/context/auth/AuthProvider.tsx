@@ -169,42 +169,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const profileUpdateData: Record<string, any> = {};
       
+      // Process profile properties first
+      Object.entries(profileData).forEach(([key, value]) => {
+        // Skip certain fields that are handled separately
+        if (key !== 'email' && key !== 'about' && key !== 'passions' && 
+            key !== 'vices' && key !== 'kinks' && key !== 'photos' && 
+            key !== 'audio') {
+          profileUpdateData[key] = value;
+        }
+      });
+      
       // Handle the about object separately
       if (profileData.about) {
         // Spread the about object properties into main level properties
-        const { occupation, status, height, zodiac, religion } = profileData.about;
+        const { occupation, status, height, religion, sexuality, languages } = profileData.about;
         
-        if (occupation !== undefined) profileUpdateData.occupation = occupation;
-        if (status !== undefined) profileUpdateData.relationship_status = status;
-        if (height !== undefined) profileUpdateData.height = height;
-        if (zodiac !== undefined) profileUpdateData.zodiac = zodiac;
-        if (religion !== undefined) profileUpdateData.religion = religion;
-        
-        // Delete the about property since we're handling it separately
-        delete profileData.about;
+        if (occupation !== undefined) profileUpdateData.about = { ...(profileUpdateData.about || {}), occupation };
+        if (status !== undefined) profileUpdateData.about = { ...(profileUpdateData.about || {}), status };
+        if (height !== undefined) profileUpdateData.about = { ...(profileUpdateData.about || {}), height };
+        if (religion !== undefined) profileUpdateData.about = { ...(profileUpdateData.about || {}), religion };
+        if (sexuality !== undefined) profileUpdateData.about = { ...(profileUpdateData.about || {}), sexuality };
+        if (languages !== undefined) profileUpdateData.about = { ...(profileUpdateData.about || {}), languages };
       }
-      
-      // Process remaining properties
-      Object.entries(profileData).forEach(([key, value]) => {
-        // Explicitly exclude the email field from updates
-        if (key === 'email') {
-          return; // Skip email field
-        }
-        else if (key === 'birthDate') {
-          // Ensure we're using the correct field name that matches the database column
-          profileUpdateData.birth_date = value;
-        }
-        else if (key === 'flirtingStyle') {
-          profileUpdateData.flirting_style = typeof value === 'object' 
-            ? JSON.stringify(value) 
-            : value;
-        } 
-        else if (key !== 'passions' && key !== 'vices' && key !== 'kinks' && key !== 'photos' && key !== 'audio') {
-          // Skip certain fields that are handled separately
-          const snakeCaseKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
-          profileUpdateData[snakeCaseKey] = value;
-        }
-      });
       
       // Only update if there are properties to update
       if (Object.keys(profileUpdateData).length > 0) {
@@ -213,21 +199,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           await updateUserProfile(user.id, profileUpdateData);
         } catch (error: any) {
           console.error('Error updating profile fields:', error);
-          let errorMessage = 'Failed to update profile';
-          
-          // Provide more specific error message
-          if (error.message) {
-            if (error.message.includes("column")) {
-              const columnMatch = error.message.match(/'([^']+)'/);
-              if (columnMatch && columnMatch[1]) {
-                errorMessage = `Failed to update profile: Issue with field "${columnMatch[1]}"`;
-              }
-            } else {
-              errorMessage = `Failed to update profile: ${error.message}`;
-            }
-          }
-          
-          throw new Error(errorMessage);
+          throw error;
         }
       }
       
