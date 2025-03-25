@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { UserProfile } from '@/types/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -14,12 +13,10 @@ interface BentoProfileProps {
 const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => {
   const isMobile = useIsMobile();
   
-  // Helper function to determine if a section should show
   const hasContent = (item: any[] | undefined | null): boolean => {
     return !!item && item.length > 0;
   };
   
-  // Track if section was rendered to adjust positioning
   const hasPhotos = hasContent(profile.photos);
   const hasSecondaryPhotos = profile.photos && profile.photos.length > 1;
   const hasVices = hasContent(profile.vices);
@@ -41,9 +38,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
   
   return (
     <div className="bento-grid w-full mx-auto">
-      {/* Main Container with 60/40 split maintained on both desktop and mobile */}
       <div className="bento-main-container">
-        {/* Left side - Main Photo - 60% width on both desktop and mobile */}
         <div className="main-photo-container">
           <div className="main-photo">
             {hasPhotos ? (
@@ -67,9 +62,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           </div>
         </div>
 
-        {/* Right side - User Info & Bio - 40% width on both desktop and mobile */}
         <div className="user-details-container">
-          {/* User Info Card */}
           <div className="bento-section user-info rounded-2xl">
             <div className="flex flex-col h-full">
               <div className="flex items-baseline">
@@ -88,7 +81,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
                 </div>
               )}
               
-              {/* Relationship status */}
               {profile.about?.status && (
                 <div className="mt-3">
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
@@ -101,7 +93,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
                 </div>
               )}
               
-              {/* Occupation */}
               {profile.about?.occupation && (
                 <div className="mt-3">
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-secondary text-secondary-foreground">
@@ -112,7 +103,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             </div>
           </div>
 
-          {/* Bio Section */}
           {hasBio && (
             <div className="bento-section bio rounded-2xl">
               <p className={`${isMobile ? 'text-xs' : 'text-sm'}`}>{profile.bio}</p>
@@ -121,7 +111,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </div>
       </div>
 
-      {/* Audio Player Section - Stacked after main container */}
       {hasAudio && profile.audio && (
         <div className="bento-section audio-card rounded-2xl bg-vice-purple/10 p-0 overflow-hidden">
           <div className="w-full bg-vice-purple/10 p-4">
@@ -141,7 +130,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </div>
       )}
 
-      {/* User Details Section - Stacked after audio or main container */}
       {hasAboutDetails && (
         <ProfileDetailsCard 
           profile={profile}
@@ -149,8 +137,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         />
       )}
 
-      {/* Remaining sections (kept for other parts of the profile) */}
-      {/* Vices Section */}
       {hasVices && (
         <div className="bento-section vices bg-white dark:bg-card p-4 rounded-2xl">
           <h3 className="text-base font-semibold mb-2">Vices</h3>
@@ -164,7 +150,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </div>
       )}
 
-      {/* Kinks Section */}
       {hasKinks && (
         <div className="bento-section kinks bg-white dark:bg-card p-4 rounded-2xl">
           <h3 className="text-base font-semibold mb-2">Kinks</h3>
@@ -178,7 +163,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </div>
       )}
 
-      {/* Secondary Photos Section */}
       {hasSecondaryPhotos && (
         <div className="bento-section photos bg-black rounded-2xl overflow-hidden">
           <div className="grid grid-cols-2 grid-rows-2 gap-1 h-full">
@@ -200,7 +184,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </div>
       )}
 
-      {/* Flirting Style Section */}
       {hasFlirtingStyle && (
         <div className="bento-section flirting bg-white dark:bg-card p-4 rounded-2xl">
           <div className="flex flex-col h-full justify-center">
@@ -212,7 +195,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </div>
       )}
 
-      {/* Passion Section */}
       {hasPassions && (
         <div className="bento-section passion bg-vice-orange p-4 text-white rounded-2xl">
           <div className="flex flex-col h-full justify-center">
@@ -223,7 +205,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         </div>
       )}
 
-      {/* Quote Section - renamed to Favorite Quote */}
       <div className="bento-section quote bg-vice-orange p-4 text-white rounded-2xl">
         <div className="flex flex-col h-full justify-center">
           <h3 className="text-sm font-semibold mb-1">Favorite Quote</h3>

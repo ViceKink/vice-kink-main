@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, FlirtingStyle } from '@/types/auth';
 
@@ -319,31 +318,44 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
     }
     
     // Update languages separately
-    if (sanitizedData.about && sanitizedData.about.languages && sanitizedData.about.languages.length > 0) {
+    if (sanitizedData.about && sanitizedData.about.languages && Array.isArray(sanitizedData.about.languages)) {
       try {
+        console.log('Updating languages:', sanitizedData.about.languages);
+        
         // First delete existing languages
-        await supabase
+        const { error: deleteError } = await supabase
           .from('profile_languages')
           .delete()
           .eq('profile_id', userId);
+          
+        if (deleteError) {
+          console.error('Error deleting existing languages:', deleteError);
+          throw deleteError;
+        }
         
-        // Then insert new languages
-        const languageInserts = sanitizedData.about.languages.map((language: string) => ({
-          profile_id: userId,
-          language: language
-        }));
-        
-        if (languageInserts.length > 0) {
-          await supabase
+        // Then insert new languages if we have any
+        if (sanitizedData.about.languages.length > 0) {
+          const languageInserts = sanitizedData.about.languages.map((language: string) => ({
+            profile_id: userId,
+            language: language
+          }));
+          
+          const { error: insertError } = await supabase
             .from('profile_languages')
             .insert(languageInserts);
+            
+          if (insertError) {
+            console.error('Error inserting languages:', insertError);
+            throw insertError;
+          }
         }
       } catch (error: any) {
         console.error('Error updating languages:', error);
+        throw new Error(`Failed to update languages: ${error.message}`);
       }
     }
     
-    // Update local state
+    // Update successful
     return true;
   } catch (error) {
     console.error('Error updating user profile:', error);

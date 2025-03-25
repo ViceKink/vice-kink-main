@@ -37,9 +37,19 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
     }
   };
   
+  // Add debug logging for troubleshooting
+  console.log("Profile details:", {
+    height: profile.about?.height,
+    zodiac: profile.about?.zodiac,
+    religion: profile.about?.religion,
+    languages: profile.about?.languages,
+    sexuality: profile.about?.sexuality,
+    occupation: profile.about?.occupation
+  });
+  
   return (
     <div className={cn("bg-white dark:bg-card p-4 rounded-2xl", className)}>
-      {/* Row 1: Height, Zodiac, Religion, Language, Sexuality */}
+      {/* Row 1: Height, Zodiac, Religion, Language, Sexuality, Occupation */}
       <div className="details-row">
         {profile.about?.height && (
           <div className="details-item">
