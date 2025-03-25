@@ -2,7 +2,7 @@
 import React from 'react';
 import { UserProfile } from '@/types/auth';
 import { cn } from '@/lib/utils';
-import { Ruler, Sun, Church, Languages, Heart, Search, Cigarette, Wine, Briefcase } from 'lucide-react';
+import { Ruler, Sun, Church, Languages, Heart, Search, Cigarette, Wine, Briefcase, User } from 'lucide-react';
 
 interface ProfileDetailsCardProps {
   profile: UserProfile;
@@ -32,6 +32,8 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
         return <Search className="w-4 h-4" />;
       case 'occupation':
         return <Briefcase className="w-4 h-4" />;
+      case 'status':
+        return <User className="w-4 h-4" />;
       default:
         return null;
     }
@@ -44,13 +46,21 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
     religion: profile.about?.religion,
     languages: profile.about?.languages,
     sexuality: profile.about?.sexuality,
-    occupation: profile.about?.occupation
+    occupation: profile.about?.occupation,
+    status: profile.about?.status
   });
   
   return (
     <div className={cn("bg-white dark:bg-card p-4 rounded-2xl", className)}>
-      {/* Row 1: Height, Zodiac, Religion, Language, Sexuality, Occupation */}
+      {/* First row of details */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {profile.about?.status && (
+          <div className="flex items-center gap-2">
+            <span className="text-vice-purple">{getIcon('status')}</span>
+            <span className="text-sm">{profile.about.status}</span>
+          </div>
+        )}
+        
         {profile.about?.height && (
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('height')}</span>

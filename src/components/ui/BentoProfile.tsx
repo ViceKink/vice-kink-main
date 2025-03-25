@@ -36,7 +36,8 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
     profile.lookingFor ||
     profile.flirtingStyle ||
     profile.about?.lifestyle?.smoking !== undefined || 
-    profile.about?.lifestyle?.drinking
+    profile.about?.lifestyle?.drinking ||
+    profile.about?.status // Added status to details card
   );
   
   return (
@@ -78,23 +79,11 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
                 </div>
               )}
               
-              {profile.about?.status && (
-                <div className="mt-3">
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                    profile.about?.status === 'single' ? 'bg-vice-purple/10 text-vice-purple' : 
-                    profile.about?.status === 'married' ? 'bg-vice-red/10 text-vice-red' : 
-                    'bg-vice-orange/10 text-vice-orange'
-                  }`}>
-                    {profile.about?.status}
-                  </span>
-                </div>
-              )}
-              
-              {/* Removed occupation from here as it's shown in the details card */}
+              {/* Relationship status moved to the details card */}
             </div>
           </div>
 
-          {/* Quote Card - replaced bio with quote */}
+          {/* Quote Card */}
           <div className="bento-section quote-card rounded-2xl">
             <h3 className="text-sm font-semibold mb-1">Favorite Quote</h3>
             <p className={`${isMobile ? 'text-xs' : 'text-sm'} italic`}>
