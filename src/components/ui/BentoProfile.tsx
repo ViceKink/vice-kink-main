@@ -122,7 +122,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           />
         )}
 
-        {/* Updated layout for vices, kinks and secondary photo */}
+        {/* NEW LAYOUT: Vices/Kinks on left, Photo on right - side by side */}
         {(hasVices || hasKinks || hasSecondPhoto) && (
           <div className="bento-tags-photo-container">
             {/* Left side: Vices and Kinks stacked in column */}
@@ -158,13 +158,11 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             {hasSecondPhoto && (
               <div className="secondary-photo-container">
                 <div className="secondary-photo-card">
-                  <div className="secondary-photo">
-                    <img
-                      src={profile.photos[1]}
-                      alt={`${profile.name} second photo`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+                  <img
+                    src={profile.photos[1]}
+                    alt={`${profile.name} second photo`}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               </div>
             )}

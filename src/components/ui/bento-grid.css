@@ -128,27 +128,27 @@
   padding: 1rem;
 }
 
-/* Layout for the tags and secondary photo section in desktop - UPDATED to side-by-side */
+/* NEW CONTAINER FOR TAGS AND PHOTO - using flexbox instead of grid */
 .bento-tags-photo-container {
-  display: grid;
-  grid-template-columns: 6fr 6fr;
+  display: flex;
+  flex-direction: row;
   grid-column: span 12;
   gap: 0.3125rem; /* 5px */
   margin-top: 0.3125rem; /* 5px */
   min-height: 300px; /* Ensure container has enough height */
 }
 
-/* Left side container for vices and kinks - UPDATED for stacked layout */
+/* Left side container for vices and kinks - 50% width */
 .tags-container {
   display: flex;
   flex-direction: column;
   gap: 0.3125rem; /* 5px */
-  grid-column: span 6;
+  width: 50%;
 }
 
-/* Right side for secondary photo */
+/* Right side for secondary photo - 50% width */
 .secondary-photo-container {
-  grid-column: span 6;
+  width: 50%;
   height: 100%; /* Make it full height */
 }
 
@@ -160,44 +160,48 @@
   transition: transform 0.2s ease-in-out;
 }
 
-/* Secondary photo container - UPDATED to make it full height */
+/* Secondary photo container */
 .secondary-photo {
   overflow: hidden;
   height: 100%;
   border-radius: 0.75rem;
-  display: flex; /* Added to ensure image fills the container */
 }
 
 /* Vices and Kinks specific styles */
 .vices-card {
   background: white;
-  flex: 1; /* Take up half the space */
+  flex: 1;
+  margin-bottom: 0.3125rem; /* Add margin between cards */
 }
 
 .kinks-card {
   background: white;
-  flex: 1; /* Take up half the space */
+  flex: 1;
 }
 
 .secondary-photo-card {
   background: black;
   height: 100%; /* Make it full height */
-  display: flex; /* Added to ensure image fills the container */
+  border-radius: 0.75rem;
+  overflow: hidden;
 }
 
-/* Mobile layout adjustments */
+/* Mobile layout adjustments - UPDATED to keep the side-by-side layout */
 @media (max-width: 767px) {
-  .bento-tags-photo-container {
-    grid-template-columns: 1fr;
-  }
-  
-  .tags-container, .secondary-photo-container {
-    grid-column: span 12;
-  }
-  
-  .secondary-photo-card {
-    min-height: 250px;
-    margin-top: 0.3125rem; /* 5px */
+  /* On very small screens, stack them vertically */
+  @media (max-width: 480px) {
+    .bento-tags-photo-container {
+      flex-direction: column;
+    }
+    
+    .tags-container, .secondary-photo-container {
+      width: 100%;
+    }
+    
+    .secondary-photo-card {
+      min-height: 250px;
+      margin-top: 0.3125rem; /* 5px */
+    }
   }
 }
 
