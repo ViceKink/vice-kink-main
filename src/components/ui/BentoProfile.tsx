@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { UserProfile } from '@/types/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -122,7 +123,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           />
         )}
 
-        {/* NEW LAYOUT: Vices/Kinks on left, Photo on right - side by side */}
+        {/* Vices/Kinks on left, Photo on right - side by side */}
         {(hasVices || hasKinks || hasSecondPhoto) && (
           <div className="bento-tags-photo-container">
             {/* Left side: Vices and Kinks stacked in column */}

@@ -72,15 +72,16 @@
   }
   
   .bento-main-container {
-    flex-direction: row;
+    flex-direction: column;
   }
   
   .main-photo-container {
-    width: 60%;
+    width: 100%;
   }
   
   .user-details-container {
-    width: 40%;
+    width: 100%;
+    margin-top: 0.3125rem; /* 5px */
   }
   
   .main-photo {
@@ -186,22 +187,23 @@
   overflow: hidden;
 }
 
-/* Mobile layout adjustments - UPDATED to keep the side-by-side layout */
+/* Mobile layout adjustments */
 @media (max-width: 767px) {
-  /* On very small screens, stack them vertically */
-  @media (max-width: 480px) {
-    .bento-tags-photo-container {
-      flex-direction: column;
-    }
-    
-    .tags-container, .secondary-photo-container {
-      width: 100%;
-    }
-    
-    .secondary-photo-card {
-      min-height: 250px;
-      margin-top: 0.3125rem; /* 5px */
-    }
+  /* Keep the side-by-side layout on all mobile views */
+  .bento-tags-photo-container {
+    flex-direction: row; /* Keep side by side */
+  }
+  
+  .tags-container, .secondary-photo-container {
+    width: 50%; /* Keep 50/50 split */
+  }
+  
+  .secondary-photo-card {
+    min-height: 200px;
+  }
+  
+  .vices-card, .kinks-card {
+    min-height: 100px;
   }
 }
 
