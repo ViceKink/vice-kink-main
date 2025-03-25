@@ -51,9 +51,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
     profile.about?.status
   );
   
-  // Row tracking for responsive layout
-  let currentRow = 1;
-  
   return (
     <div className="w-full mx-auto">
       {/* Top section with main photo and user details */}
@@ -93,7 +90,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           </div>
 
           <div className="quote-card">
-            <ProfileQuote quote={profile.quote || "https://www.linkedin.com/in/tejasv-kumar/"} />
+            <ProfileQuote quote={profile.quote || ""} />
           </div>
         </div>
       </div>
@@ -168,7 +165,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         
         {/* Third photo after flirting style */}
         {hasThirdPhoto && (
-          <div className="bg-black p-0 rounded-2xl col-span-12 mt-[0.3125rem] overflow-hidden h-[300px]">
+          <div className="bg-black p-0 rounded-2xl col-span-12 mt-[0.3125rem] overflow-hidden h-[400px]">
             <img
               src={profile.photos[2]}
               alt={`${profile.name} third photo`}
@@ -200,17 +197,8 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
               </div>
             )}
             
-            {hasPassions && (
-              <div className="w-1/2 bg-vice-dark-purple p-4 rounded-2xl flex flex-col justify-center text-white">
-                <p className="text-sm mb-2">I am passionate about:</p>
-                <div className="flex flex-wrap gap-2">
-                  {profile.passions?.slice(0, 1).map((passion, index) => (
-                    <div key={index} className="bg-white text-vice-dark-purple px-3 py-1 rounded-full text-sm inline-block">
-                      {passion}
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {hasPassions && profile.passions && profile.passions.length > 0 && (
+              <ProfilePassion passion={profile.passions[0]} />
             )}
           </div>
         )}
@@ -219,7 +207,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         {(hasFifthPhoto || hasSixthPhoto) && (
           <div className="flex flex-col gap-[0.3125rem] col-span-12 mt-[0.3125rem]">
             {hasFifthPhoto && (
-              <div className="bg-black p-0 rounded-2xl overflow-hidden h-[300px]">
+              <div className="bg-black p-0 rounded-2xl overflow-hidden h-[400px]">
                 <img
                   src={profile.photos[4]}
                   alt={`${profile.name} fifth photo`}
@@ -229,7 +217,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             )}
             
             {hasSixthPhoto && (
-              <div className="bg-black p-0 rounded-2xl overflow-hidden h-[300px] mt-[0.3125rem]">
+              <div className="bg-black p-0 rounded-2xl overflow-hidden h-[400px] mt-[0.3125rem]">
                 <img
                   src={profile.photos[5]}
                   alt={`${profile.name} sixth photo`}

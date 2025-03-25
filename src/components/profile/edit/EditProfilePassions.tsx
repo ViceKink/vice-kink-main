@@ -24,7 +24,7 @@ const EditProfilePassions = ({ userData, updateField }: EditProfilePassionsProps
     }
   }, [userData]);
 
-  const handleAddPassion = () => {
+  const handleAddPassion = async () => {
     if (!newPassion.trim()) return;
     
     // Check if passion already exists
@@ -38,12 +38,60 @@ const EditProfilePassions = ({ userData, updateField }: EditProfilePassionsProps
     updateField('passions', updatedPassions);
     setNewPassion('');
     setIsAdding(false);
+    
+    // Save to Supabase
+    if (userData.id) {
+      try {
+        setIsLoading(true);
+        
+        const { error } = await supabase
+          .from('profile_passions')
+          .insert({
+            profile_id: userData.id,
+            passion: newPassion.trim()
+          });
+          
+        if (error) {
+          console.error('Error saving passion:', error);
+          toast.error('Failed to save passion');
+        }
+      } catch (error) {
+        console.error('Error saving passion:', error);
+        toast.error('Failed to save passion');
+      } finally {
+        setIsLoading(false);
+      }
+    }
   };
 
-  const handleRemovePassion = (index: number) => {
+  const handleRemovePassion = async (index: number) => {
+    const passionToRemove = passions[index];
     const updatedPassions = passions.filter((_, i) => i !== index);
     setPassions(updatedPassions);
     updateField('passions', updatedPassions);
+    
+    // Remove from Supabase
+    if (userData.id && passionToRemove) {
+      try {
+        setIsLoading(true);
+        
+        const { error } = await supabase
+          .from('profile_passions')
+          .delete()
+          .eq('profile_id', userData.id)
+          .eq('passion', passionToRemove);
+          
+        if (error) {
+          console.error('Error removing passion:', error);
+          toast.error('Failed to remove passion');
+        }
+      } catch (error) {
+        console.error('Error removing passion:', error);
+        toast.error('Failed to remove passion');
+      } finally {
+        setIsLoading(false);
+      }
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -75,6 +123,13 @@ const EditProfilePassions = ({ userData, updateField }: EditProfilePassionsProps
             </button>
           </div>
         ))}
+
+        {isLoading && (
+          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>Updating...</span>
+          </div>
+        )}
 
         {isAdding ? (
           <div className="flex items-center gap-2">

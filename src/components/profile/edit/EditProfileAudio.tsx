@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { UserProfile } from '@/context/AuthContext';
+import { UserProfile } from '@/types/auth';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -118,6 +118,49 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
         .getPublicUrl(filePath);
       
       const publicUrl = publicUrlData.publicUrl;
+      
+      // Get user ID from userData
+      const userId = userData.id;
+      
+      if (!userId) {
+        throw new Error('User ID not found');
+      }
+      
+      // First check if the user already has an audio entry
+      const { data: existingAudio, error: fetchError } = await supabase
+        .from('profile_audio')
+        .select('*')
+        .eq('profile_id', userId)
+        .single();
+      
+      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+        throw fetchError;
+      }
+      
+      // Insert or update in profile_audio table
+      if (existingAudio) {
+        // Update existing record
+        const { error: updateError } = await supabase
+          .from('profile_audio')
+          .update({ 
+            title: title.trim(),
+            url: publicUrl
+          })
+          .eq('profile_id', userId);
+          
+        if (updateError) throw updateError;
+      } else {
+        // Insert new record
+        const { error: insertError } = await supabase
+          .from('profile_audio')
+          .insert({ 
+            profile_id: userId,
+            title: title.trim(),
+            url: publicUrl
+          });
+          
+        if (insertError) throw insertError;
+      }
       
       // Update component state
       setAudioUrl(publicUrl);
