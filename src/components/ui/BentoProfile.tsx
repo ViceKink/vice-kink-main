@@ -21,7 +21,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
   };
   
   const hasPhotos = hasContent(profile.photos);
-  const hasSecondaryPhotos = profile.photos && profile.photos.length > 1;
+  const hasSecondPhoto = profile.photos && profile.photos.length > 1;
   const hasVices = hasContent(profile.vices);
   const hasKinks = hasContent(profile.kinks);
   const hasPassions = hasContent(profile.passions);
@@ -52,11 +52,6 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
                   alt={profile.name}
                   className="w-full h-full object-cover"
                 />
-                {hasSecondaryPhotos && (
-                  <div className="photo-count">
-                    {profile.photos.length} photos
-                  </div>
-                )}
               </>
             ) : (
               <div className="w-full h-full bg-gray-200 flex items-center justify-center">
@@ -130,7 +125,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           />
         )}
 
-        {/* Bento layout for vices, kinks, and secondary photos */}
+        {/* Vices card */}
         {hasVices && (
           <div className="vices-card bento-card p-4">
             <h3 className="text-base font-semibold mb-2">Vices</h3>
@@ -142,6 +137,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           </div>
         )}
 
+        {/* Kinks card */}
         {hasKinks && (
           <div className="kinks-card bento-card p-4">
             <h3 className="text-base font-semibold mb-2">Kinks</h3>
@@ -153,29 +149,21 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           </div>
         )}
 
-        {hasSecondaryPhotos && (
-          <div className="photos-card">
-            <div className="secondary-photos">
-              {profile.photos.length > 1 && (
-                <div className="relative w-full h-full">
-                  <img
-                    src={profile.photos[1]}
-                    alt={`${profile.name} photo 2`}
-                    className="w-full h-full object-cover"
-                  />
-                  {profile.photos.length > 2 && (
-                    <div className="absolute bottom-4 right-4 bg-white/90 px-2 py-1 rounded-lg text-sm text-black">
-                      {profile.photos.length} photos
-                    </div>
-                  )}
-                </div>
-              )}
+        {/* Secondary photo */}
+        {hasSecondPhoto && (
+          <div className="secondary-photo-card">
+            <div className="secondary-photo">
+              <img
+                src={profile.photos[1]}
+                alt={`${profile.name} second photo`}
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
         )}
 
         {hasFlirtingStyle && (
-          <div className="bg-white dark:bg-card p-4 rounded-2xl col-span-12">
+          <div className="bg-white dark:bg-card p-4 rounded-2xl col-span-12 mt-[0.3125rem]">
             <div className="flex flex-col h-full justify-center">
               <p className="text-base">
                 <span className="font-medium">My idea of flirting is: </span>
@@ -186,7 +174,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         )}
 
         {hasPassions && (
-          <div className="bg-vice-orange p-4 text-white rounded-2xl col-span-6">
+          <div className="bg-vice-orange p-4 text-white rounded-2xl col-span-6 mt-[0.3125rem]">
             <div className="flex flex-col h-full justify-center">
               <p className="text-sm">
                 I am passionate about: <span className="font-medium">{profile.passions[0]}</span>
@@ -195,7 +183,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           </div>
         )}
 
-        <div className="bg-vice-orange p-4 text-white rounded-2xl col-span-6">
+        <div className="bg-vice-orange p-4 text-white rounded-2xl col-span-6 mt-[0.3125rem]">
           <div className="flex flex-col h-full justify-center">
             <h3 className="text-sm font-semibold mb-1">Favorite Quote</h3>
             <p className="text-sm italic">

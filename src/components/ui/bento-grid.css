@@ -147,8 +147,8 @@
   transition: transform 0.2s ease-in-out;
 }
 
-/* Secondary photos container */
-.secondary-photos {
+/* Secondary photo container */
+.secondary-photo {
   overflow: hidden;
   height: 100%;
   border-radius: 0.75rem;
@@ -159,23 +159,32 @@
   grid-column: span 6;
   grid-row: span 1;
   background: white;
+  margin-top: 0.3125rem; /* 5px */
 }
 
 .kinks-card {
   grid-column: span 6;
   grid-row: span 1;
   background: white;
+  margin-top: 0.3125rem; /* 5px */
 }
 
-.photos-card {
-  grid-column: span 6;
-  grid-row: span 2;
+.secondary-photo-card {
+  grid-column: span 12;
+  grid-row: span 1;
   background: black;
+  margin-top: 0.3125rem; /* 5px */
+  min-height: 300px;
 }
 
 @media (max-width: 767px) {
-  .vices-card, .kinks-card, .photos-card {
+  .vices-card, .kinks-card {
     grid-column: span 6;
+  }
+  
+  .secondary-photo-card {
+    grid-column: span 12;
+    min-height: 250px;
   }
 }
 
