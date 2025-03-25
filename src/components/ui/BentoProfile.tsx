@@ -118,7 +118,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
                   <div className="vices-card bento-card p-4">
                     <h3 className="text-base font-semibold mb-2">Vices</h3>
                     <div className="flex flex-wrap gap-2">
-                      {profile.vices?.map((vice, index) => (
+                      {profile.vices?.slice(0, 5).map((vice, index) => (
                         <ProfileTag key={index} label={vice} type="vice" />
                       ))}
                     </div>
@@ -129,7 +129,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
                   <div className="kinks-card bento-card p-4">
                     <h3 className="text-base font-semibold mb-2">Kinks</h3>
                     <div className="flex flex-wrap gap-2">
-                      {profile.kinks?.map((kink, index) => (
+                      {profile.kinks?.slice(0, 5).map((kink, index) => (
                         <ProfileTag key={index} label={kink} type="kink" />
                       ))}
                     </div>
@@ -163,9 +163,9 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           </div>
         )}
         
-        {/* Third photo after flirting style */}
+        {/* Third photo after flirting style - now with square aspect ratio */}
         {hasThirdPhoto && (
-          <div className="bg-black p-0 rounded-2xl col-span-12 mt-[0.3125rem] overflow-hidden h-[400px]">
+          <div className="square-photo col-span-12 mt-[0.3125rem] bg-black rounded-2xl overflow-hidden">
             <img
               src={profile.photos[2]}
               alt={`${profile.name} third photo`}
@@ -197,17 +197,17 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
               </div>
             )}
             
-            {hasPassions && profile.passions && profile.passions.length > 0 && (
-              <ProfilePassion passion={profile.passions[0]} />
+            {hasPassions && profile.passions && (
+              <ProfilePassion passion={profile.passions.slice(0, 5)} />
             )}
           </div>
         )}
         
-        {/* Fifth and sixth photos stacked */}
+        {/* Fifth and sixth photos stacked - now with square aspect ratio */}
         {(hasFifthPhoto || hasSixthPhoto) && (
           <div className="flex flex-col gap-[0.3125rem] col-span-12 mt-[0.3125rem]">
             {hasFifthPhoto && (
-              <div className="bg-black p-0 rounded-2xl overflow-hidden h-[400px]">
+              <div className="square-photo bg-black rounded-2xl overflow-hidden">
                 <img
                   src={profile.photos[4]}
                   alt={`${profile.name} fifth photo`}
@@ -217,7 +217,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             )}
             
             {hasSixthPhoto && (
-              <div className="bg-black p-0 rounded-2xl overflow-hidden h-[400px] mt-[0.3125rem]">
+              <div className="square-photo bg-black rounded-2xl overflow-hidden mt-[0.3125rem]">
                 <img
                   src={profile.photos[5]}
                   alt={`${profile.name} sixth photo`}

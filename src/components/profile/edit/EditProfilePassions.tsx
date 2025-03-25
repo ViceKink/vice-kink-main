@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import ProfileTag from '@/components/ui/ProfileTag';
-import { Plus, X, Loader2 } from 'lucide-react';
+import { Plus, X, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,8 @@ const EditProfilePassions = ({ userData, updateField }: EditProfilePassionsProps
   const [newPassion, setNewPassion] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  
+  const MAX_PASSIONS = 5;
 
   useEffect(() => {
     if (userData?.passions) {
@@ -26,6 +28,14 @@ const EditProfilePassions = ({ userData, updateField }: EditProfilePassionsProps
 
   const handleAddPassion = async () => {
     if (!newPassion.trim()) return;
+    
+    // Check if we've reached the maximum
+    if (passions.length >= MAX_PASSIONS) {
+      toast.error(`You can only add up to ${MAX_PASSIONS} passions.`);
+      setNewPassion('');
+      setIsAdding(false);
+      return;
+    }
     
     // Check if passion already exists
     if (passions.includes(newPassion.trim())) {
@@ -103,9 +113,21 @@ const EditProfilePassions = ({ userData, updateField }: EditProfilePassionsProps
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Add things you're passionate about to help others get to know you better.
-      </p>
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-muted-foreground">
+          Add things you're passionate about to help others get to know you better.
+        </p>
+        <span className="text-sm font-medium">
+          {passions.length}/{MAX_PASSIONS}
+        </span>
+      </div>
+      
+      {passions.length >= MAX_PASSIONS && (
+        <div className="flex items-center gap-1 text-amber-500 text-sm">
+          <AlertCircle className="h-4 w-4" />
+          <span>Maximum of {MAX_PASSIONS} passions reached.</span>
+        </div>
+      )}
       
       <div className="flex flex-wrap gap-2">
         {passions.map((passion, index) => (
@@ -166,6 +188,7 @@ const EditProfilePassions = ({ userData, updateField }: EditProfilePassionsProps
           <button
             onClick={() => setIsAdding(true)}
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            disabled={passions.length >= MAX_PASSIONS}
           >
             <Plus className="h-4 w-4" />
             Add passion

@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { AlertCircle } from 'lucide-react';
 
 // Available languages list
 const LANGUAGES = [
@@ -32,6 +33,8 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
     userData?.about?.languages || []
   );
   
+  const MAX_LANGUAGES = 5;
+  
   // Debug logging
   console.log('EditProfileAbout - Initial userData:', userData);
   console.log('EditProfileAbout - Initial selectedLanguages:', selectedLanguages);
@@ -45,9 +48,18 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
   
   const handleLanguageToggle = (language: string) => {
     setSelectedLanguages(prev => {
-      const newLanguages = prev.includes(language)
-        ? prev.filter(l => l !== language)
-        : [...prev, language];
+      let newLanguages;
+      
+      if (prev.includes(language)) {
+        // Remove language if already selected
+        newLanguages = prev.filter(l => l !== language);
+      } else {
+        // Add language only if under the limit
+        if (prev.length >= MAX_LANGUAGES) {
+          return prev; // Don't make any changes if at the limit
+        }
+        newLanguages = [...prev, language];
+      }
       
       // Debug logging
       console.log('Language toggled:', language);
@@ -157,7 +169,20 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
       
       {/* Languages Section */}
       <div className="space-y-4 mt-6">
-        <Label>Languages</Label>
+        <div className="flex justify-between items-center">
+          <Label>Languages</Label>
+          <span className="text-sm font-medium">
+            {selectedLanguages.length}/{MAX_LANGUAGES}
+          </span>
+        </div>
+        
+        {selectedLanguages.length >= MAX_LANGUAGES && (
+          <div className="flex items-center gap-1 text-amber-500 text-sm">
+            <AlertCircle className="h-4 w-4" />
+            <span>Maximum of {MAX_LANGUAGES} languages reached.</span>
+          </div>
+        )}
+        
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {LANGUAGES.map(language => (
             <div key={language} className="flex items-center space-x-2">
@@ -165,8 +190,14 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
                 id={`lang-${language}`} 
                 checked={selectedLanguages.includes(language)}
                 onCheckedChange={() => handleLanguageToggle(language)}
+                disabled={!selectedLanguages.includes(language) && selectedLanguages.length >= MAX_LANGUAGES}
               />
-              <Label htmlFor={`lang-${language}`} className="cursor-pointer">{language}</Label>
+              <Label 
+                htmlFor={`lang-${language}`} 
+                className={`cursor-pointer ${!selectedLanguages.includes(language) && selectedLanguages.length >= MAX_LANGUAGES ? 'text-muted-foreground' : ''}`}
+              >
+                {language}
+              </Label>
             </div>
           ))}
         </div>

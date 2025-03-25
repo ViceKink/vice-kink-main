@@ -8,7 +8,7 @@
   padding: 0 10px;
 }
 
-/* Main container with 60/40 split - using grid instead of flex */
+/* Main container with 25/75 split for desktop - using grid instead of flex */
 .bento-main-container {
   display: grid;
   grid-template-columns: 60% 40%;
@@ -125,12 +125,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.3125rem; /* 5px */
-  width: 50%;
+  width: 25%; /* Reduced to 25% for desktop */
 }
 
 /* Secondary photo container */
 .secondary-photo-container {
-  width: 50%;
+  width: 75%; /* Increased to 75% for desktop */
   height: 100%; /* Make it full height */
 }
 
@@ -178,6 +178,19 @@
   display: block;
 }
 
+/* Square photos (3, 5, 6) with aspect ratio 1:1 */
+.square-photo {
+  aspect-ratio: 1/1;
+  width: 100%;
+  position: relative;
+}
+
+.square-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* Colors for different sections */
 .vice-red {
   background-color: #B30000;
@@ -201,7 +214,7 @@
     grid-template-columns: repeat(6, 1fr);
   }
   
-  /* Keep the 60/40 split for mobile too */
+  /* Keep the 60/40 split for mobile */
   .bento-main-container {
     grid-template-columns: 60% 40%;
   }
@@ -210,8 +223,12 @@
     flex-direction: row; /* Keep side by side */
   }
   
-  .tags-container, .secondary-photo-container {
-    width: 50%; /* Keep 50/50 split */
+  .tags-container {
+    width: 50%; /* 50/50 split for mobile */
+  }
+  
+  .secondary-photo-container {
+    width: 50%; /* 50/50 split for mobile */
   }
 }
 

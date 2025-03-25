@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/integrations/supabase/client';
 import ProfileTag from '@/components/ui/ProfileTag';
-import { Check, Plus, X, Loader2 } from 'lucide-react';
+import { Check, Plus, X, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Vice {
@@ -26,6 +26,8 @@ const VicesKinksManager = ({ mode, userData, updateField }: VicesKinksManagerPro
   const [items, setItems] = useState<(Vice | Kink)[]>([]);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const MAX_ITEMS = 5;
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -57,9 +59,19 @@ const VicesKinksManager = ({ mode, userData, updateField }: VicesKinksManagerPro
 
   const handleItemToggle = (itemName: string) => {
     setSelectedItems(prev => {
-      const newItems = prev.includes(itemName)
-        ? prev.filter(item => item !== itemName)
-        : [...prev, itemName];
+      let newItems;
+      
+      if (prev.includes(itemName)) {
+        // Remove the item if it's already selected
+        newItems = prev.filter(item => item !== itemName);
+      } else {
+        // Add the item only if we haven't reached the max
+        if (prev.length >= MAX_ITEMS) {
+          toast.error(`You can only select up to ${MAX_ITEMS} ${mode}.`);
+          return prev;
+        }
+        newItems = [...prev, itemName];
+      }
       
       // Update parent component state immediately
       const fieldName = mode === 'vices' ? 'vices' : 'kinks';
@@ -79,9 +91,21 @@ const VicesKinksManager = ({ mode, userData, updateField }: VicesKinksManagerPro
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Select all that apply to you. This information will be visible on your profile.
-      </p>
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-muted-foreground">
+          Select all that apply to you. This information will be visible on your profile.
+        </p>
+        <span className="text-sm font-medium">
+          {selectedItems.length}/{MAX_ITEMS}
+        </span>
+      </div>
+      
+      {selectedItems.length >= MAX_ITEMS && (
+        <div className="flex items-center gap-1 text-amber-500 text-sm">
+          <AlertCircle className="h-4 w-4" />
+          <span>Maximum of {MAX_ITEMS} {mode} reached.</span>
+        </div>
+      )}
       
       <div className="flex flex-wrap gap-2 mt-4">
         {items.map((item) => {
@@ -91,6 +115,7 @@ const VicesKinksManager = ({ mode, userData, updateField }: VicesKinksManagerPro
               key={item.id}
               className="group relative"
               onClick={() => handleItemToggle(item.name)}
+              disabled={!isSelected && selectedItems.length >= MAX_ITEMS}
             >
               <ProfileTag 
                 label={item.name}
