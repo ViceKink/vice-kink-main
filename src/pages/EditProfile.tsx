@@ -12,6 +12,7 @@ import EditProfileBasic from '@/components/profile/edit/EditProfileBasic';
 import EditProfileAbout from '@/components/profile/edit/EditProfileAbout';
 import EditProfileBio from '@/components/profile/edit/EditProfileBio';
 import EditProfilePassions from '@/components/profile/edit/EditProfilePassions';
+import EditProfileFlirtingStyle from '@/components/profile/edit/EditProfileFlirtingStyle';
 import VicesKinksManager from '@/components/profile/VicesKinksManager';
 import EditProfileAudio from '@/components/profile/edit/EditProfileAudio';
 import EditProfilePhotos from '@/components/profile/edit/EditProfilePhotos';
@@ -114,6 +115,7 @@ const EditProfile = () => {
             <TabsTrigger value="about">About Me</TabsTrigger>
             <TabsTrigger value="bio">Bio</TabsTrigger>
             <TabsTrigger value="interests">Interests</TabsTrigger>
+            <TabsTrigger value="flirting">Flirting Style</TabsTrigger>
           </TabsList>
           
           <TabsContent value="basic" className="mt-4">
@@ -184,6 +186,15 @@ const EditProfile = () => {
                 mode="kinks" 
                 userData={profileData}
                 updateField={updateField}
+              />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="flirting" className="mt-4">
+            <div className="bg-card rounded-lg p-6 shadow-sm">
+              <EditProfileFlirtingStyle 
+                userData={profileData} 
+                updateField={updateField} 
               />
             </div>
           </TabsContent>
