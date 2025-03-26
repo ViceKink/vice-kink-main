@@ -134,6 +134,11 @@
   height: 100%; /* Make it full height */
 }
 
+/* When secondary photo container should be full width */
+.secondary-photo-container.w-full {
+  width: 100%;
+}
+
 /* Generic bento card */
 .bento-card {
   overflow: hidden;
@@ -229,6 +234,11 @@
   
   .secondary-photo-container {
     width: 50%; /* 50/50 split for mobile */
+  }
+  
+  /* When secondary photo container should be full width on mobile */
+  .secondary-photo-container.w-full {
+    width: 100%;
   }
 }
 

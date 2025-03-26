@@ -139,7 +139,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             )}
 
             {hasSecondPhoto && (
-              <div className="secondary-photo-container">
+              <div className={`secondary-photo-container ${!hasVicesOrKinks ? 'w-full' : ''}`}>
                 <div className="secondary-photo-card">
                   <img
                     src={profile.photos[1]}
@@ -184,11 +184,11 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           </div>
         )}
         
-        {/* Fourth photo with passion (50/50 split) */}
+        {/* Fourth photo with passion (full width for each if one is missing) */}
         {(hasFourthPhoto || hasPassions) && (
           <div className="flex flex-row gap-[0.3125rem] w-full col-span-12 mt-[0.3125rem]">
             {hasFourthPhoto && (
-              <div className="w-1/2 bg-black rounded-2xl overflow-hidden h-[300px]">
+              <div className={`${hasPassions ? 'w-1/2' : 'w-full'} bg-black rounded-2xl overflow-hidden h-[300px]`}>
                 <img
                   src={profile.photos[3]}
                   alt={`${profile.name} fourth photo`}
@@ -198,7 +198,10 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
             )}
             
             {hasPassions && profile.passions && (
-              <ProfilePassion passion={profile.passions.slice(0, 5)} />
+              <ProfilePassion 
+                passion={profile.passions.slice(0, 5)} 
+                fullWidth={!hasFourthPhoto}
+              />
             )}
           </div>
         )}
