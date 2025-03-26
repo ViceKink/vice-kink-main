@@ -28,6 +28,27 @@ export function CustomDatePicker({
 }: CustomDatePickerProps) {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(value);
   
+  // We'll separately track each part of the date to avoid automatic resetting
+  const [selectedDay, setSelectedDay] = React.useState<string | undefined>(
+    selectedDate ? selectedDate.getDate().toString() : undefined
+  );
+  const [selectedMonth, setSelectedMonth] = React.useState<string | undefined>(
+    selectedDate ? selectedDate.getMonth().toString() : undefined
+  );
+  const [selectedYear, setSelectedYear] = React.useState<string | undefined>(
+    selectedDate ? selectedDate.getFullYear().toString() : undefined
+  );
+  
+  // Initialize the parts when the value prop changes
+  React.useEffect(() => {
+    if (value) {
+      setSelectedDay(value.getDate().toString());
+      setSelectedMonth(value.getMonth().toString());
+      setSelectedYear(value.getFullYear().toString());
+      setSelectedDate(value);
+    }
+  }, [value]);
+  
   // Generate days (1-31)
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   
@@ -53,72 +74,59 @@ export function CustomDatePicker({
     { length: currentYear - 1900 + 1 },
     (_, i) => currentYear - i
   );
-
-  // Extract day, month, year from the selected date
-  const day = selectedDate ? selectedDate.getDate().toString() : undefined;
-  const month = selectedDate ? selectedDate.getMonth().toString() : undefined;
-  const year = selectedDate ? selectedDate.getFullYear().toString() : undefined;
-
-  // Function to update the date when selections change
-  const updateDate = (part: 'day' | 'month' | 'year', value: string) => {
-    // Create a base date object - either from existing selection or a default
-    let newDate: Date;
-    
-    if (selectedDate) {
-      // If we already have a date selected, clone it to preserve values
-      newDate = new Date(selectedDate);
-    } else {
-      // If no date is selected yet, create a new one with default values
-      // Use Jan 1 of current year as default
-      const currYear = new Date().getFullYear();
-      newDate = new Date(currYear, 0, 1, 12, 0, 0, 0);
-    }
-    
-    // Update only the specific part requested
-    if (part === 'day') {
-      newDate.setDate(parseInt(value));
-    } else if (part === 'month') {
-      newDate.setMonth(parseInt(value));
-    } else if (part === 'year') {
-      // Fix: Only update the year while preserving the existing day and month
-      newDate.setFullYear(parseInt(value));
-    }
-    
-    // Handle edge cases like selecting April 31 or February 30
-    const maxDaysInMonth = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0).getDate();
-    if (newDate.getDate() > maxDaysInMonth) {
-      newDate.setDate(maxDaysInMonth);
-    }
-    
-    // Handle February 29 in non-leap years
-    if (newDate.getMonth() === 1 && newDate.getDate() === 29) {
-      const isLeapYear = (newDate.getFullYear() % 4 === 0 && newDate.getFullYear() % 100 !== 0) || newDate.getFullYear() % 400 === 0;
-      if (!isLeapYear) {
-        newDate.setDate(28);
-      }
-    }
-    
-    // Check if date is disabled
-    if (disabled && disabled(newDate)) {
-      return;
-    }
-    
-    // Set date to noon to avoid timezone issues
-    newDate.setHours(12, 0, 0, 0);
-    
-    setSelectedDate(newDate);
-    onChange?.(newDate);
-  };
-
+  
   // Get available days for the selected month and year
   const getAvailableDays = () => {
-    if (!month || !year) return days;
+    if (!selectedMonth || !selectedYear) return days;
     
-    const daysInMonth = new Date(parseInt(year), parseInt(month) + 1, 0).getDate();
+    const daysInMonth = new Date(parseInt(selectedYear), parseInt(selectedMonth) + 1, 0).getDate();
     return Array.from({ length: daysInMonth }, (_, i) => i + 1);
   };
-
+  
   const availableDays = getAvailableDays();
+  
+  // Function to update the date when selections change
+  const updateDate = (part: 'day' | 'month' | 'year', value: string) => {
+    // Update the individual part state
+    if (part === 'day') {
+      setSelectedDay(value);
+    } else if (part === 'month') {
+      setSelectedMonth(value);
+    } else if (part === 'year') {
+      setSelectedYear(value);
+    }
+    
+    // Only try to construct a full date if we have all parts
+    if (
+      (part === 'day' && selectedMonth && selectedYear) ||
+      (part === 'month' && selectedDay && selectedYear) ||
+      (part === 'year' && selectedDay && selectedMonth)
+    ) {
+      // Use existing values for parts not currently being changed
+      const day = part === 'day' ? parseInt(value) : selectedDay ? parseInt(selectedDay) : 1;
+      const month = part === 'month' ? parseInt(value) : selectedMonth ? parseInt(selectedMonth) : 0;
+      const year = part === 'year' ? parseInt(value) : selectedYear ? parseInt(selectedYear) : currentYear;
+      
+      // Create new date with all the parts
+      let newDate = new Date(year, month, day, 12, 0, 0, 0);
+      
+      // Handle edge cases like selecting April 31 or February 30
+      const maxDaysInMonth = new Date(year, month + 1, 0).getDate();
+      if (day > maxDaysInMonth) {
+        newDate = new Date(year, month, maxDaysInMonth, 12, 0, 0, 0);
+        // Update the day state if it was adjusted
+        setSelectedDay(maxDaysInMonth.toString());
+      }
+      
+      // Check if date is disabled
+      if (disabled && disabled(newDate)) {
+        return;
+      }
+      
+      setSelectedDate(newDate);
+      onChange?.(newDate);
+    }
+  };
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -127,7 +135,7 @@ export function CustomDatePicker({
         <div className="space-y-1">
           <Label htmlFor="day-select" className="text-xs">Day</Label>
           <Select
-            value={day}
+            value={selectedDay}
             onValueChange={(value) => updateDate('day', value)}
           >
             <SelectTrigger id="day-select" className="w-[80px]">
@@ -151,7 +159,7 @@ export function CustomDatePicker({
         <div className="space-y-1">
           <Label htmlFor="month-select" className="text-xs">Month</Label>
           <Select
-            value={month}
+            value={selectedMonth}
             onValueChange={(value) => updateDate('month', value)}
           >
             <SelectTrigger id="month-select" className="w-[120px]">
@@ -175,7 +183,7 @@ export function CustomDatePicker({
         <div className="space-y-1">
           <Label htmlFor="year-select" className="text-xs">Year</Label>
           <Select
-            value={year}
+            value={selectedYear}
             onValueChange={(value) => updateDate('year', value)}
           >
             <SelectTrigger id="year-select" className="w-[100px]">
