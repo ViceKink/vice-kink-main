@@ -23,6 +23,20 @@ const RELIGION_OPTIONS = [
   'Sikhism', 'Atheism', 'Agnosticism', 'Spiritual', 'Other', 'Prefer not to say'
 ];
 
+// Height options (4' to 8' with 1" increments)
+const HEIGHT_OPTIONS = [
+  // 4'0" to 4'11"
+  "4'0\"", "4'1\"", "4'2\"", "4'3\"", "4'4\"", "4'5\"", "4'6\"", "4'7\"", "4'8\"", "4'9\"", "4'10\"", "4'11\"",
+  // 5'0" to 5'11"
+  "5'0\"", "5'1\"", "5'2\"", "5'3\"", "5'4\"", "5'5\"", "5'6\"", "5'7\"", "5'8\"", "5'9\"", "5'10\"", "5'11\"",
+  // 6'0" to 6'11"
+  "6'0\"", "6'1\"", "6'2\"", "6'3\"", "6'4\"", "6'5\"", "6'6\"", "6'7\"", "6'8\"", "6'9\"", "6'10\"", "6'11\"",
+  // 7'0" to 7'11"
+  "7'0\"", "7'1\"", "7'2\"", "7'3\"", "7'4\"", "7'5\"", "7'6\"", "7'7\"", "7'8\"", "7'9\"", "7'10\"", "7'11\"",
+  // 8'0"
+  "8'0\""
+];
+
 interface EditProfileAboutProps {
   userData: any;
   updateField: (field: string, value: any) => void;
@@ -119,15 +133,22 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
           </Select>
         </div>
         
-        {/* Height */}
+        {/* Height - Changed to dropdown */}
         <div className="space-y-2">
           <Label htmlFor="height">Height</Label>
-          <Input
-            id="height"
-            placeholder="e.g., 5'10&quot; or 178cm"
-            value={userData?.about?.height || ''}
-            onChange={(e) => updateField('about', { ...userData.about, height: e.target.value })}
-          />
+          <Select
+            value={userData?.about?.height || undefined}
+            onValueChange={(value) => updateField('about', { ...userData.about, height: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select height" />
+            </SelectTrigger>
+            <SelectContent className="max-h-[200px]">
+              {HEIGHT_OPTIONS.map(height => (
+                <SelectItem key={height} value={height}>{height}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
         {/* Religion - Restored as dropdown */}
