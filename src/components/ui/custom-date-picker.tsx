@@ -61,27 +61,30 @@ export function CustomDatePicker({
 
   // Function to update the date when selections change
   const updateDate = (part: 'day' | 'month' | 'year', value: string) => {
+    // Create a new date object based on the current selectedDate or a new date
+    // Important: Using new Date() here was causing the issue as it sets to today's date
     const newDate = new Date(selectedDate || new Date());
     
     if (part === 'day') {
       newDate.setDate(parseInt(value));
     } else if (part === 'month') {
       newDate.setMonth(parseInt(value));
-      
-      // Handle edge cases like selecting April 31 or February 30
-      const maxDaysInMonth = new Date(newDate.getFullYear(), parseInt(value) + 1, 0).getDate();
-      if (newDate.getDate() > maxDaysInMonth) {
-        newDate.setDate(maxDaysInMonth);
-      }
     } else if (part === 'year') {
+      // Fix: Only update the year while preserving the existing day and month
       newDate.setFullYear(parseInt(value));
-      
-      // Handle February 29 in non-leap years
-      if (newDate.getMonth() === 1 && newDate.getDate() === 29) {
-        const isLeapYear = (newDate.getFullYear() % 4 === 0 && newDate.getFullYear() % 100 !== 0) || newDate.getFullYear() % 400 === 0;
-        if (!isLeapYear) {
-          newDate.setDate(28);
-        }
+    }
+    
+    // Handle edge cases like selecting April 31 or February 30
+    const maxDaysInMonth = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0).getDate();
+    if (newDate.getDate() > maxDaysInMonth) {
+      newDate.setDate(maxDaysInMonth);
+    }
+    
+    // Handle February 29 in non-leap years
+    if (newDate.getMonth() === 1 && newDate.getDate() === 29) {
+      const isLeapYear = (newDate.getFullYear() % 4 === 0 && newDate.getFullYear() % 100 !== 0) || newDate.getFullYear() % 400 === 0;
+      if (!isLeapYear) {
+        newDate.setDate(28);
       }
     }
     
