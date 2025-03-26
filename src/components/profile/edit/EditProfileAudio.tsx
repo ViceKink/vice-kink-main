@@ -8,6 +8,7 @@ import AudioPlayer from '@/components/ui/AudioPlayer';
 import { AlertCircle, Mic, MicOff, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'sonner';
 
 interface EditProfileAudioProps {
   userData: Partial<UserProfile>;
@@ -89,6 +90,12 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
   };
   
   const uploadRecording = async (blob: Blob | null, title: string) => {
+    console.log("Attempting to upload recording:", { 
+      hasBlob: !!blob, 
+      title, 
+      blobType: blob?.type 
+    });
+    
     // Clear any previous error
     setError('');
     
@@ -109,6 +116,8 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
       const fileName = `${uuidv4()}.webm`;
       const filePath = `audio/${fileName}`;
       
+      console.log("Uploading to Supabase:", { filePath, contentType: blob.type });
+      
       // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profile-media')
@@ -117,7 +126,12 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
           upsert: true
         });
       
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Storage upload error:", uploadError);
+        throw uploadError;
+      }
+      
+      console.log("Upload successful:", uploadData);
       
       // Get public URL
       const { data: publicUrlData } = supabase.storage
@@ -125,6 +139,7 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
         .getPublicUrl(filePath);
       
       const publicUrl = publicUrlData.publicUrl;
+      console.log("Public URL:", publicUrl);
       
       // Get user ID from userData
       const userId = userData.id;
@@ -132,6 +147,8 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
       if (!userId) {
         throw new Error('User ID not found');
       }
+      
+      console.log("User ID:", userId);
       
       // First check if the user already has an audio entry
       const { data: existingAudio, error: fetchError } = await supabase
@@ -141,12 +158,16 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
         .single();
       
       if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+        console.error("Error fetching existing audio:", fetchError);
         throw fetchError;
       }
+      
+      console.log("Existing audio entry:", existingAudio);
       
       // Insert or update in profile_audio table
       if (existingAudio) {
         // Update existing record
+        console.log("Updating existing record");
         const { error: updateError } = await supabase
           .from('profile_audio')
           .update({ 
@@ -155,9 +176,13 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
           })
           .eq('profile_id', userId);
           
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error("Database update error:", updateError);
+          throw updateError;
+        }
       } else {
         // Insert new record
+        console.log("Inserting new record");
         const { error: insertError } = await supabase
           .from('profile_audio')
           .insert({ 
@@ -166,7 +191,10 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
             url: publicUrl
           });
           
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error("Database insert error:", insertError);
+          throw insertError;
+        }
       }
       
       // Update component state with the permanent URL
@@ -178,7 +206,9 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
         url: publicUrl
       });
       
+      toast.success('Audio successfully uploaded!');
       setIsUploading(false);
+      console.log("Upload process completed successfully");
     } catch (err: any) {
       console.error('Error uploading audio:', err);
       setError('Failed to upload audio: ' + (err.message || 'Unknown error'));
@@ -242,7 +272,7 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
               type="button"
               variant="outline"
               onClick={() => uploadRecording(audioBlob, audioTitle)}
-              disabled={isUploading || !audioBlob}
+              disabled={isUploading}
               className="mt-2"
             >
               Upload Recording
