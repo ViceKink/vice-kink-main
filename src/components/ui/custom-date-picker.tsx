@@ -61,10 +61,20 @@ export function CustomDatePicker({
 
   // Function to update the date when selections change
   const updateDate = (part: 'day' | 'month' | 'year', value: string) => {
-    // Create a new date object based on the current selectedDate or a new date
-    // Important: Using new Date() here was causing the issue as it sets to today's date
-    const newDate = new Date(selectedDate || new Date());
+    // Create a base date object - either from existing selection or a default
+    let newDate: Date;
     
+    if (selectedDate) {
+      // If we already have a date selected, clone it to preserve values
+      newDate = new Date(selectedDate);
+    } else {
+      // If no date is selected yet, create a new one with default values
+      // Use Jan 1 of current year as default instead of today's date
+      const currYear = new Date().getFullYear();
+      newDate = new Date(currYear, 0, 1, 12, 0, 0, 0);
+    }
+    
+    // Update only the specific part requested
     if (part === 'day') {
       newDate.setDate(parseInt(value));
     } else if (part === 'month') {
