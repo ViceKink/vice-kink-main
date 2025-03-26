@@ -127,7 +127,7 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
       };
       
       // Start recording
-      mediaRecorder.start();
+      mediaRecorder.start(100); // Collect data every 100ms for more frequent updates
       setIsRecording(true);
       setRecordingTime(0);
       console.log("Recording started");
@@ -153,6 +153,11 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
     console.log("Stopping recording...");
     
     try {
+      // Request data before stopping (to ensure we get the final chunk)
+      if (mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.requestData();
+      }
+      
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       
