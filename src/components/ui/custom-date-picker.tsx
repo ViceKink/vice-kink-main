@@ -69,7 +69,7 @@ export function CustomDatePicker({
       newDate = new Date(selectedDate);
     } else {
       // If no date is selected yet, create a new one with default values
-      // Use Jan 1 of current year as default instead of today's date
+      // Use Jan 1 of current year as default
       const currYear = new Date().getFullYear();
       newDate = new Date(currYear, 0, 1, 12, 0, 0, 0);
     }
