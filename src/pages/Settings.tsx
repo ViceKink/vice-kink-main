@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,13 +8,25 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { Shield, Bell, CreditCard, LogOut, Gem, AlertCircle } from 'lucide-react';
+import { Shield, Bell, CreditCard, LogOut, Gem, AlertCircle, Trash2 } from 'lucide-react';
 import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const Settings = () => {
   const { user, logout } = useAuth();
   const [adCoins, setAdCoins] = useState(50); // Mock ad coins balance
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const handleLogout = async () => {
     try {
@@ -21,6 +34,17 @@ const Settings = () => {
       toast.success("Logged out successfully");
     } catch (error) {
       toast.error("Failed to log out");
+      console.error(error);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      // In a real application, this would delete the user's account
+      toast.error("Account deletion is not implemented in this demo");
+      setIsDialogOpen(false);
+    } catch (error) {
+      toast.error("Failed to delete account");
       console.error(error);
     }
   };
@@ -106,6 +130,72 @@ const Settings = () => {
               <Button variant="outline">Cancel</Button>
               <Button>Save Changes</Button>
             </CardFooter>
+          </Card>
+
+          {/* Account Actions Section */}
+          <Card className="border-destructive/20">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <LogOut className="h-5 w-5 text-vice-purple" />
+                <CardTitle>Account Actions</CardTitle>
+              </div>
+              <CardDescription>
+                Manage your account access and sessions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-col gap-4">
+                <div>
+                  <h3 className="text-base font-medium mb-2">Log out of your account</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    End your current session and return to the login page.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleLogout}
+                    className="flex items-center gap-2"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </Button>
+                </div>
+                
+                <Separator className="my-2" />
+                
+                <div>
+                  <h3 className="text-base font-medium mb-2 text-destructive">Danger Zone</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Permanently delete your account and all associated data.
+                  </p>
+                  <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="destructive" 
+                        className="flex items-center gap-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete Account
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete your
+                          account and remove your data from our servers.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Delete Account
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            </CardContent>
           </Card>
         </TabsContent>
         
