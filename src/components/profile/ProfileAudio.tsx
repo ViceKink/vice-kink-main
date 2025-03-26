@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import AudioPlayer from '@/components/ui/AudioPlayer';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { Play } from 'lucide-react';
 
 interface ProfileAudioProps {
@@ -12,7 +11,6 @@ interface ProfileAudioProps {
 }
 
 const ProfileAudio = ({ audio }: ProfileAudioProps) => {
-  const isMobile = useIsMobile();
   const [expanded, setExpanded] = useState(false);
   const [audioError, setAudioError] = useState(false);
   
@@ -29,25 +27,24 @@ const ProfileAudio = ({ audio }: ProfileAudioProps) => {
     expanded
   });
 
-  // Add function to validate the audio URL
-  const validateAudioUrl = () => {
+  // Validate the audio URL
+  useEffect(() => {
     // Only validate real URLs, not blob URLs (which are temporary)
     if (audio.url.startsWith('http')) {
       const audioElement = new Audio();
+      
       audioElement.onerror = () => {
         console.error("Audio URL failed to load:", audio.url);
         setAudioError(true);
       };
+      
       audioElement.onloadedmetadata = () => {
         console.log("Audio URL validated successfully");
         setAudioError(false);
       };
+      
       audioElement.src = audio.url;
     }
-  };
-
-  useEffect(() => {
-    validateAudioUrl();
   }, [audio.url]);
   
   const handleClick = () => {

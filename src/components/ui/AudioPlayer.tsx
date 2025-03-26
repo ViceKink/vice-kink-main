@@ -1,6 +1,6 @@
 
 import { useState, useRef, useEffect } from 'react';
-import { Play, Pause, ChevronRight } from 'lucide-react';
+import { Play, Pause } from 'lucide-react';
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -13,7 +13,6 @@ const AudioPlayer = ({ audioUrl, title, className = '' }: AudioPlayerProps) => {
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const progressBarRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -97,7 +96,6 @@ const AudioPlayer = ({ audioUrl, title, className = '' }: AudioPlayerProps) => {
         
         <div className="flex-1 bg-black/10 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
           <div 
-            ref={progressBarRef}
             className="h-full bg-vice-purple transition-all duration-100 ease-in-out"
             style={{ width: `${calculateProgress()}%` }}
           />

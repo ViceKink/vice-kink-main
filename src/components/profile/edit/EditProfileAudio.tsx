@@ -5,10 +5,10 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import AudioPlayer from '@/components/ui/AudioPlayer';
-import { AlertCircle, Mic, MicOff, Loader2, Check } from 'lucide-react';
+import { Mic, MicOff, Loader2, Check, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/use-toast';
 
 interface EditProfileAudioProps {
   userData: Partial<UserProfile>;
@@ -16,39 +16,36 @@ interface EditProfileAudioProps {
 }
 
 const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
-  // State for component
+  // Basic component state
   const [audioTitle, setAudioTitle] = useState(userData.audio?.title || '');
   const [audioUrl, setAudioUrl] = useState(userData.audio?.url || '');
-  const [error, setError] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [error, setError] = useState('');
   const [recordingSuccess, setRecordingSuccess] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
-  
-  // Refs for media handling
+
+  // Refs for recording
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const audioStreamRef = useRef<MediaStream | null>(null);
-  
+  const streamRef = useRef<MediaStream | null>(null);
+
   // Clear error when title changes
   useEffect(() => {
-    if (error) {
+    if (error && audioTitle.trim()) {
       setError('');
     }
-  }, [audioTitle]);
-  
-  // Cleanup function
+  }, [audioTitle, error]);
+
+  // Cleanup function when component unmounts
   useEffect(() => {
     return () => {
-      // Stop recording and clean up media if component unmounts during recording
-      if (isRecording && mediaRecorderRef.current) {
-        mediaRecorderRef.current.stop();
-        if (audioStreamRef.current) {
-          audioStreamRef.current.getTracks().forEach(track => track.stop());
-        }
+      // Stop any ongoing recording
+      if (isRecording) {
+        stopRecording();
       }
       
       // Clear timer
@@ -56,81 +53,87 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
         clearInterval(timerRef.current);
       }
       
-      // Release any object URLs to prevent memory leaks
+      // Release any blob URLs
       if (audioUrl && audioUrl.startsWith('blob:')) {
         URL.revokeObjectURL(audioUrl);
       }
     };
   }, [isRecording, audioUrl]);
-  
+
+  // Start recording function
   const startRecording = async () => {
-    setError('');
-    setRecordingSuccess(false);
-    setUploadSuccess(false);
-    
     try {
-      // Reset state before new recording
+      setError('');
+      setRecordingSuccess(false);
+      setUploadSuccess(false);
+      
+      // Reset audio blob
       setAudioBlob(null);
       
-      // If there's an existing blob URL, revoke it to prevent memory leaks
+      // Revoke previous blob URL if exists
       if (audioUrl && audioUrl.startsWith('blob:')) {
         URL.revokeObjectURL(audioUrl);
+        setAudioUrl('');
       }
       
-      // Get audio stream
+      console.log("Requesting microphone access...");
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      audioStreamRef.current = stream;
+      streamRef.current = stream;
       
-      // Create media recorder
+      // Create and configure media recorder
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
       
-      // Handle data available event
+      // Set up data handler
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        if (event.data && event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
       };
       
-      // Handle stop event
+      // Set up stop handler
       mediaRecorder.onstop = () => {
-        // Only process if we have audio chunks
+        console.log("Recording stopped, processing audio chunks...");
         if (audioChunksRef.current.length > 0) {
           // Create blob from chunks
-          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-          console.log("Recording stopped. Audio blob created:", { 
-            size: audioBlob.size, 
-            type: audioBlob.type,
-            chunks: audioChunksRef.current.length
-          });
+          const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
           
-          // Check if blob is valid
-          if (audioBlob.size > 0) {
-            setAudioBlob(audioBlob);
-            setRecordingSuccess(true);
+          console.log(`Created audio blob: size=${blob.size}, type=${blob.type}`);
+          
+          if (blob.size > 0) {
+            setAudioBlob(blob);
             
-            // Create a local URL for preview
-            const blobUrl = URL.createObjectURL(audioBlob);
-            setAudioUrl(blobUrl);
-            console.log("Created blob URL for audio preview:", blobUrl);
+            // Create preview URL
+            const url = URL.createObjectURL(blob);
+            setAudioUrl(url);
+            
+            setRecordingSuccess(true);
+            console.log("Recording processed successfully!");
           } else {
-            console.error("Empty audio blob created");
-            setError("Recording failed: No audio data captured.");
-            toast.error("Recording failed: No audio data captured.");
+            setError("Recording failed: no audio data captured");
+            toast({
+              title: "Recording Failed",
+              description: "No audio data was captured. Please try again.",
+              variant: "destructive"
+            });
           }
         } else {
-          console.error("No audio chunks recorded");
-          setError("Recording failed: No audio data captured.");
-          toast.error("Recording failed: No audio data captured.");
+          setError("Recording failed: no audio data received");
+          toast({
+            title: "Recording Failed",
+            description: "No audio data was received. Please try again.",
+            variant: "destructive"
+          });
         }
       };
       
       // Start recording
-      mediaRecorder.start(100); // Collect data every 100ms for more frequent updates
+      mediaRecorder.start(100); // Collect data in short intervals for more responsive UI
       setIsRecording(true);
       setRecordingTime(0);
-      console.log("Recording started");
+      
+      console.log("Recording started successfully!");
       
       // Start timer
       timerRef.current = setInterval(() => {
@@ -138,102 +141,124 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
       }, 1000);
       
     } catch (err) {
-      console.error('Error accessing microphone:', err);
-      setError('Could not access your microphone. Please ensure it is connected and you have granted permission.');
-      toast.error('Microphone access error');
+      console.error("Error starting recording:", err);
+      setError("Could not access microphone. Please ensure it is connected and you have granted permission.");
+      toast({
+        title: "Microphone Error",
+        description: "Could not access your microphone. Please check permissions and try again.",
+        variant: "destructive"
+      });
     }
   };
-  
+
+  // Stop recording function
   const stopRecording = () => {
+    console.log("Stopping recording...");
+    
     if (!mediaRecorderRef.current || !isRecording) {
       console.log("No active recording to stop");
       return;
     }
     
-    console.log("Stopping recording...");
-    
     try {
-      // Request data before stopping (to ensure we get the final chunk)
+      // Request final data
       if (mediaRecorderRef.current.state === 'recording') {
         mediaRecorderRef.current.requestData();
       }
       
+      // Stop recording
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       
-      // Stop all audio tracks
-      if (audioStreamRef.current) {
-        audioStreamRef.current.getTracks().forEach(track => track.stop());
+      // Stop all tracks
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => {
+          track.stop();
+        });
       }
       
-      // Clear the timer
+      // Clear timer
       if (timerRef.current) {
         clearInterval(timerRef.current);
+        timerRef.current = null;
       }
       
       console.log("Recording stopped successfully");
     } catch (err) {
       console.error("Error stopping recording:", err);
-      setError("There was an error stopping the recording.");
-      toast.error("Error stopping recording");
+      setError("Error stopping recording");
+      toast({
+        title: "Recording Error",
+        description: "There was a problem stopping the recording.",
+        variant: "destructive"
+      });
     }
   };
-  
+
+  // Format time for display
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
-  
+
+  // Upload recording function
   const uploadRecording = async () => {
-    // Validate required conditions
+    // Validation checks
     if (!audioBlob) {
-      setError('No recording found. Please record audio first.');
-      toast.error('No recording found');
+      setError('No recording to upload. Please record audio first.');
+      toast({
+        title: "Upload Error",
+        description: "No recording found. Please record audio first.",
+        variant: "destructive"
+      });
       return;
     }
     
     if (!audioTitle.trim()) {
-      setError('Please provide a title for your audio recording');
-      toast.error('Audio title required');
+      setError('Please provide a title for your audio recording.');
+      toast({
+        title: "Title Required",
+        description: "Please provide a title for your audio recording.",
+        variant: "destructive"
+      });
       return;
     }
     
     if (!userData.id) {
-      setError('User ID not found. Please refresh the page and try again.');
-      toast.error('User ID not found');
+      setError('User ID not found. Please refresh and try again.');
+      toast({
+        title: "User Error",
+        description: "User ID not found. Please refresh and try again.",
+        variant: "destructive"
+      });
       return;
     }
     
-    // Start upload process
+    // Begin upload process
     setIsUploading(true);
     setError('');
     setUploadSuccess(false);
     
-    console.log("Starting upload process:", { 
-      audioTitle,
-      blobSize: audioBlob.size,
-      blobType: audioBlob.type,
-      userId: userData.id
-    });
+    console.log("Starting upload process...");
     
     try {
-      // Generate a unique file name
+      // Generate unique filename
       const fileName = `${uuidv4()}.webm`;
       const filePath = `audio/${fileName}`;
       
-      console.log("Preparing to upload to Supabase storage:", { filePath });
+      console.log(`Uploading to storage path: ${filePath}`);
       
-      // Upload to Supabase Storage (with timeouts and retries)
-      let uploadAttempts = 0;
-      let uploadSuccessful = false;
-      let uploadData = null;
+      // Upload to Supabase Storage with retries
+      let uploadSuccess = false;
+      let attempts = 0;
+      let uploadError;
       
-      while (uploadAttempts < 3 && !uploadSuccessful) {
-        uploadAttempts++;
-        console.log(`Storage upload attempt ${uploadAttempts}...`);
-        
+      while (!uploadSuccess && attempts < 3) {
+        attempts++;
         try {
+          console.log(`Upload attempt ${attempts}...`);
+          
           const { data, error } = await supabase.storage
             .from('profile-media')
             .upload(filePath, audioBlob, {
@@ -243,29 +268,28 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
             });
           
           if (error) {
-            console.error(`Upload attempt ${uploadAttempts} failed:`, error);
-            if (uploadAttempts === 3) {
-              throw error;
-            }
+            console.error(`Upload attempt ${attempts} failed:`, error);
+            uploadError = error;
             // Wait before retry
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            if (attempts < 3) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
           } else {
-            uploadSuccessful = true;
-            uploadData = data;
-            console.log("Storage upload successful:", data);
+            uploadSuccess = true;
+            console.log("Upload successful:", data);
           }
-        } catch (innerError) {
-          console.error(`Upload attempt ${uploadAttempts} exception:`, innerError);
-          if (uploadAttempts === 3) {
-            throw innerError;
-          }
+        } catch (err) {
+          console.error(`Upload attempt ${attempts} error:`, err);
+          uploadError = err;
           // Wait before retry
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          if (attempts < 3) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
         }
       }
       
-      if (!uploadSuccessful) {
-        throw new Error('Failed to upload after multiple attempts');
+      if (!uploadSuccess) {
+        throw uploadError || new Error("Failed to upload after multiple attempts");
       }
       
       // Get public URL
@@ -273,32 +297,26 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
         .from('profile-media')
         .getPublicUrl(filePath);
       
-      if (!publicUrlData || !publicUrlData.publicUrl) {
-        throw new Error('Failed to get public URL for uploaded file');
+      if (!publicUrlData?.publicUrl) {
+        throw new Error("Failed to get public URL for uploaded file");
       }
       
       const publicUrl = publicUrlData.publicUrl;
       console.log("Generated public URL:", publicUrl);
       
-      // Check if the user already has an audio entry
-      const { data: existingAudio, error: fetchError } = await supabase
+      // Check for existing record
+      const { data: existingAudio } = await supabase
         .from('profile_audio')
         .select('*')
         .eq('profile_id', userData.id)
         .maybeSingle();
       
-      if (fetchError) {
-        console.error("Error checking existing audio:", fetchError);
-        throw fetchError;
-      }
-      
-      console.log("Existing audio check result:", existingAudio);
+      console.log("Existing audio check:", existingAudio);
       
       let dbResult;
       
-      // Insert or update in profile_audio table
+      // Update or insert record
       if (existingAudio) {
-        // Update existing record
         console.log("Updating existing audio record");
         const { data, error } = await supabase
           .from('profile_audio')
@@ -312,8 +330,7 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
         if (error) throw error;
         dbResult = data;
       } else {
-        // Insert new record
-        console.log("Inserting new audio record");
+        console.log("Creating new audio record");
         const { data, error } = await supabase
           .from('profile_audio')
           .insert({ 
@@ -329,7 +346,7 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
       
       console.log("Database operation successful:", dbResult);
       
-      // Update component state with the permanent URL
+      // Update local state
       setAudioUrl(publicUrl);
       
       // Update parent component
@@ -339,22 +356,29 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
       });
       
       setUploadSuccess(true);
-      toast.success('Audio successfully uploaded!');
-      console.log("Upload process completed successfully");
+      toast({
+        title: "Upload Successful",
+        description: "Your audio has been uploaded successfully!",
+      });
+      
     } catch (err: any) {
-      console.error('Error uploading audio:', err);
-      const errorMessage = err.message || 'Unknown error';
-      setError('Failed to upload audio: ' + errorMessage);
-      toast.error('Failed to upload audio: ' + errorMessage);
+      console.error("Upload error:", err);
+      const errorMessage = err.message || "Unknown error";
+      setError(`Failed to upload: ${errorMessage}`);
+      toast({
+        title: "Upload Failed",
+        description: `Failed to upload: ${errorMessage}`,
+        variant: "destructive"
+      });
     } finally {
       setIsUploading(false);
     }
   };
   
-  // Determine if we have a permanent audio URL (not a blob URL)
+  // Check if we have a stored audio (not a blob URL)
   const hasStoredAudio = !!(userData.audio?.url && !userData.audio.url.startsWith('blob:'));
   const hasRecordedAudio = !!audioBlob;
-  
+
   return (
     <div className="space-y-6">
       <p className="text-sm text-muted-foreground">
@@ -362,6 +386,7 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
       </p>
       
       <div className="space-y-4">
+        {/* Audio Title Input */}
         <div className="space-y-2">
           <Label htmlFor="audioTitle">Audio Title</Label>
           <Input
@@ -376,6 +401,7 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
           )}
         </div>
         
+        {/* Recording Controls */}
         <div className="space-y-2 mt-4">
           <Label>Record Audio</Label>
           <div className="flex items-center gap-3">
@@ -412,6 +438,7 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
             )}
           </div>
           
+          {/* Upload Button */}
           {hasRecordedAudio && !isRecording && (
             <Button
               type="button"
@@ -431,6 +458,7 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
             </Button>
           )}
           
+          {/* Status Messages */}
           {isUploading && (
             <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -446,6 +474,7 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
           )}
         </div>
         
+        {/* Error Messages */}
         {error && (
           <div className="flex items-center text-destructive text-sm gap-1 mt-2">
             <AlertCircle className="w-4 h-4" />
@@ -453,6 +482,7 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
           </div>
         )}
         
+        {/* Audio Preview */}
         {(hasStoredAudio || audioUrl) && !isRecording && (
           <div className="mt-6">
             <h3 className="text-sm font-medium mb-2">Preview:</h3>
