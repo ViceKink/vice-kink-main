@@ -11,26 +11,18 @@ import { cn } from '@/lib/utils';
 const Auth = () => {
   const { login, signup, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
-  const [isNewUser, setIsNewUser] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   
   // Check for redirect after successful authentication
   useEffect(() => {
     if (isAuthenticated) {
-      // If it's a new user, redirect to edit profile page
-      if (isNewUser) {
-        console.log("Auth: New user authenticated, redirecting to edit profile");
-        setIsNewUser(false); // Reset the flag
-        navigate('/edit-profile', { replace: true });
-      } else {
-        // Otherwise redirect to the page they tried to visit or home page
-        const from = location.state?.from?.pathname || '/';
-        console.log("Auth: User authenticated, redirecting to:", from);
-        navigate(from, { replace: true });
-      }
+      // Redirect to the page they tried to visit or home page
+      const from = location.state?.from?.pathname || '/';
+      console.log("Auth: User authenticated, redirecting to:", from);
+      navigate(from, { replace: true });
     }
-  }, [isAuthenticated, location.state, navigate, isNewUser]);
+  }, [isAuthenticated, location.state, navigate]);
   
   // Debug log for authentication state
   useEffect(() => {
@@ -66,11 +58,7 @@ const Auth = () => {
             </TabsContent>
             
             <TabsContent value="signup">
-              <SignupForm 
-                onSignup={signup} 
-                isLoading={isLoading} 
-                setIsNewUser={setIsNewUser} 
-              />
+              <SignupForm onSignup={signup} isLoading={isLoading} />
             </TabsContent>
           </Tabs>
         </div>
@@ -169,10 +157,9 @@ const LoginForm = ({ onLogin, isLoading }: LoginFormProps) => {
 interface SignupFormProps {
   onSignup: (email: string, password: string, name: string, username: string) => Promise<void>;
   isLoading: boolean;
-  setIsNewUser: (isNew: boolean) => void;
 }
 
-const SignupForm = ({ onSignup, isLoading, setIsNewUser }: SignupFormProps) => {
+const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -203,13 +190,10 @@ const SignupForm = ({ onSignup, isLoading, setIsNewUser }: SignupFormProps) => {
     
     try {
       setLocalLoading(true);
-      // Set the new user flag before signing up
-      setIsNewUser(true);
       await onSignup(email, password, name, username);
       toast.success('Please check your email to confirm your account.');
     } catch (error) {
       // Error is handled in the auth context
-      setIsNewUser(false); // Reset the flag if there's an error
     } finally {
       setLocalLoading(false);
     }
