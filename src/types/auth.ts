@@ -11,6 +11,7 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
+  username?: string;
   birthDate?: string; // ISO string for date of birth
   age?: number;
   photos?: string[];

@@ -22,6 +22,7 @@ const formatProfile = (profile: any): UserProfile => {
     id: profile.id,
     name: profile.name,
     email: '', // This will be set later
+    username: profile.username,
     age: profile.age || undefined,
     birthDate: profile.birth_date ? profile.birth_date : undefined,
     location: profile.location || undefined,
@@ -248,6 +249,18 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
   try {
     console.log('Updating profile with data:', profileData);
     
+    // Skip username updates
+    if (profileData.username) {
+      console.warn('Username cannot be updated after account creation');
+      delete profileData.username;
+    }
+    
+    // Skip email updates
+    if (profileData.email) {
+      console.warn('Email cannot be updated in this form');
+      delete profileData.email;
+    }
+    
     // Split data into main profile fields and languages
     const { languages, ...mainProfileData } = profileData;
     const finalData: Record<string, any> = {};
@@ -255,8 +268,8 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
     // Convert any camelCase to snake_case for database compatibility
     Object.entries(mainProfileData).forEach(([key, value]) => {
       // Skip certain fields
-      if (key === 'email') {
-        return; // Skip email field
+      if (key === 'email' || key === 'username') {
+        return; // Skip email and username fields
       }
       else if (key === 'birthDate') {
         finalData['birth_date'] = value;

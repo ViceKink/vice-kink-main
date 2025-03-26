@@ -155,12 +155,13 @@ const LoginForm = ({ onLogin, isLoading }: LoginFormProps) => {
 };
 
 interface SignupFormProps {
-  onSignup: (email: string, password: string, name: string) => Promise<void>;
+  onSignup: (email: string, password: string, name: string, username: string) => Promise<void>;
   isLoading: boolean;
 }
 
 const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -176,6 +177,8 @@ const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
     // Basic validation
     const newErrors: Record<string, string> = {};
     if (!name) newErrors.name = 'Name is required';
+    if (!username) newErrors.username = 'Username is required';
+    else if (username.includes(' ')) newErrors.username = 'Username cannot contain spaces';
     if (!email) newErrors.email = 'Email is required';
     if (!password) newErrors.password = 'Password is required';
     if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
@@ -187,7 +190,7 @@ const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
     
     try {
       setLocalLoading(true);
-      await onSignup(email, password, name);
+      await onSignup(email, password, name, username);
       toast.success('Please check your email to confirm your account.');
     } catch (error) {
       // Error is handled in the auth context
@@ -215,6 +218,23 @@ const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
         {errors.name && (
           <p className="text-destructive text-sm">{errors.name}</p>
         )}
+      </div>
+      
+      <div className="space-y-1">
+        <Label htmlFor="username">Username</Label>
+        <Input
+          id="username"
+          type="text"
+          placeholder="johndoe"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className={cn(errors.username && "border-destructive")}
+          disabled={buttonLoading}
+        />
+        {errors.username && (
+          <p className="text-destructive text-sm">{errors.username}</p>
+        )}
+        <p className="text-xs text-muted-foreground">Username cannot be changed later</p>
       </div>
       
       <div className="space-y-1">

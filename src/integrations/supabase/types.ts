@@ -498,6 +498,7 @@ export type Database = {
           relationship_status: string | null
           religion: string | null
           sexuality: string | null
+          username: string | null
           verified: boolean | null
           zodiac: string | null
         }
@@ -518,6 +519,7 @@ export type Database = {
           relationship_status?: string | null
           religion?: string | null
           sexuality?: string | null
+          username?: string | null
           verified?: boolean | null
           zodiac?: string | null
         }
@@ -538,6 +540,7 @@ export type Database = {
           relationship_status?: string | null
           religion?: string | null
           sexuality?: string | null
+          username?: string | null
           verified?: boolean | null
           zodiac?: string | null
         }

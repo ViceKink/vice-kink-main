@@ -1,4 +1,3 @@
-
 import React, { 
   createContext, 
   useState, 
@@ -17,7 +16,7 @@ type AuthContextType = {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  signup: (email: string, password: string, name: string, username: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (profileData: Partial<UserProfile>) => Promise<void>;
   fetchProfile: (userId?: string) => Promise<UserProfile | null>;
@@ -135,7 +134,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const signup = async (email: string, password: string, name: string) => {
+  const signup = async (email: string, password: string, name: string, username: string) => {
     try {
       const { error } = await supabase.auth.signUp({
         email,
@@ -143,6 +142,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         options: {
           data: {
             name,
+            username,
           },
         },
       });
@@ -175,7 +175,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Process top-level profile properties
       Object.entries(profileData).forEach(([key, value]) => {
         // Skip fields that are handled separately
-        if (key !== 'email' && key !== 'about' && key !== 'passions' && 
+        if (key !== 'email' && key !== 'username' && key !== 'about' && key !== 'passions' && 
             key !== 'vices' && key !== 'kinks' && key !== 'photos' && 
             key !== 'audio') {
           profileUpdateData[key] = value;
@@ -213,7 +213,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Update top-level properties
         Object.entries(profileData).forEach(([key, value]) => {
-          if (key !== 'about') {
+          if (key !== 'about' && key !== 'email' && key !== 'username') {
             (updatedUser as any)[key] = value;
           }
         });
