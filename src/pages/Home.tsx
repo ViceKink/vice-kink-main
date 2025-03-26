@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Heart, PenSquare, MessageSquare, Bookmark, MoreHorizontal, Image, Smile } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -173,8 +172,8 @@ const Home = () => {
       
       {/* Social Feed Section */}
       {isAuthenticated && (
-        <section className="py-6 px-2 md:px-4 bg-background mt-16 md:mt-16">
-          <div className="container mx-auto max-w-2xl">
+        <section className="py-6 px-1 sm:px-2 md:px-4 bg-background mt-16 md:mt-16">
+          <div className="container mx-auto max-w-3xl">
             {/* Create Post Box */}
             <div className="bg-card rounded-xl shadow-md mb-6 overflow-hidden border border-border">
               {!isCreatingPost ? (
@@ -509,3 +508,4 @@ const FeatureCard = ({ icon, title, description }: FeatureCardProps) => {
 };
 
 export default Home;
+

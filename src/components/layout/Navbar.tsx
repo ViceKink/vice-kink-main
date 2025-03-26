@@ -78,6 +78,16 @@ const Navbar = () => {
                 >
                   Messages
                 </NavLink>
+                <NavLink
+                  to="/settings"
+                  className={({ isActive }) =>
+                    `transition-colors hover:text-vice-purple ${
+                      isActive ? 'text-vice-purple' : 'text-foreground/80'
+                    }`
+                  }
+                >
+                  Settings
+                </NavLink>
               </nav>
             )}
             
@@ -86,7 +96,7 @@ const Navbar = () => {
                 <Button 
                   variant="ghost" 
                   onClick={() => setCreatePostOpen(true)}
-                  className="h-10 w-10 md:h-11 md:w-auto md:px-4 rounded-full hover:bg-vice-purple/10 text-foreground/80 hover:text-vice-purple"
+                  className="h-10 w-10 md:h-10 md:w-auto md:px-4 rounded-full hover:bg-vice-purple/10 text-foreground/80 hover:text-vice-purple"
                 >
                   <PlusCircle className="h-6 w-6 md:mr-2" />
                   <span className="hidden md:inline">Create Post</span>
