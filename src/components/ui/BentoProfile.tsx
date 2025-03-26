@@ -55,44 +55,52 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
     <div className="w-full mx-auto">
       {/* Top section with main photo and user details */}
       <div className="bento-main-container">
-        <div className="main-photo-container">
-          <div className="main-photo">
-            {hasPhotos ? (
+        {hasPhotos && (
+          <div className={`main-photo-container ${!hasQuote ? 'w-full' : ''}`}>
+            <div className="main-photo">
               <img
                 src={profile.photos[0]}
                 alt={profile.name}
               />
-            ) : (
+            </div>
+          </div>
+        )}
+
+        {(!hasPhotos && hasQuote) && (
+          <div className="main-photo-container w-full">
+            <div className="main-photo">
               <div className="w-full h-full bg-gray-200 flex items-center justify-center">
                 <span className="text-gray-500">No photo available</span>
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="user-details-container">
-          <div className="user-info">
-            <div className="flex items-baseline">
-              <h2 className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>{profile.name}</h2>
-              {profile.verified && (
-                <span className="ml-1 text-blue-500">✓</span>
+        {hasQuote && (
+          <div className={`user-details-container ${!hasPhotos ? 'w-full' : ''}`}>
+            <div className="user-info">
+              <div className="flex items-baseline">
+                <h2 className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'}`}>{profile.name}</h2>
+                {profile.verified && (
+                  <span className="ml-1 text-blue-500">✓</span>
+                )}
+              </div>
+              
+              <div className={isMobile ? 'text-lg' : 'text-xl'}>{profile.age}</div>
+              
+              {profile.location && (
+                <div className="text-sm text-foreground/70 mt-2 flex items-center">
+                  <MapPin className="w-3.5 h-3.5 mr-1 text-red-400" />
+                  {profile.location}
+                </div>
               )}
             </div>
-            
-            <div className={isMobile ? 'text-lg' : 'text-xl'}>{profile.age}</div>
-            
-            {profile.location && (
-              <div className="text-sm text-foreground/70 mt-2 flex items-center">
-                <MapPin className="w-3.5 h-3.5 mr-1 text-red-400" />
-                {profile.location}
-              </div>
-            )}
-          </div>
 
-          <div className="quote-card">
-            <ProfileQuote quote={profile.quote || ""} />
+            <div className="quote-card">
+              <ProfileQuote quote={profile.quote || ""} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Grid layout for the bento cards */}
@@ -113,7 +121,7 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         {(hasVicesOrKinks || hasSecondPhoto) && (
           <div className="bento-tags-photo-container">
             {(hasVices || hasKinks) && (
-              <div className="tags-container">
+              <div className={`tags-container ${!hasSecondPhoto ? 'w-full' : ''}`}>
                 {hasVices && (
                   <div className="vices-card bento-card p-4">
                     <h3 className="text-base font-semibold mb-2">Vices</h3>

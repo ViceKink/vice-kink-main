@@ -25,6 +25,12 @@
   overflow: hidden;
 }
 
+/* When main photo should be full width */
+.main-photo-container.w-full {
+  width: 100%;
+  grid-column: span 2;
+}
+
 /* Main photo with proper aspect ratio */
 .main-photo {
   width: 100%;
@@ -50,6 +56,12 @@
   grid-template-rows: auto 1fr;
   gap: 0.3125rem; /* 5px */
   height: 100%;
+}
+
+/* When user details should be full width */
+.user-details-container.w-full {
+  width: 100%;
+  grid-column: span 2;
 }
 
 /* User info card */
@@ -126,6 +138,11 @@
   flex-direction: column;
   gap: 0.3125rem; /* 5px */
   width: 25%; /* Reduced to 25% for desktop */
+}
+
+/* When tags container should be full width */
+.tags-container.w-full {
+  width: 100%;
 }
 
 /* Secondary photo container */
@@ -224,12 +241,29 @@
     grid-template-columns: 60% 40%;
   }
   
+  /* When main photo should be full width on mobile */
+  .main-photo-container.w-full {
+    width: 100%;
+    grid-column: span 2;
+  }
+  
+  /* When user details should be full width on mobile */
+  .user-details-container.w-full {
+    width: 100%;
+    grid-column: span 2;
+  }
+  
   .bento-tags-photo-container {
     flex-direction: row; /* Keep side by side */
   }
   
   .tags-container {
     width: 50%; /* 50/50 split for mobile */
+  }
+  
+  /* When tags container should be full width on mobile */
+  .tags-container.w-full {
+    width: 100%;
   }
   
   .secondary-photo-container {
