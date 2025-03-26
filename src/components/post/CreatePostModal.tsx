@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Image, Smile, AlignLeft, BookOpen, Hash } from 'lucide-react';
+import { X, Image, AlignLeft, BookOpen, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -34,10 +34,42 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
   const [communities, setCommunities] = useState<Community[]>([]);
   const [selectedCommunity, setSelectedCommunity] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [defaultCommunityId, setDefaultCommunityId] = useState<string | null>(null);
   
   useEffect(() => {
     const fetchCommunities = async () => {
       try {
+        // First, check if NSFW community exists
+        const { data: existingNSFW, error: existingError } = await supabase
+          .from('communities')
+          .select('id')
+          .eq('name', 'NSFW')
+          .single();
+          
+        // If NSFW community doesn't exist, create it
+        if (existingError && !existingNSFW) {
+          const { data: newNSFW, error: createError } = await supabase
+            .from('communities')
+            .insert({
+              name: 'NSFW',
+              type: 'vice',
+              description: 'Not Safe For Work content'
+            })
+            .select()
+            .single();
+            
+          if (createError) throw createError;
+          
+          if (newNSFW) {
+            setDefaultCommunityId(newNSFW.id);
+            setSelectedCommunity(newNSFW.id);
+          }
+        } else if (existingNSFW) {
+          setDefaultCommunityId(existingNSFW.id);
+          setSelectedCommunity(existingNSFW.id);
+        }
+        
+        // Fetch all communities
         const { data, error } = await supabase
           .from('communities')
           .select('id, name, type')
@@ -105,6 +137,17 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
   };
   
   const handlePost = async () => {
+    // Validate required fields
+    if (!title.trim()) {
+      toast.error('Post title is required');
+      return;
+    }
+    
+    if (!selectedCommunity) {
+      toast.error('Please select a community');
+      return;
+    }
+    
     if (activeTab === 'text' && content.trim()) {
       try {
         setIsLoading(true);
@@ -114,10 +157,10 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
           .from('posts')
           .insert({
             user_id: user?.id,
-            title: title || null,
+            title: title,
             content,
             type: 'text',
-            community_id: selectedCommunity || null
+            community_id: selectedCommunity
           })
           .select()
           .single();
@@ -145,10 +188,10 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
           .from('posts')
           .insert({
             user_id: user?.id,
-            title: title || null,
+            title: title,
             content,
             type: 'photo',
-            community_id: selectedCommunity || null,
+            community_id: selectedCommunity,
             media_url: imageUrl
           })
           .select()
@@ -176,10 +219,10 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
           .from('posts')
           .insert({
             user_id: user?.id,
-            title: title || null,
+            title: title,
             content,
             type: 'comic',
-            community_id: selectedCommunity || null,
+            community_id: selectedCommunity,
             media_url: comicDataString // In a real implementation, this would be a URL to the stored comic data
           })
           .select()
@@ -221,21 +264,24 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
           
           <div className="mb-4">
             <Input
-              placeholder="Post title (optional)"
+              placeholder="Post title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="mb-2"
+              required
             />
             
             <div className="flex items-center gap-2">
               <Hash className="h-4 w-4 text-muted-foreground" />
-              <Select value={selectedCommunity || undefined} onValueChange={setSelectedCommunity}>
+              <Select 
+                value={selectedCommunity || undefined} 
+                onValueChange={setSelectedCommunity}
+                required
+              >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a community (optional)" />
+                  <SelectValue placeholder="Select a community" />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* Fixed the empty value issue by using "none" instead of empty string */}
-                  <SelectItem value="none">No community</SelectItem>
                   {communities.map((community) => (
                     <SelectItem key={community.id} value={community.id}>
                       {community.name} ({community.type})
@@ -269,13 +315,6 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
               />
-              
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="flex items-center gap-1">
-                  <Smile className="w-4 h-4" />
-                  Feeling
-                </Button>
-              </div>
             </TabsContent>
             
             <TabsContent value="photo" className="space-y-4">
@@ -356,6 +395,8 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
             disabled={
               isLoading || 
               !content.trim() || 
+              !title.trim() ||
+              !selectedCommunity ||
               (activeTab === 'photo' && !selectedImage) || 
               (activeTab === 'comic' && !comicData)
             }

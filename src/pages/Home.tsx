@@ -24,7 +24,6 @@ interface Post {
   };
 }
 
-// Mock posts data for initial render
 const mockPosts: Post[] = [
   {
     id: '1',
@@ -83,8 +82,6 @@ const Home = () => {
   const handleCreatePost = async () => {
     if (!newPostContent.trim()) return;
     
-    // In a real implementation, this would send the post to Supabase
-    // For now, we'll just add it to our local state
     const newPost: Post = {
       id: `temp-${Date.now()}`,
       user_id: user?.id || 'anonymous',
@@ -105,12 +102,10 @@ const Home = () => {
   
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section (only for non-authenticated users) */}
       {!isAuthenticated && (
         <section 
           className="relative h-screen flex items-center justify-center overflow-hidden"
         >
-          {/* Background gradient */}
           <div 
             className="absolute inset-0 bg-gradient-to-br from-vice-purple/30 to-vice-dark-purple/30 dark:from-vice-purple/10 dark:to-vice-black"
             style={{
@@ -170,11 +165,9 @@ const Home = () => {
         </section>
       )}
       
-      {/* Social Feed Section */}
       {isAuthenticated && (
         <section className="py-6 px-1 sm:px-2 md:px-4 bg-background mt-16 md:mt-16">
           <div className="container mx-auto max-w-3xl">
-            {/* Create Post Box */}
             <div className="bg-card rounded-xl shadow-md mb-6 overflow-hidden border border-border">
               {!isCreatingPost ? (
                 <div className="p-4 flex items-center gap-3">
@@ -212,10 +205,6 @@ const Home = () => {
                         <Image className="w-4 h-4" />
                         Photo
                       </Button>
-                      <Button variant="outline" size="sm" className="flex items-center gap-1">
-                        <Smile className="w-4 h-4" />
-                        Feeling
-                      </Button>
                     </div>
                     
                     <div className="flex gap-2">
@@ -236,7 +225,6 @@ const Home = () => {
               )}
             </div>
             
-            {/* Posts Feed */}
             <div className="space-y-6">
               {posts.map((post) => (
                 <PostCard key={post.id} post={post} />
@@ -246,7 +234,6 @@ const Home = () => {
         </section>
       )}
       
-      {/* Features Section (only for non-authenticated users) */}
       {!isAuthenticated && (
         <section className="py-20 px-4 md:px-6 bg-white dark:bg-black/30">
           <div className="container mx-auto">
@@ -277,7 +264,6 @@ const Home = () => {
         </section>
       )}
       
-      {/* CTA Section (only for non-authenticated users) */}
       {!isAuthenticated && (
         <section className="py-16 px-4 md:px-6 bg-gradient-to-br from-vice-purple/20 to-vice-dark-purple/20">
           <div className="container mx-auto text-center">
@@ -303,7 +289,6 @@ const Home = () => {
         </section>
       )}
       
-      {/* Footer */}
       <footer className="py-8 px-4 md:px-6 bg-secondary/50 dark:bg-black/50 mt-auto">
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
@@ -390,7 +375,6 @@ const PostCard = ({ post }: PostCardProps) => {
   
   return (
     <div className="bg-card rounded-xl shadow-md overflow-hidden border border-border">
-      {/* Post Header */}
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
@@ -409,12 +393,10 @@ const PostCard = ({ post }: PostCardProps) => {
         </Button>
       </div>
       
-      {/* Post Content */}
       <div className="px-4 pb-3">
         <p className="whitespace-pre-line">{post.content}</p>
       </div>
       
-      {/* Post Images (if any) */}
       {post.images && post.images.length > 0 && (
         <div className="w-full">
           {post.images.length === 1 ? (
@@ -438,7 +420,6 @@ const PostCard = ({ post }: PostCardProps) => {
         </div>
       )}
       
-      {/* Engagement Stats */}
       <div className="px-4 py-2 border-t border-border text-sm text-foreground/60">
         <div className="flex justify-between">
           <div>{post.likes_count + (liked ? 1 : 0)} likes</div>
@@ -446,7 +427,6 @@ const PostCard = ({ post }: PostCardProps) => {
         </div>
       </div>
       
-      {/* Action Buttons */}
       <div className="px-4 py-1 border-t border-border flex justify-between">
         <Button 
           variant="ghost" 
@@ -475,7 +455,6 @@ const PostCard = ({ post }: PostCardProps) => {
         </Button>
       </div>
       
-      {/* Comment Input */}
       <div className="px-4 py-3 border-t border-border flex items-center gap-2">
         <Avatar className="h-8 w-8">
           <AvatarImage src={user?.photos?.[0]} alt={user?.name} />
@@ -508,4 +487,3 @@ const FeatureCard = ({ icon, title, description }: FeatureCardProps) => {
 };
 
 export default Home;
-
