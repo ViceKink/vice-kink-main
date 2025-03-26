@@ -47,8 +47,7 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
         const audioUrl = URL.createObjectURL(audioBlob);
         setAudioUrl(audioUrl);
         
-        // Auto upload after recording stops
-        uploadRecording(audioBlob, audioTitle);
+        // Don't auto upload after recording stops - wait for user to click the upload button
       };
       
       mediaRecorder.start();
@@ -90,13 +89,21 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
   };
   
   const uploadRecording = async (blob: Blob | null, title: string) => {
-    if (!blob || !title.trim()) {
-      setError('Please record audio and provide a title before uploading');
+    // Clear any previous error
+    setError('');
+    
+    // Validate inputs
+    if (!blob) {
+      setError('Please record audio before uploading');
+      return;
+    }
+    
+    if (!title.trim()) {
+      setError('Please provide a title for your audio recording');
       return;
     }
     
     setIsUploading(true);
-    setError('');
     
     try {
       const fileName = `${uuidv4()}.webm`;
@@ -162,7 +169,7 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
         if (insertError) throw insertError;
       }
       
-      // Update component state
+      // Update component state with the permanent URL
       setAudioUrl(publicUrl);
       
       // Update parent component
@@ -179,7 +186,9 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
     }
   };
   
-  const hasAudio = !!(userData.audio?.url && userData.audio?.title);
+  // Determine if we have a permanent audio URL (not a blob URL)
+  const hasStoredAudio = !!(userData.audio?.url && !userData.audio.url.startsWith('blob:'));
+  const hasRecordedAudio = !!audioBlob;
   
   return (
     <div className="space-y-6">
@@ -228,7 +237,7 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
             )}
           </div>
           
-          {audioBlob && !isUploading && audioUrl.startsWith('blob:') && (
+          {hasRecordedAudio && !isUploading && (
             <Button
               type="button"
               variant="outline"
@@ -255,12 +264,12 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
           </div>
         )}
         
-        {(hasAudio || audioUrl) && !isRecording && (
+        {(hasStoredAudio || audioUrl) && !isRecording && (
           <div className="mt-6">
             <h3 className="text-sm font-medium mb-2">Preview:</h3>
             <div className="bg-vice-purple/10 rounded-lg overflow-hidden">
               <AudioPlayer 
-                audioUrl={audioUrl || (userData.audio?.url || '')}
+                audioUrl={audioUrl}
                 title={audioTitle || (userData.audio?.title || 'Voice Intro')}
               />
             </div>
