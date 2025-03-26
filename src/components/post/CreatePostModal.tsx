@@ -35,48 +35,17 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [defaultCommunityId, setDefaultCommunityId] = useState<string | null>(null);
   
+  const defaultCommunity = {
+    id: 'default',
+    name: 'General',
+    type: 'vice' as const
+  };
+  
   useEffect(() => {
     const fetchCommunities = async () => {
       try {
         setIsLoading(true);
         
-        // First, check if NSFW community exists
-        const { data: existingNSFW, error: existingError } = await supabase
-          .from('communities')
-          .select('id, name, type')
-          .eq('name', 'NSFW')
-          .single();
-          
-        // If NSFW community doesn't exist, create it
-        if (existingError && !existingNSFW) {
-          console.log("NSFW community not found, creating it");
-          const { data: newNSFW, error: createError } = await supabase
-            .from('communities')
-            .insert({
-              name: 'NSFW',
-              type: 'vice',
-              description: 'Not Safe For Work content'
-            })
-            .select()
-            .single();
-            
-          if (createError) {
-            console.error("Error creating NSFW community:", createError);
-            throw createError;
-          }
-          
-          if (newNSFW) {
-            console.log("Created NSFW community:", newNSFW);
-            setDefaultCommunityId(newNSFW.id);
-            setSelectedCommunity(newNSFW.id);
-          }
-        } else if (existingNSFW) {
-          console.log("Found existing NSFW community:", existingNSFW);
-          setDefaultCommunityId(existingNSFW.id);
-          setSelectedCommunity(existingNSFW.id);
-        }
-        
-        // Fetch all communities
         const { data, error } = await supabase
           .from('communities')
           .select('id, name, type')
@@ -87,19 +56,34 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
           throw error;
         }
         
-        console.log("Fetched communities:", data);
-        
-        // Explicitly cast the data to ensure it matches the Community type
-        const typedData = data?.map(item => ({
-          id: item.id,
-          name: item.name,
-          type: item.type as 'vice' | 'kink'
-        })) || [];
-        
-        setCommunities(typedData);
+        if (!data || data.length === 0) {
+          console.log("No communities found, using default");
+          setCommunities([defaultCommunity]);
+          setDefaultCommunityId(defaultCommunity.id);
+          setSelectedCommunity(defaultCommunity.id);
+        } else {
+          console.log("Fetched communities:", data);
+          
+          const typedData = data?.map(item => ({
+            id: item.id,
+            name: item.name,
+            type: item.type as 'vice' | 'kink'
+          })) || [];
+          
+          setCommunities(typedData);
+          
+          if (typedData.length > 0) {
+            setDefaultCommunityId(typedData[0].id);
+            setSelectedCommunity(typedData[0].id);
+          }
+        }
       } catch (error) {
         console.error('Error fetching communities:', error);
         toast.error('Failed to load communities');
+        
+        setCommunities([defaultCommunity]);
+        setDefaultCommunityId(defaultCommunity.id);
+        setSelectedCommunity(defaultCommunity.id);
       } finally {
         setIsLoading(false);
       }
@@ -113,7 +97,6 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
     if (file) {
       setSelectedImage(file);
       
-      // Create a preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreviewUrl(reader.result as string);
@@ -151,14 +134,12 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
   };
   
   const handlePost = async () => {
-    // Validate required fields
     if (!title.trim()) {
       toast.error('Post title is required');
       return;
     }
     
     if (!selectedCommunity) {
-      // If no community is selected but we have a default, use that
       if (defaultCommunityId) {
         setSelectedCommunity(defaultCommunityId);
       } else {
@@ -167,11 +148,12 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
       }
     }
     
+    const communityId = selectedCommunity === 'default' ? null : selectedCommunity;
+    
     if (activeTab === 'text' && content.trim()) {
       try {
         setIsLoading(true);
         
-        // Create post in the database
         const { data, error } = await supabase
           .from('posts')
           .insert({
@@ -179,7 +161,7 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
             title: title,
             content,
             type: 'text',
-            community_id: selectedCommunity
+            community_id: communityId
           })
           .select()
           .single();
@@ -198,11 +180,9 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
       try {
         setIsLoading(true);
         
-        // Upload image first
         const imageUrl = await uploadImage(selectedImage);
         if (!imageUrl) throw new Error('Failed to upload image');
         
-        // Create post with the image URL
         const { data, error } = await supabase
           .from('posts')
           .insert({
@@ -210,7 +190,7 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
             title: title,
             content,
             type: 'photo',
-            community_id: selectedCommunity,
+            community_id: communityId,
             media_url: imageUrl
           })
           .select()
@@ -230,8 +210,6 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
       try {
         setIsLoading(true);
         
-        // In a real implementation, we would upload the comic data to Supabase storage
-        // For now, we'll just handle it as a JSON string
         const comicDataString = JSON.stringify(comicData);
         
         const { data, error } = await supabase
@@ -241,8 +219,8 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
             title: title,
             content,
             type: 'comic',
-            community_id: selectedCommunity,
-            media_url: comicDataString // In a real implementation, this would be a URL to the stored comic data
+            community_id: communityId,
+            media_url: comicDataString
           })
           .select()
           .single();

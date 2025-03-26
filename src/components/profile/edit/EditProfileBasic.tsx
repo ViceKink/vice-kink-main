@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '@/types/auth';
 import { Input } from '@/components/ui/input';
@@ -202,19 +203,6 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
             onChange={(e) => updateField('hometown', e.target.value)}
             placeholder="Your hometown"
           />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="username">Username</Label>
-          <div className="relative">
-            <Input
-              id="username"
-              value={userData.username || ''}
-              disabled
-              className="bg-muted"
-            />
-          </div>
-          <p className="text-xs text-muted-foreground">Username cannot be changed.</p>
         </div>
       </div>
     </div>
