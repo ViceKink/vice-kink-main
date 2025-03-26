@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile } from '@/types/auth';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,13 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
+  // Clear error when title changes
+  useEffect(() => {
+    if (error) {
+      setError('');
+    }
+  }, [audioTitle]);
+  
   const startRecording = async () => {
     setError('');
     try {
@@ -47,8 +54,6 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
         // Create a local URL for preview
         const audioUrl = URL.createObjectURL(audioBlob);
         setAudioUrl(audioUrl);
-        
-        // Don't auto upload after recording stops - wait for user to click the upload button
       };
       
       mediaRecorder.start();
@@ -89,57 +94,60 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
   
-  const uploadRecording = async (blob: Blob | null, title: string) => {
-    console.log("Attempting to upload recording:", { 
-      hasBlob: !!blob, 
-      title, 
-      blobType: blob?.type 
-    });
-    
-    // Clear any previous error
-    setError('');
-    
-    // Validate inputs
-    if (!blob) {
-      setError('Please record audio before uploading');
+  const uploadRecording = async () => {
+    if (!audioBlob) {
+      setError('No recording found. Please record audio first.');
       return;
     }
     
-    if (!title.trim()) {
+    if (!audioTitle.trim()) {
       setError('Please provide a title for your audio recording');
       return;
     }
     
     setIsUploading(true);
+    setError('');
+    
+    console.log("Starting upload process:", { 
+      audioTitle,
+      blobSize: audioBlob.size,
+      blobType: audioBlob.type,
+      userId: userData.id
+    });
     
     try {
+      // Generate a unique file name
       const fileName = `${uuidv4()}.webm`;
       const filePath = `audio/${fileName}`;
       
-      console.log("Uploading to Supabase:", { filePath, contentType: blob.type });
+      console.log("Preparing to upload to Supabase storage:", { filePath });
       
       // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profile-media')
-        .upload(filePath, blob, {
+        .upload(filePath, audioBlob, {
           contentType: 'audio/webm',
           upsert: true
         });
       
       if (uploadError) {
         console.error("Storage upload error:", uploadError);
-        throw uploadError;
+        throw new Error(`Storage upload failed: ${uploadError.message}`);
       }
       
-      console.log("Upload successful:", uploadData);
+      console.log("Storage upload successful:", uploadData);
       
       // Get public URL
       const { data: publicUrlData } = supabase.storage
         .from('profile-media')
         .getPublicUrl(filePath);
       
+      if (!publicUrlData || !publicUrlData.publicUrl) {
+        throw new Error('Failed to get public URL for uploaded file');
+      }
+      
       const publicUrl = publicUrlData.publicUrl;
-      console.log("Public URL:", publicUrl);
+      console.log("Generated public URL:", publicUrl);
       
       // Get user ID from userData
       const userId = userData.id;
@@ -148,70 +156,74 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
         throw new Error('User ID not found');
       }
       
-      console.log("User ID:", userId);
+      console.log("Processing database update for user:", userId);
       
-      // First check if the user already has an audio entry
+      // Check if the user already has an audio entry
       const { data: existingAudio, error: fetchError } = await supabase
         .from('profile_audio')
         .select('*')
         .eq('profile_id', userId)
-        .single();
+        .maybeSingle();
       
-      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
-        console.error("Error fetching existing audio:", fetchError);
-        throw fetchError;
+      if (fetchError) {
+        console.error("Error checking existing audio:", fetchError);
+        throw new Error(`Database query failed: ${fetchError.message}`);
       }
       
-      console.log("Existing audio entry:", existingAudio);
+      console.log("Existing audio check result:", existingAudio);
+      
+      let dbError = null;
       
       // Insert or update in profile_audio table
       if (existingAudio) {
         // Update existing record
-        console.log("Updating existing record");
-        const { error: updateError } = await supabase
+        console.log("Updating existing audio record");
+        const { error } = await supabase
           .from('profile_audio')
           .update({ 
-            title: title.trim(),
+            title: audioTitle.trim(),
             url: publicUrl
           })
           .eq('profile_id', userId);
           
-        if (updateError) {
-          console.error("Database update error:", updateError);
-          throw updateError;
-        }
+        dbError = error;
       } else {
         // Insert new record
-        console.log("Inserting new record");
-        const { error: insertError } = await supabase
+        console.log("Inserting new audio record");
+        const { error } = await supabase
           .from('profile_audio')
           .insert({ 
             profile_id: userId,
-            title: title.trim(),
+            title: audioTitle.trim(),
             url: publicUrl
           });
           
-        if (insertError) {
-          console.error("Database insert error:", insertError);
-          throw insertError;
-        }
+        dbError = error;
       }
+      
+      if (dbError) {
+        console.error("Database operation failed:", dbError);
+        throw new Error(`Database operation failed: ${dbError.message}`);
+      }
+      
+      console.log("Database operation successful");
       
       // Update component state with the permanent URL
       setAudioUrl(publicUrl);
       
       // Update parent component
       updateField('audio', {
-        title: title.trim(),
+        title: audioTitle.trim(),
         url: publicUrl
       });
       
       toast.success('Audio successfully uploaded!');
-      setIsUploading(false);
       console.log("Upload process completed successfully");
     } catch (err: any) {
       console.error('Error uploading audio:', err);
       setError('Failed to upload audio: ' + (err.message || 'Unknown error'));
+      toast.error('Failed to upload audio: ' + (err.message || 'Unknown error'));
+    } finally {
       setIsUploading(false);
     }
   };
@@ -267,15 +279,15 @@ const EditProfileAudio = ({ userData, updateField }: EditProfileAudioProps) => {
             )}
           </div>
           
-          {hasRecordedAudio && !isUploading && (
+          {hasRecordedAudio && (
             <Button
               type="button"
               variant="outline"
-              onClick={() => uploadRecording(audioBlob, audioTitle)}
+              onClick={uploadRecording}
               disabled={isUploading}
               className="mt-2"
             >
-              Upload Recording
+              {isUploading ? 'Uploading...' : 'Upload Recording'}
             </Button>
           )}
           

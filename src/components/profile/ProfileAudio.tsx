@@ -24,6 +24,7 @@ const ProfileAudio = ({ audio }: ProfileAudioProps) => {
   console.log("ProfileAudio: Rendering audio player", { 
     audioTitle: audio.title, 
     hasAudioUrl: !!audio.url,
+    audioUrl: audio.url,
     expanded
   });
   
