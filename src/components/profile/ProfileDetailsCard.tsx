@@ -10,6 +10,38 @@ interface ProfileDetailsCardProps {
 }
 
 const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => {
+  // Convert flirting style JSON to human-readable text
+  const getFlirtingStyleText = (flirtingStyle: string | object | undefined): string => {
+    if (!flirtingStyle) return 'Not specified';
+    
+    try {
+      let styleObj;
+      
+      if (typeof flirtingStyle === 'string') {
+        styleObj = JSON.parse(flirtingStyle);
+      } else {
+        styleObj = flirtingStyle;
+      }
+      
+      // Find the highest rated styles
+      const entries = Object.entries(styleObj) as Array<[string, number]>;
+      entries.sort((a, b) => b[1] - a[1]);
+      
+      const topStyles = entries.slice(0, 2).filter(([_, value]) => value > 60);
+      
+      if (topStyles.length === 0) {
+        return "Balanced across all styles";
+      } else if (topStyles.length === 1) {
+        return `Primarily ${topStyles[0][0]}`;
+      } else {
+        return `A mix of ${topStyles[0][0]} and ${topStyles[1][0]}`;
+      }
+    } catch (e) {
+      // If parsing fails, return the string as is
+      return typeof flirtingStyle === 'string' ? flirtingStyle : "Balanced approach";
+    }
+  };
+
   const getIcon = (type: string) => {
     switch (type) {
       case 'height':
@@ -110,7 +142,7 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('flirting')}</span>
             <span className="text-sm">
-              {typeof profile.flirtingStyle === 'string' ? profile.flirtingStyle : 'Playful and fun'}
+              {getFlirtingStyleText(profile.flirtingStyle)}
             </span>
           </div>
         </div>
