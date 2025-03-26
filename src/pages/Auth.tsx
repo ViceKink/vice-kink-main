@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,26 +12,31 @@ import { cn } from '@/lib/utils';
 const Auth = () => {
   const { login, signup, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [isNewSignup, setIsNewSignup] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   
   // Check for redirect after successful authentication
   useEffect(() => {
     if (isAuthenticated) {
-      // Redirect to the page they tried to visit or home page
-      const from = location.state?.from?.pathname || '/';
-      console.log("Auth: User authenticated, redirecting to:", from);
-      navigate(from, { replace: true });
+      if (isNewSignup) {
+        // Redirect new users to the Edit Profile page
+        console.log("Auth: New user authenticated, redirecting to edit-profile");
+        navigate('/edit-profile', { replace: true });
+        setIsNewSignup(false);
+      } else {
+        // Redirect returning users to the page they tried to visit or home page
+        const from = location.state?.from?.pathname || '/';
+        console.log("Auth: Returning user authenticated, redirecting to:", from);
+        navigate(from, { replace: true });
+      }
     }
-  }, [isAuthenticated, location.state, navigate]);
+  }, [isAuthenticated, isNewSignup, location.state, navigate]);
   
   // Debug log for authentication state
   useEffect(() => {
     console.log("Auth page state:", { isAuthenticated, isLoading });
   }, [isAuthenticated, isLoading]);
-  
-  // Don't render Navigate directly, use the effect instead
-  // This prevents issues with infinite redirects or loading states
   
   return (
     <div className="min-h-screen pt-20 flex items-center justify-center px-4">
@@ -58,7 +64,7 @@ const Auth = () => {
             </TabsContent>
             
             <TabsContent value="signup">
-              <SignupForm onSignup={signup} isLoading={isLoading} />
+              <SignupForm onSignup={signup} isLoading={isLoading} setIsNewSignup={setIsNewSignup} />
             </TabsContent>
           </Tabs>
         </div>
@@ -157,9 +163,10 @@ const LoginForm = ({ onLogin, isLoading }: LoginFormProps) => {
 interface SignupFormProps {
   onSignup: (email: string, password: string, name: string, username: string) => Promise<void>;
   isLoading: boolean;
+  setIsNewSignup: (value: boolean) => void;
 }
 
-const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
+const SignupForm = ({ onSignup, isLoading, setIsNewSignup }: SignupFormProps) => {
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -190,10 +197,13 @@ const SignupForm = ({ onSignup, isLoading }: SignupFormProps) => {
     
     try {
       setLocalLoading(true);
+      // Set the new signup flag before calling the signup function
+      setIsNewSignup(true);
       await onSignup(email, password, name, username);
       toast.success('Please check your email to confirm your account.');
     } catch (error) {
       // Error is handled in the auth context
+      setIsNewSignup(false); // Reset if there's an error
     } finally {
       setLocalLoading(false);
     }
