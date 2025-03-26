@@ -44,7 +44,15 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
           .order('name');
           
         if (error) throw error;
-        setCommunities(data || []);
+        
+        // Explicitly cast the data to ensure it matches the Community type
+        const typedData = data?.map(item => ({
+          id: item.id,
+          name: item.name,
+          type: item.type as 'vice' | 'kink'
+        })) || [];
+        
+        setCommunities(typedData);
       } catch (error) {
         console.error('Error fetching communities:', error);
         toast.error('Failed to load communities');
@@ -221,12 +229,13 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
             
             <div className="flex items-center gap-2">
               <Hash className="h-4 w-4 text-muted-foreground" />
-              <Select value={selectedCommunity || ''} onValueChange={setSelectedCommunity}>
+              <Select value={selectedCommunity || undefined} onValueChange={setSelectedCommunity}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a community (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No community</SelectItem>
+                  {/* Fixed the empty value issue by using "none" instead of empty string */}
+                  <SelectItem value="none">No community</SelectItem>
                   {communities.map((community) => (
                     <SelectItem key={community.id} value={community.id}>
                       {community.name} ({community.type})

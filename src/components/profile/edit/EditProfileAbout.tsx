@@ -105,7 +105,7 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
         <div className="space-y-2">
           <Label htmlFor="relationship">Relationship Status</Label>
           <Select
-            value={userData?.about?.status || ''}
+            value={userData?.about?.status || undefined}
             onValueChange={(value) => updateField('about', { ...userData.about, status: value })}
           >
             <SelectTrigger>
@@ -134,7 +134,7 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
         <div className="space-y-2">
           <Label htmlFor="religion">Religion</Label>
           <Select
-            value={userData?.about?.religion || ''}
+            value={userData?.about?.religion || undefined}
             onValueChange={(value) => updateField('about', { ...userData.about, religion: value })}
           >
             <SelectTrigger>
@@ -152,7 +152,7 @@ const EditProfileAbout = ({ userData, updateField }: EditProfileAboutProps) => {
         <div className="space-y-2">
           <Label htmlFor="sexuality">Sexuality</Label>
           <Select
-            value={userData?.about?.sexuality || ''}
+            value={userData?.about?.sexuality || undefined}
             onValueChange={handleSexualityChange}
           >
             <SelectTrigger>
