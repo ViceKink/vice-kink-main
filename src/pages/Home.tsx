@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Heart, PenSquare, MessageSquare, Bookmark, MoreHorizontal, Image, Smile } from 'lucide-react';
+import { Heart, PenSquare, MessageSquare, Bookmark, MoreHorizontal, Image } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -66,8 +65,6 @@ const mockPosts: Post[] = [
 const Home = () => {
   const { user, isAuthenticated } = useAuth();
   const [scrollY, setScrollY] = useState(0);
-  const [newPostContent, setNewPostContent] = useState('');
-  const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [posts, setPosts] = useState<Post[]>(mockPosts);
   
   useEffect(() => {
@@ -78,27 +75,6 @@ const Home = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-  
-  const handleCreatePost = async () => {
-    if (!newPostContent.trim()) return;
-    
-    const newPost: Post = {
-      id: `temp-${Date.now()}`,
-      user_id: user?.id || 'anonymous',
-      content: newPostContent,
-      created_at: new Date().toISOString(),
-      likes_count: 0,
-      comments_count: 0,
-      user: {
-        name: user?.name || 'Anonymous',
-        avatar: user?.photos?.[0]
-      }
-    };
-    
-    setPosts([newPost, ...posts]);
-    setNewPostContent('');
-    setIsCreatingPost(false);
-  };
   
   return (
     <div className="flex flex-col min-h-screen">
@@ -168,63 +144,6 @@ const Home = () => {
       {isAuthenticated && (
         <section className="py-6 px-1 sm:px-2 md:px-4 bg-background mt-16 md:mt-16">
           <div className="container mx-auto max-w-3xl">
-            <div className="bg-card rounded-xl shadow-md mb-6 overflow-hidden border border-border">
-              {!isCreatingPost ? (
-                <div className="p-4 flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={user?.photos?.[0]} alt={user?.name} />
-                    <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
-                  </Avatar>
-                  <div 
-                    className="flex-1 bg-muted rounded-full px-4 py-2 text-muted-foreground cursor-pointer hover:bg-muted/80"
-                    onClick={() => setIsCreatingPost(true)}
-                  >
-                    What's on your mind, {user?.name?.split(' ')[0]}?
-                  </div>
-                </div>
-              ) : (
-                <div className="p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={user?.photos?.[0]} alt={user?.name} />
-                      <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
-                    </Avatar>
-                    <div className="font-medium">{user?.name}</div>
-                  </div>
-                  
-                  <Textarea 
-                    placeholder={`What's on your mind, ${user?.name?.split(' ')[0]}?`}
-                    className="min-h-[120px] mb-3 border-none focus-visible:ring-0 bg-muted"
-                    value={newPostContent}
-                    onChange={(e) => setNewPostContent(e.target.value)}
-                  />
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex items-center gap-1">
-                        <Image className="w-4 h-4" />
-                        Photo
-                      </Button>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setIsCreatingPost(false)}>
-                        Cancel
-                      </Button>
-                      <Button 
-                        className="bg-vice-purple hover:bg-vice-dark-purple" 
-                        size="sm"
-                        onClick={handleCreatePost}
-                        disabled={!newPostContent.trim()}
-                      >
-                        Post
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            
             <div className="space-y-6">
               {posts.map((post) => (
                 <PostCard key={post.id} post={post} />

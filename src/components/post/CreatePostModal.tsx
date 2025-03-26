@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { X, Image, AlignLeft, BookOpen, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -39,15 +38,18 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
   useEffect(() => {
     const fetchCommunities = async () => {
       try {
+        setIsLoading(true);
+        
         // First, check if NSFW community exists
         const { data: existingNSFW, error: existingError } = await supabase
           .from('communities')
-          .select('id')
+          .select('id, name, type')
           .eq('name', 'NSFW')
           .single();
           
         // If NSFW community doesn't exist, create it
         if (existingError && !existingNSFW) {
+          console.log("NSFW community not found, creating it");
           const { data: newNSFW, error: createError } = await supabase
             .from('communities')
             .insert({
@@ -58,13 +60,18 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
             .select()
             .single();
             
-          if (createError) throw createError;
+          if (createError) {
+            console.error("Error creating NSFW community:", createError);
+            throw createError;
+          }
           
           if (newNSFW) {
+            console.log("Created NSFW community:", newNSFW);
             setDefaultCommunityId(newNSFW.id);
             setSelectedCommunity(newNSFW.id);
           }
         } else if (existingNSFW) {
+          console.log("Found existing NSFW community:", existingNSFW);
           setDefaultCommunityId(existingNSFW.id);
           setSelectedCommunity(existingNSFW.id);
         }
@@ -75,7 +82,12 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
           .select('id, name, type')
           .order('name');
           
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching communities:", error);
+          throw error;
+        }
+        
+        console.log("Fetched communities:", data);
         
         // Explicitly cast the data to ensure it matches the Community type
         const typedData = data?.map(item => ({
@@ -88,6 +100,8 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
       } catch (error) {
         console.error('Error fetching communities:', error);
         toast.error('Failed to load communities');
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -144,8 +158,13 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
     }
     
     if (!selectedCommunity) {
-      toast.error('Please select a community');
-      return;
+      // If no community is selected but we have a default, use that
+      if (defaultCommunityId) {
+        setSelectedCommunity(defaultCommunityId);
+      } else {
+        toast.error('Please select a community');
+        return;
+      }
     }
     
     if (activeTab === 'text' && content.trim()) {
@@ -277,9 +296,10 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
                 value={selectedCommunity || undefined} 
                 onValueChange={setSelectedCommunity}
                 required
+                disabled={isLoading}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a community" />
+                  <SelectValue placeholder={isLoading ? "Loading communities..." : "Select a community"} />
                 </SelectTrigger>
                 <SelectContent>
                   {communities.map((community) => (

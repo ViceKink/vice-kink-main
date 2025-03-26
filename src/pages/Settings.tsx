@@ -48,11 +48,6 @@ const Settings = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" defaultValue={user?.name} />
-                </div>
-                
-                <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Label htmlFor="username">Username</Label>
                     <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Read only</span>
@@ -110,43 +105,6 @@ const Settings = () => {
             <CardFooter className="flex justify-between">
               <Button variant="outline">Cancel</Button>
               <Button>Save Changes</Button>
-            </CardFooter>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Delete Account</CardTitle>
-              <CardDescription>
-                Permanently delete your account and all of your content
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Once you delete your account, there is no going back. Please be certain.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button variant="destructive">Delete Account</Button>
-            </CardFooter>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Log Out</CardTitle>
-              <CardDescription>
-                Sign out of your account on this device
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                <LogOut className="h-4 w-4" />
-                You'll need to log back in to access your account
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline" onClick={handleLogout}>
-                Log Out
-              </Button>
             </CardFooter>
           </Card>
         </TabsContent>

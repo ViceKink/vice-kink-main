@@ -1,9 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '@/types/auth';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle } from 'lucide-react';
 import { differenceInYears, getDate, getMonth } from 'date-fns';
 import { CustomDatePicker } from '@/components/ui/custom-date-picker';
 
@@ -206,23 +204,17 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
           />
         </div>
         
-        <div className="space-y-2 md:col-span-2">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="email">Email</Label>
-            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">Read only</span>
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="username">Username</Label>
           <div className="relative">
             <Input
-              id="email"
-              value={userData.email || ''}
+              id="username"
+              value={userData.username || ''}
               disabled
-              className="bg-muted pr-10"
+              className="bg-muted"
             />
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-              <AlertCircle className="h-4 w-4 text-muted-foreground" />
-            </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">Email cannot be changed and will not be included in profile updates.</p>
+          <p className="text-xs text-muted-foreground">Username cannot be changed.</p>
         </div>
       </div>
     </div>
