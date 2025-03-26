@@ -1,209 +1,49 @@
 
-import React, { useState, useEffect } from 'react';
-import { UserProfile } from '@/types/auth';
+import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { differenceInYears, getDate, getMonth } from 'date-fns';
-import { CustomDatePicker } from '@/components/ui/custom-date-picker';
+import { UserProfile } from '@/types/auth';
 
 interface EditProfileBasicProps {
   userData: Partial<UserProfile>;
   updateField: (field: string, value: any) => void;
 }
 
-// Function to calculate zodiac sign from date of birth
-const getZodiacSign = (month: number, day: number): string => {
-  const zodiacSigns = [
-    { name: 'Capricorn', startMonth: 12, startDay: 22, endMonth: 1, endDay: 19 },
-    { name: 'Aquarius', startMonth: 1, startDay: 20, endMonth: 2, endDay: 18 },
-    { name: 'Pisces', startMonth: 2, startDay: 19, endMonth: 3, endDay: 20 },
-    { name: 'Aries', startMonth: 3, startDay: 21, endMonth: 4, endDay: 19 },
-    { name: 'Taurus', startMonth: 4, startDay: 20, endMonth: 5, endDay: 20 },
-    { name: 'Gemini', startMonth: 5, startDay: 21, endMonth: 6, endDay: 20 },
-    { name: 'Cancer', startMonth: 6, startDay: 21, endMonth: 7, endDay: 22 },
-    { name: 'Leo', startMonth: 7, startDay: 23, endMonth: 8, endDay: 22 },
-    { name: 'Virgo', startMonth: 8, startDay: 23, endMonth: 9, endDay: 22 },
-    { name: 'Libra', startMonth: 9, startDay: 23, endMonth: 10, endDay: 22 },
-    { name: 'Scorpio', startMonth: 10, startDay: 23, endMonth: 11, endDay: 21 },
-    { name: 'Sagittarius', startMonth: 11, startDay: 22, endMonth: 12, endDay: 21 },
-    { name: 'Capricorn', startMonth: 12, startDay: 22, endMonth: 12, endDay: 31 },
-  ];
-
-  // JavaScript months are 0-indexed, but our data is 1-indexed
-  month = month + 1;
-  
-  for (const sign of zodiacSigns) {
-    if (
-      (month === sign.startMonth && day >= sign.startDay) ||
-      (month === sign.endMonth && day <= sign.endDay)
-    ) {
-      return sign.name;
-    }
-  }
-  
-  return 'Unknown';
-};
-
-// Relationship status options
-const relationshipOptions = [
-  { value: 'single', label: 'Single' },
-  { value: 'married', label: 'Married' },
-  { value: 'it\'s complicated', label: 'It\'s Complicated' },
-  { value: 'in a relationship', label: 'In a Relationship' },
-  { value: 'divorced', label: 'Divorced' },
-  { value: 'widowed', label: 'Widowed' },
-];
-
-// Height options (in cm and feet/inches)
-const generateHeightOptions = (): { value: string; label: string }[] => {
-  const options = [];
-  
-  // Add heights from 145cm (4'9") to 215cm (7'1")
-  for (let cm = 145; cm <= 215; cm++) {
-    const feet = Math.floor(cm / 30.48);
-    const inches = Math.round((cm / 2.54) % 12);
-    options.push({
-      value: `${cm}cm`,
-      label: `${cm}cm (${feet}'${inches}")`
-    });
-  }
-  
-  return options;
-};
-
-const heightOptions = generateHeightOptions();
-
-// Religion options
-const religionOptions = [
-  { value: 'Christianity', label: 'Christianity' },
-  { value: 'Islam', label: 'Islam' },
-  { value: 'Hinduism', label: 'Hinduism' },
-  { value: 'Buddhism', label: 'Buddhism' },
-  { value: 'Judaism', label: 'Judaism' },
-  { value: 'Sikhism', label: 'Sikhism' },
-  { value: 'Atheism', label: 'Atheism' },
-  { value: 'Agnosticism', label: 'Agnosticism' },
-  { value: 'Spiritual', label: 'Spiritual' },
-  { value: 'Other', label: 'Other' },
-  { value: 'Prefer not to say', label: 'Prefer not to say' },
-];
-
-// Sexuality options
-const sexualityOptions = [
-  { value: 'Straight', label: 'Straight' },
-  { value: 'Gay', label: 'Gay' },
-  { value: 'Lesbian', label: 'Lesbian' },
-  { value: 'Bisexual', label: 'Bisexual' },
-  { value: 'Pansexual', label: 'Pansexual' },
-  { value: 'Asexual', label: 'Asexual' },
-  { value: 'Demisexual', label: 'Demisexual' },
-  { value: 'Queer', label: 'Queer' },
-  { value: 'Questioning', label: 'Questioning' },
-  { value: 'Other', label: 'Other' },
-  { value: 'Prefer not to say', label: 'Prefer not to say' },
-];
-
-// Common languages
-const commonLanguages = [
-  'English', 'Spanish', 'Mandarin', 'Hindi', 'Arabic', 
-  'Portuguese', 'Bengali', 'Russian', 'Japanese', 'Punjabi',
-  'German', 'French', 'Italian', 'Korean', 'Turkish',
-  'Vietnamese', 'Tamil', 'Urdu', 'Polish', 'Malay',
-  'Ukrainian', 'Persian', 'Thai', 'Dutch', 'Tagalog'
-];
-
 const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
-  const [birthDate, setBirthDate] = useState<Date | undefined>(
-    userData.birthDate ? new Date(userData.birthDate) : undefined
-  );
-  const [age, setAge] = useState<number | undefined>(userData.age);
-  const [zodiacSign, setZodiacSign] = useState<string | undefined>(userData.about?.zodiac);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    updateField(name, value);
+  };
   
-  // Calculate age and zodiac sign whenever birthDate changes
-  useEffect(() => {
-    if (birthDate) {
-      // Calculate age
-      const calculatedAge = differenceInYears(new Date(), birthDate);
-      setAge(calculatedAge);
-      updateField('age', calculatedAge);
-      
-      // Set date to noon to avoid timezone issues
-      const dateForStorage = new Date(birthDate);
-      dateForStorage.setHours(12, 0, 0, 0);
-      
-      // Update birthDate in userData using ISO format for consistency
-      updateField('birthDate', dateForStorage.toISOString().split('T')[0]);
-      
-      // Calculate zodiac sign
-      const month = getMonth(birthDate);
-      const day = getDate(birthDate);
-      const sign = getZodiacSign(month, day);
-      setZodiacSign(sign);
-      
-      // Update zodiac in about object
-      const updatedAbout = { ...(userData.about || {}) };
-      updatedAbout.zodiac = sign;
-      updateField('about', updatedAbout);
-      
-      console.log("Updated birthDate:", dateForStorage.toISOString().split('T')[0]);
-    }
-  }, [birthDate, updateField, userData.about]);
-
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-semibold">Basic Information</h2>
+      <div>
+        <Label htmlFor="name" className="text-base">Full Name</Label>
+        <Input
+          id="name"
+          name="name"
+          value={userData.name || ''}
+          onChange={handleChange}
+          className="mt-1"
+          placeholder="Your full name"
+        />
+        <p className="text-sm text-muted-foreground mt-1">
+          This is how you'll appear to others
+        </p>
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
-          <Input
-            id="name"
-            value={userData.name || ''}
-            onChange={(e) => updateField('name', e.target.value)}
-            placeholder="Your name"
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="birthdate">Date of Birth</Label>
-          <CustomDatePicker
-            value={birthDate}
-            onChange={setBirthDate}
-            disabled={(date) => {
-              // Disable future dates
-              if (date > new Date()) return true;
-              
-              // Disable dates that would make the user under 18
-              const years = differenceInYears(new Date(), date);
-              return years < 18;
-            }}
-          />
-          {age !== undefined && (
-            <div className="text-sm text-foreground mt-3">
-              <span className="font-medium">Age:</span> {age} years | <span className="font-medium">Zodiac:</span> {zodiacSign}
-            </div>
-          )}
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="location">Current Location</Label>
-          <Input
-            id="location"
-            value={userData.location || ''}
-            onChange={(e) => updateField('location', e.target.value)}
-            placeholder="City, Country"
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="hometown">Hometown</Label>
-          <Input
-            id="hometown"
-            value={userData.hometown || ''}
-            onChange={(e) => updateField('hometown', e.target.value)}
-            placeholder="Your hometown"
-          />
-        </div>
+      {/* Username field has been removed as requested */}
+      
+      <div>
+        <Label htmlFor="location" className="text-base">Location</Label>
+        <Input
+          id="location"
+          name="location"
+          value={userData.location || ''}
+          onChange={handleChange}
+          className="mt-1"
+          placeholder="City, Country"
+        />
       </div>
     </div>
   );
