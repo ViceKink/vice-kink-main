@@ -1,15 +1,16 @@
-
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '@/types/auth';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { differenceInYears, getDate, getMonth } from 'date-fns';
 import { CustomDatePicker } from '@/components/ui/custom-date-picker';
-
-interface EditProfileBasicProps {
-  userData: Partial<UserProfile>;
-  updateField: (field: string, value: any) => void;
-}
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 // Function to calculate zodiac sign from date of birth
 const getZodiacSign = (month: number, day: number): string => {
@@ -188,12 +189,8 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
         <div className="space-y-2">
           <Label htmlFor="gender">Gender</Label>
           <Select
-            value={userData.about?.gender || ''}
-            onValueChange={(value) => {
-              const updatedAbout = { ...(userData.about || {}) };
-              updatedAbout.gender = value;
-              updateField('about', updatedAbout);
-            }}
+            value={userData.gender || ''}
+            onValueChange={(value) => updateField('gender', value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select your gender" />
