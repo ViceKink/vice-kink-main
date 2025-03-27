@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { UserProfile } from '@/types/auth';
 import { Input } from '@/components/ui/input';
@@ -11,6 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+
+// Define the interface for component props
+interface EditProfileBasicProps {
+  userData: Partial<UserProfile>;
+  updateField: (field: string, value: any) => void;
+}
 
 // Function to calculate zodiac sign from date of birth
 const getZodiacSign = (month: number, day: number): string => {
