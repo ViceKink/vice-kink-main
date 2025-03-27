@@ -486,7 +486,12 @@ export type Database = {
           bio: string | null
           birth_date: string | null
           created_at: string | null
+          dating_intention: string | null
+          drinking: string | null
+          education: string | null
+          ethnicity: string | null
           flirting_style: string | null
+          gender: string | null
           height: string | null
           hometown: string | null
           id: string
@@ -494,10 +499,13 @@ export type Database = {
           looking_for: string | null
           name: string
           occupation: string | null
+          preferences: Json | null
           quote: string | null
           relationship_status: string | null
+          relationship_type: string | null
           religion: string | null
           sexuality: string | null
+          smoking: boolean | null
           username: string | null
           verified: boolean | null
           zodiac: string | null
@@ -507,7 +515,12 @@ export type Database = {
           bio?: string | null
           birth_date?: string | null
           created_at?: string | null
+          dating_intention?: string | null
+          drinking?: string | null
+          education?: string | null
+          ethnicity?: string | null
           flirting_style?: string | null
+          gender?: string | null
           height?: string | null
           hometown?: string | null
           id: string
@@ -515,10 +528,13 @@ export type Database = {
           looking_for?: string | null
           name: string
           occupation?: string | null
+          preferences?: Json | null
           quote?: string | null
           relationship_status?: string | null
+          relationship_type?: string | null
           religion?: string | null
           sexuality?: string | null
+          smoking?: boolean | null
           username?: string | null
           verified?: boolean | null
           zodiac?: string | null
@@ -528,7 +544,12 @@ export type Database = {
           bio?: string | null
           birth_date?: string | null
           created_at?: string | null
+          dating_intention?: string | null
+          drinking?: string | null
+          education?: string | null
+          ethnicity?: string | null
           flirting_style?: string | null
+          gender?: string | null
           height?: string | null
           hometown?: string | null
           id?: string
@@ -536,10 +557,13 @@ export type Database = {
           looking_for?: string | null
           name?: string
           occupation?: string | null
+          preferences?: Json | null
           quote?: string | null
           relationship_status?: string | null
+          relationship_type?: string | null
           religion?: string | null
           sexuality?: string | null
+          smoking?: boolean | null
           username?: string | null
           verified?: boolean | null
           zodiac?: string | null

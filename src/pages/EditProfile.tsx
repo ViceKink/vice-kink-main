@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
@@ -40,10 +39,8 @@ const EditProfile = () => {
     setError(null);
     
     try {
-      // First update the profile data
       await updateProfile(profileData);
       
-      // Then handle vices and kinks separately (these functions handle their own API calls)
       if (profileData.vices) {
         await updateUserVices(profileData.vices);
       }
@@ -57,10 +54,7 @@ const EditProfile = () => {
     } catch (error: any) {
       console.error('Update profile error:', error);
       
-      // Set a more descriptive error message
       setError(error.message || 'Failed to update profile');
-      
-      // Also show as toast
       toast.error(error.message || 'Failed to update profile');
     } finally {
       setIsSubmitting(false);
