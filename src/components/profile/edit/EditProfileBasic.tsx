@@ -196,8 +196,12 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
         <div className="space-y-2">
           <Label htmlFor="gender">Gender</Label>
           <Select
-            value={userData.gender || ''}
-            onValueChange={(value) => updateField('gender', value)}
+            value={userData.about?.gender || ''}
+            onValueChange={(value) => {
+              const updatedAbout = { ...(userData.about || {}) };
+              updatedAbout.gender = value;
+              updateField('about', updatedAbout);
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select your gender" />

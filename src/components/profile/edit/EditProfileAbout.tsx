@@ -18,6 +18,31 @@ interface EditProfileAboutProps {
   updateField: (field: string, value: any) => void;
 }
 
+// Height options in feet and inches
+const generateHeightOptions = () => {
+  const options = [];
+  
+  // Generate heights from 4'0" to 8'0"
+  for (let feet = 4; feet <= 8; feet++) {
+    for (let inches = 0; inches <= 11; inches++) {
+      // For 8', only include 8'0"
+      if (feet === 8 && inches > 0) break;
+      
+      const heightInInches = feet * 12 + inches;
+      const heightInCm = Math.round(heightInInches * 2.54);
+      
+      options.push({
+        value: `${feet}'${inches}" (${heightInCm}cm)`,
+        label: `${feet}'${inches}" (${heightInCm}cm)`
+      });
+    }
+  }
+  
+  return options;
+};
+
+const heightOptions = generateHeightOptions();
+
 const EditProfileAbout: React.FC<EditProfileAboutProps> = ({ 
   userData, 
   updateField 
@@ -127,15 +152,24 @@ const EditProfileAbout: React.FC<EditProfileAboutProps> = ({
             </Select>
           </div>
           
-          {/* Height */}
+          {/* Height - Changed back to dropdown with feet and inches */}
           <div className="space-y-2">
             <Label htmlFor="height">Height</Label>
-            <Input
-              id="height"
+            <Select
               value={userData.about?.height || ''}
-              onChange={(e) => handleChange('height', e.target.value)}
-              placeholder="e.g., 5'10"
-            />
+              onValueChange={(value) => handleChange('height', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select your height" />
+              </SelectTrigger>
+              <SelectContent>
+                {heightOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           {/* Relationship Status */}
@@ -193,32 +227,7 @@ const EditProfileAbout: React.FC<EditProfileAboutProps> = ({
             </Select>
           </div>
           
-          {/* Zodiac */}
-          <div className="space-y-2">
-            <Label htmlFor="zodiac">Zodiac Sign</Label>
-            <Select
-              value={userData.about?.zodiac || ''}
-              onValueChange={(value) => handleChange('zodiac', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select zodiac sign" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Aries">Aries</SelectItem>
-                <SelectItem value="Taurus">Taurus</SelectItem>
-                <SelectItem value="Gemini">Gemini</SelectItem>
-                <SelectItem value="Cancer">Cancer</SelectItem>
-                <SelectItem value="Leo">Leo</SelectItem>
-                <SelectItem value="Virgo">Virgo</SelectItem>
-                <SelectItem value="Libra">Libra</SelectItem>
-                <SelectItem value="Scorpio">Scorpio</SelectItem>
-                <SelectItem value="Sagittarius">Sagittarius</SelectItem>
-                <SelectItem value="Capricorn">Capricorn</SelectItem>
-                <SelectItem value="Aquarius">Aquarius</SelectItem>
-                <SelectItem value="Pisces">Pisces</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Zodiac field has been removed as requested */}
           
           {/* Religion */}
           <div className="space-y-2">
