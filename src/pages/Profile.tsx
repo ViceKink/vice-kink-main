@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Settings, RefreshCw, Pencil } from 'lucide-react';
@@ -41,7 +42,7 @@ const Profile = () => {
           likes_count,
           comments_count,
           media_url,
-          profiles:user_id(name)
+          profiles(name, avatar)
         `)
         .eq('user_id', profileId)
         .order('created_at', { ascending: false });
@@ -57,11 +58,11 @@ const Profile = () => {
         content: post.content,
         images: post.media_url ? [post.media_url] : undefined,
         created_at: post.created_at,
-        likes_count: post.likes_count,
-        comments_count: post.comments_count,
+        likes_count: post.likes_count || 0,
+        comments_count: post.comments_count || 0,
         user: {
           name: post.profiles?.name || 'Anonymous',
-          avatar: undefined
+          avatar: post.profiles?.avatar
         }
       }));
     },

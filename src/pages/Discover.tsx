@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EmailSwiper from '@/components/ui/EmailSwiper';
@@ -25,7 +26,7 @@ const Discover = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
-  const { data: userInteractions = [] } = useQuery({
+  const { data: userInteractions = [], isLoading: interactionsLoading } = useQuery({
     queryKey: ['userInteractions'],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -40,7 +41,7 @@ const Discover = () => {
         return [];
       }
       
-      return data;
+      return data || [];
     },
     enabled: !!user?.id
   });
@@ -60,7 +61,8 @@ const Discover = () => {
       
       const excludedIds = [...likedProfileIds, ...dislikedProfileIds, user.id];
       
-      const { data, error } = await supabase
+      // Handle empty excludedIds to avoid SQL error
+      let query = supabase
         .from('profiles')
         .select(`
           id,
@@ -71,9 +73,17 @@ const Discover = () => {
           religion,
           height,
           verified
-        `)
-        .not('id', 'in', `(${excludedIds.join(',')})`)
-        .limit(10);
+        `);
+        
+      if (excludedIds.length > 0) {
+        query = query.not('id', 'in', `(${excludedIds.join(',')})`);
+      } else {
+        query = query.neq('id', user.id); // At least exclude the current user
+      }
+      
+      query = query.limit(10);
+      
+      const { data, error } = await query;
         
       if (error) {
         console.error('Error fetching profiles:', error);
@@ -99,7 +109,7 @@ const Discover = () => {
       
       return profilesWithPhotos;
     },
-    enabled: !!user?.id && (likedProfileIds.length > 0 || dislikedProfileIds.length > 0)
+    enabled: !!user?.id
   });
   
   const interactionMutation = useMutation({
@@ -148,7 +158,8 @@ const Discover = () => {
     toast.info('Filters coming soon!');
   };
   
-  if (isLoading) {
+  // Show loading UI
+  if (isLoading || interactionsLoading) {
     return (
       <div className="min-h-screen py-24 px-4 md:px-6 flex justify-center items-center">
         <div className="animate-pulse text-center">
@@ -159,6 +170,7 @@ const Discover = () => {
     );
   }
   
+  // Provide sample profiles if none are available
   const displayProfiles = profiles.length > 0 ? profiles : [
     {
       id: "profile-1",

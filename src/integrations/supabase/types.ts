@@ -292,6 +292,38 @@ export type Database = {
           },
         ]
       }
+      profile_interactions: {
+        Row: {
+          created_at: string | null
+          id: string
+          interaction_type: string
+          target_profile_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          interaction_type: string
+          target_profile_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          interaction_type?: string
+          target_profile_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_interactions_target_profile_id_fkey"
+            columns: ["target_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_kinks: {
         Row: {
           kink_id: string
