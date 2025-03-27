@@ -13,7 +13,8 @@ const Home = () => {
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['allPosts'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First fetch the posts
+      const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
           id,
@@ -22,29 +23,52 @@ const Home = () => {
           created_at,
           likes_count,
           comments_count,
-          media_url,
-          profiles(name, avatar)
+          media_url
         `)
         .order('created_at', { ascending: false });
       
-      if (error) {
-        console.error('Error fetching posts:', error);
-        throw error;
+      if (postsError) {
+        console.error('Error fetching posts:', postsError);
+        throw postsError;
       }
       
-      return data.map(post => ({
-        id: post.id,
-        user_id: post.user_id,
-        content: post.content,
-        images: post.media_url ? [post.media_url] : undefined,
-        created_at: post.created_at,
-        likes_count: post.likes_count || 0,
-        comments_count: post.comments_count || 0,
-        user: {
-          name: post.profiles?.name || 'Anonymous',
-          avatar: post.profiles?.avatar
-        }
-      }));
+      // Then for each post, fetch the profile information
+      const postsWithProfiles = await Promise.all(
+        postsData.map(async (post) => {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('name, avatar')
+            .eq('id', post.user_id)
+            .single();
+          
+          if (profileError) {
+            console.error('Error fetching profile for post:', profileError);
+            return {
+              ...post,
+              user: {
+                name: 'Anonymous',
+                avatar: undefined
+              }
+            };
+          }
+          
+          return {
+            id: post.id,
+            user_id: post.user_id,
+            content: post.content,
+            images: post.media_url ? [post.media_url] : undefined,
+            created_at: post.created_at,
+            likes_count: post.likes_count || 0,
+            comments_count: post.comments_count || 0,
+            user: {
+              name: profileData?.name || 'Anonymous',
+              avatar: profileData?.avatar
+            }
+          };
+        })
+      );
+      
+      return postsWithProfiles;
     }
   });
   
