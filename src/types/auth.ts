@@ -7,6 +7,20 @@ export interface FlirtingStyle {
   romantic: number;
 }
 
+export interface UserPreferences {
+  preferred_gender?: string[];
+  age_range?: {
+    min: number;
+    max: number;
+  };
+  max_distance?: number;
+  preferred_ethnicity?: string[];
+  preferred_religion?: string[];
+  preferred_relationship_type?: string[];
+  preferred_language?: string[];
+  preferred_education?: string[];
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -27,6 +41,11 @@ export interface UserProfile {
     religion?: string;
     languages?: string[];
     sexuality?: string;
+    gender?: string;
+    ethnicity?: string;
+    education?: string;
+    relationshipType?: string;
+    datingIntention?: string;
     lifestyle?: {
       smoking?: boolean;
       drinking?: string;
@@ -48,4 +67,5 @@ export interface UserProfile {
     favoriteSong?: string;
     artists?: string[];
   };
+  preferences?: UserPreferences;
 }

@@ -2,7 +2,7 @@
 import React from 'react';
 import { UserProfile } from '@/types/auth';
 import { cn } from '@/lib/utils';
-import { Ruler, Sun, Church, Languages, Heart, Search, Cigarette, Wine, Briefcase, User } from 'lucide-react';
+import { Ruler, Sun, Church, Languages, Heart, Search, Cigarette, Wine, Briefcase, User, GraduationCap, Globe, Users } from 'lucide-react';
 
 interface ProfileDetailsCardProps {
   profile: UserProfile;
@@ -66,6 +66,16 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
         return <Briefcase className="w-4 h-4" />;
       case 'status':
         return <User className="w-4 h-4" />;
+      case 'gender':
+        return <User className="w-4 h-4" />;
+      case 'education':
+        return <GraduationCap className="w-4 h-4" />;
+      case 'ethnicity':
+        return <Globe className="w-4 h-4" />;
+      case 'relationshipType':
+        return <Users className="w-4 h-4" />;
+      case 'datingIntention':
+        return <Heart className="w-4 h-4" />;
       default:
         return null;
     }
@@ -79,7 +89,12 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
     languages: profile.about?.languages,
     sexuality: profile.about?.sexuality,
     occupation: profile.about?.occupation,
-    status: profile.about?.status
+    status: profile.about?.status,
+    gender: profile.about?.gender,
+    education: profile.about?.education,
+    ethnicity: profile.about?.ethnicity,
+    relationshipType: profile.about?.relationshipType,
+    datingIntention: profile.about?.datingIntention
   });
   
   return (
@@ -93,10 +108,31 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
           </div>
         )}
         
+        {profile.about?.gender && (
+          <div className="flex items-center gap-2">
+            <span className="text-vice-purple">{getIcon('gender')}</span>
+            <span className="text-sm">{profile.about.gender}</span>
+          </div>
+        )}
+        
         {profile.about?.height && (
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('height')}</span>
             <span className="text-sm">{profile.about.height}</span>
+          </div>
+        )}
+        
+        {profile.about?.ethnicity && (
+          <div className="flex items-center gap-2">
+            <span className="text-vice-purple">{getIcon('ethnicity')}</span>
+            <span className="text-sm">{profile.about.ethnicity}</span>
+          </div>
+        )}
+        
+        {profile.about?.education && (
+          <div className="flex items-center gap-2">
+            <span className="text-vice-purple">{getIcon('education')}</span>
+            <span className="text-sm">{profile.about.education}</span>
           </div>
         )}
         
@@ -132,6 +168,20 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('occupation')}</span>
             <span className="text-sm">{profile.about.occupation}</span>
+          </div>
+        )}
+        
+        {profile.about?.relationshipType && (
+          <div className="flex items-center gap-2">
+            <span className="text-vice-purple">{getIcon('relationshipType')}</span>
+            <span className="text-sm">{profile.about.relationshipType}</span>
+          </div>
+        )}
+        
+        {profile.about?.datingIntention && (
+          <div className="flex items-center gap-2">
+            <span className="text-vice-purple">{getIcon('datingIntention')}</span>
+            <span className="text-sm">{profile.about.datingIntention}</span>
           </div>
         )}
       </div>

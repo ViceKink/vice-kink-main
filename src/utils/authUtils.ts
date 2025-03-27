@@ -1,5 +1,6 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { UserProfile, FlirtingStyle } from '@/types/auth';
+import { UserProfile, FlirtingStyle, UserPreferences } from '@/types/auth';
 
 // Convert snake_case profile from Supabase to camelCase UserProfile
 const formatProfile = (profile: any): UserProfile => {
@@ -18,6 +19,18 @@ const formatProfile = (profile: any): UserProfile => {
     }
   }
   
+  // Try to parse preferences if it's a JSON string
+  let preferences: UserPreferences | undefined;
+  if (typeof profile.preferences === 'string' && profile.preferences) {
+    try {
+      preferences = JSON.parse(profile.preferences) as UserPreferences;
+    } catch (e) {
+      console.warn('Failed to parse preferences as JSON:', e);
+    }
+  } else if (typeof profile.preferences === 'object') {
+    preferences = profile.preferences as UserPreferences;
+  }
+  
   const userProfile: UserProfile = {
     id: profile.id,
     name: profile.name,
@@ -32,6 +45,7 @@ const formatProfile = (profile: any): UserProfile => {
     bio: profile.bio || undefined,
     lookingFor: profile.looking_for || undefined,
     flirtingStyle: flirtingStyle || undefined,
+    preferences: preferences || undefined,
     about: {
       occupation: profile.occupation || undefined,
       status: profile.relationship_status as any || undefined,
@@ -39,6 +53,11 @@ const formatProfile = (profile: any): UserProfile => {
       zodiac: profile.zodiac || undefined,
       religion: profile.religion || undefined,
       sexuality: profile.sexuality || undefined,
+      gender: profile.gender || undefined,
+      ethnicity: profile.ethnicity || undefined,
+      education: profile.education || undefined,
+      relationshipType: profile.relationship_type || undefined,
+      datingIntention: profile.dating_intention || undefined,
       languages: [],
       lifestyle: {
         smoking: profile.smoking || undefined,
@@ -262,7 +281,7 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
     }
     
     // Split data into main profile fields and languages
-    const { languages, ...mainProfileData } = profileData;
+    const { languages, preferences, ...mainProfileData } = profileData;
     const finalData: Record<string, any> = {};
     
     // Convert any camelCase to snake_case for database compatibility
@@ -278,12 +297,43 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
         finalData['flirting_style'] = typeof value === 'object' 
           ? JSON.stringify(value) 
           : value;
-      } 
+      }
+      // Handle nested about object
+      else if (key === 'about' && typeof value === 'object') {
+        const aboutObj = value as Record<string, any>;
+        
+        // Handle special nested properties
+        if (aboutObj.lifestyle) {
+          if (aboutObj.lifestyle.smoking !== undefined) {
+            finalData['smoking'] = aboutObj.lifestyle.smoking;
+          }
+          if (aboutObj.lifestyle.drinking) {
+            finalData['drinking'] = aboutObj.lifestyle.drinking;
+          }
+          // Add other lifestyle properties as needed
+        }
+        
+        // Extract other about properties (flattened)
+        for (const [aboutKey, aboutValue] of Object.entries(aboutObj)) {
+          if (aboutKey === 'lifestyle') {
+            continue; // Already handled above
+          }
+          
+          // Convert camelCase to snake_case
+          const snakeCaseAboutKey = aboutKey.replace(/([A-Z])/g, '_$1').toLowerCase();
+          finalData[snakeCaseAboutKey] = aboutValue;
+        }
+      }
       else {
         const snakeCaseKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
         finalData[snakeCaseKey] = value;
       }
     });
+    
+    // Handle preferences separately
+    if (preferences) {
+      finalData['preferences'] = JSON.stringify(preferences);
+    }
     
     // Debug logging
     console.log('Final profile update data for Supabase:', finalData);
