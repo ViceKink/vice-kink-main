@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Heart, MessageSquare, Bookmark, MoreHorizontal } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Heart, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
 interface Post {
   id: string;
@@ -19,6 +20,8 @@ interface Post {
   created_at: string;
   likes_count: number;
   comments_count: number;
+  community_id?: string;
+  community_name?: string;
   user: {
     name: string;
     avatar?: string;
@@ -30,11 +33,29 @@ interface PostCardProps {
 }
 
 export const PostCard: React.FC<PostCardProps> = ({ post }) => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [liked, setLiked] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [comment, setComment] = useState('');
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+  
+  // Check if the user has already liked the post
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const checkUserLike = async () => {
+      const { data } = await supabase
+        .from('post_likes')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('post_id', post.id)
+        .single();
+      
+      setLiked(!!data);
+    };
+    
+    checkUserLike();
+  }, [user?.id, post.id]);
   
   // Create mutation for liking a post
   const likeMutation = useMutation({
@@ -66,7 +87,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     },
     onSuccess: (data) => {
       setLiked(data.action === 'like');
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+      queryClient.invalidateQueries({ queryKey: ['allPosts'] });
       queryClient.invalidateQueries({ queryKey: ['userPosts', post.user_id] });
     },
     onError: (error) => {
@@ -75,51 +96,56 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     }
   });
   
-  // Create mutation for saving a post
-  const saveMutation = useMutation({
+  // Create mutation for adding a comment
+  const commentMutation = useMutation({
     mutationFn: async () => {
-      if (!user?.id) throw new Error('User not authenticated');
+      if (!user?.id || !comment.trim()) throw new Error('User not authenticated or empty comment');
       
-      if (saved) {
-        // Unsave post
-        const { error } = await supabase
-          .from('post_saves')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('post_id', post.id);
-          
-        if (error) throw error;
-        return { action: 'unsave' };
-      } else {
-        // Save post
-        const { error } = await supabase
-          .from('post_saves')
-          .insert({
-            user_id: user.id,
-            post_id: post.id
-          });
-          
-        if (error) throw error;
-        return { action: 'save' };
-      }
+      const { error } = await supabase
+        .from('comments')
+        .insert({
+          user_id: user.id,
+          post_id: post.id,
+          content: comment.trim()
+        });
+        
+      if (error) throw error;
+      return { success: true };
     },
-    onSuccess: (data) => {
-      setSaved(data.action === 'save');
-      queryClient.invalidateQueries({ queryKey: ['posts'] });
+    onSuccess: () => {
+      setComment('');
+      queryClient.invalidateQueries({ queryKey: ['allPosts'] });
       queryClient.invalidateQueries({ queryKey: ['userPosts', post.user_id] });
+      toast.success('Comment added');
     },
     onError: (error) => {
-      toast.error('Failed to update save');
-      console.error('Save error:', error);
+      toast.error('Failed to add comment');
+      console.error('Comment error:', error);
     }
   });
   
   const toggleLike = () => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in to like posts');
+      return;
+    }
     likeMutation.mutate();
   };
   
-  const toggleSave = () => {
-    saveMutation.mutate();
+  const handleCommentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      toast.error('Please sign in to comment');
+      return;
+    }
+    commentMutation.mutate();
+  };
+  
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleCommentSubmit(e);
+    }
   };
   
   const timeAgo = (dateString: string) => {
@@ -157,22 +183,28 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   
   return (
     <div className="bg-card rounded-xl shadow-md overflow-hidden border border-border">
-      <div className="p-4 flex items-center justify-between">
+      <div className="p-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
             <AvatarImage src={post.user.avatar} alt={post.user.name} />
             <AvatarFallback>{post.user.name[0]}</AvatarFallback>
           </Avatar>
           
-          <div>
-            <div className="font-medium">{post.user.name}</div>
+          <div className="flex flex-col">
+            {post.community_name && (
+              <div className="text-xs text-vice-purple font-medium">
+                {post.community_name}
+              </div>
+            )}
+            <Link 
+              to={`/profile/${post.user_id}`} 
+              className="font-medium hover:underline"
+            >
+              {post.user.name}
+            </Link>
             <div className="text-xs text-foreground/60">{timeAgo(post.created_at)}</div>
           </div>
         </div>
-        
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <MoreHorizontal className="h-5 w-5" />
-        </Button>
       </div>
       
       <div className="px-4 pb-3">
@@ -204,7 +236,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       
       <div className="px-4 py-2 border-t border-border text-sm text-foreground/60">
         <div className="flex justify-between">
-          <div>{post.likes_count + (liked ? 1 : 0)} likes</div>
+          <div>{post.likes_count + (liked && !likeMutation.isPending ? 1 : 0)} likes</div>
           <div>{post.comments_count} comments</div>
         </div>
       </div>
@@ -227,29 +259,34 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           <MessageSquare className="h-5 w-5" />
           {!isMobile && "Comment"}
         </Button>
-        
-        <Button 
-          variant="ghost"
-          className={cn("flex-1 flex items-center justify-center gap-2", saved && "text-yellow-500")}
-          onClick={toggleSave}
-          disabled={saveMutation.isPending}
-        >
-          <Bookmark className={cn("h-5 w-5", saved && "fill-current")} />
-          {!isMobile && "Save"}
-        </Button>
       </div>
       
-      <div className="px-4 py-3 border-t border-border flex items-center gap-2">
+      <form onSubmit={handleCommentSubmit} className="px-4 py-3 border-t border-border flex items-center gap-2">
         <Avatar className="h-8 w-8">
           <AvatarImage src={user?.photos?.[0]} alt={user?.name} />
           <AvatarFallback>{user?.name?.[0] || 'U'}</AvatarFallback>
         </Avatar>
         
-        <Input 
-          placeholder="Write a comment..." 
-          className="rounded-full bg-muted border-none"
-        />
-      </div>
+        <div className="flex-1 relative">
+          <Input 
+            placeholder="Write a comment..." 
+            className="rounded-full bg-muted border-none pr-16"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          {comment.trim() && (
+            <Button 
+              type="submit" 
+              size="sm" 
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 px-3 bg-vice-purple hover:bg-vice-dark-purple"
+              disabled={commentMutation.isPending}
+            >
+              Post
+            </Button>
+          )}
+        </div>
+      </form>
     </div>
   );
 };

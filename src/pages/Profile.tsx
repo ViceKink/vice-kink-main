@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Settings, RefreshCw, Pencil } from 'lucide-react';
@@ -42,7 +41,8 @@ const Profile = () => {
           created_at,
           likes_count,
           comments_count,
-          media_url
+          media_url,
+          community_id
         `)
         .eq('user_id', profileId)
         .order('created_at', { ascending: false });
@@ -52,43 +52,69 @@ const Profile = () => {
         return [];
       }
       
-      // Then for each post, fetch the profile information
-      const postsWithProfiles = await Promise.all(
-        postsData.map(async (post) => {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('name, avatar')
-            .eq('id', post.user_id)
-            .single();
-          
-          if (profileError) {
-            console.error('Error fetching profile for post:', profileError);
-            return {
-              ...post,
-              user: {
-                name: 'Anonymous',
-                avatar: undefined
-              }
-            };
-          }
-          
-          return {
-            id: post.id,
-            user_id: post.user_id,
-            content: post.content,
-            images: post.media_url ? [post.media_url] : undefined,
-            created_at: post.created_at,
-            likes_count: post.likes_count || 0,
-            comments_count: post.comments_count || 0,
-            user: {
-              name: profileData?.name || 'Anonymous',
-              avatar: profileData?.avatar
-            }
-          };
-        })
-      );
+      // Fetch profile information if there are posts
+      if (postsData.length === 0) return [];
       
-      return postsWithProfiles;
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('name, avatar')
+        .eq('id', profileId)
+        .single();
+      
+      if (profileError) {
+        console.error('Error fetching profile for posts:', profileError);
+        return postsData.map(post => ({
+          ...post,
+          images: post.media_url ? [post.media_url] : undefined,
+          user: {
+            name: 'Anonymous',
+            avatar: undefined
+          }
+        }));
+      }
+      
+      // Get all community IDs
+      const communityIds = postsData
+        .filter(post => post.community_id)
+        .map(post => post.community_id);
+      
+      // Fetch community data if there are any community IDs
+      let communitiesMap = {};
+      
+      if (communityIds.length > 0) {
+        const { data: communitiesData, error: communitiesError } = await supabase
+          .from('communities')
+          .select('id, name')
+          .in('id', communityIds);
+        
+        if (!communitiesError && communitiesData) {
+          communitiesMap = communitiesData.reduce((acc, community) => {
+            acc[community.id] = community;
+            return acc;
+          }, {});
+        }
+      }
+      
+      // Map the posts with profile and community information
+      return postsData.map(post => {
+        const community = post.community_id ? communitiesMap[post.community_id] : null;
+        
+        return {
+          id: post.id,
+          user_id: post.user_id,
+          content: post.content,
+          images: post.media_url ? [post.media_url] : undefined,
+          created_at: post.created_at,
+          likes_count: post.likes_count || 0,
+          comments_count: post.comments_count || 0,
+          community_id: post.community_id,
+          community_name: community ? community.name : undefined,
+          user: {
+            name: profileData?.name || 'Anonymous',
+            avatar: profileData?.avatar
+          }
+        };
+      });
     },
     enabled: !!profileId
   });

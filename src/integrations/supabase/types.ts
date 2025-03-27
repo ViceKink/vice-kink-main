@@ -515,6 +515,7 @@ export type Database = {
       profiles: {
         Row: {
           age: number | null
+          avatar: string | null
           bio: string | null
           birth_date: string | null
           created_at: string | null
@@ -544,6 +545,7 @@ export type Database = {
         }
         Insert: {
           age?: number | null
+          avatar?: string | null
           bio?: string | null
           birth_date?: string | null
           created_at?: string | null
@@ -573,6 +575,7 @@ export type Database = {
         }
         Update: {
           age?: number | null
+          avatar?: string | null
           bio?: string | null
           birth_date?: string | null
           created_at?: string | null
@@ -625,7 +628,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_profile_avatar: {
+        Args: {
+          profile_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

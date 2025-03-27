@@ -23,7 +23,8 @@ const Home = () => {
           created_at,
           likes_count,
           comments_count,
-          media_url
+          media_url,
+          community_id
         `)
         .order('created_at', { ascending: false });
       
@@ -32,41 +33,69 @@ const Home = () => {
         throw postsError;
       }
       
-      // Then for each post, fetch the profile information
-      const postsWithProfiles = await Promise.all(
-        postsData.map(async (post) => {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('name, avatar')
-            .eq('id', post.user_id)
-            .single();
-          
-          if (profileError) {
-            console.error('Error fetching profile for post:', profileError);
-            return {
-              ...post,
-              user: {
-                name: 'Anonymous',
-                avatar: undefined
-              }
-            };
+      // Collect unique user IDs from posts
+      const userIds = [...new Set(postsData.map(post => post.user_id))];
+      
+      // Fetch all profiles in one query
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, avatar')
+        .in('id', userIds);
+      
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
+      
+      // Create a map of user IDs to profile data for quick lookup
+      const profilesMap = profilesData.reduce((acc, profile) => {
+        acc[profile.id] = profile;
+        return acc;
+      }, {});
+      
+      // Get all community IDs
+      const communityIds = postsData
+        .filter(post => post.community_id)
+        .map(post => post.community_id);
+      
+      // Fetch community data if there are any community IDs
+      let communitiesMap = {};
+      
+      if (communityIds.length > 0) {
+        const { data: communitiesData, error: communitiesError } = await supabase
+          .from('communities')
+          .select('id, name')
+          .in('id', communityIds);
+        
+        if (!communitiesError && communitiesData) {
+          communitiesMap = communitiesData.reduce((acc, community) => {
+            acc[community.id] = community;
+            return acc;
+          }, {});
+        }
+      }
+      
+      // Merge the post data with profile information
+      const postsWithProfiles = postsData.map(post => {
+        const profile = profilesMap[post.user_id] || { name: 'Anonymous' };
+        const community = post.community_id ? communitiesMap[post.community_id] : null;
+        
+        return {
+          id: post.id,
+          user_id: post.user_id,
+          content: post.content,
+          images: post.media_url ? [post.media_url] : undefined,
+          created_at: post.created_at,
+          likes_count: post.likes_count || 0,
+          comments_count: post.comments_count || 0,
+          community_id: post.community_id,
+          community_name: community ? community.name : undefined,
+          user: {
+            name: profile.name || 'Anonymous',
+            avatar: profile.avatar
           }
-          
-          return {
-            id: post.id,
-            user_id: post.user_id,
-            content: post.content,
-            images: post.media_url ? [post.media_url] : undefined,
-            created_at: post.created_at,
-            likes_count: post.likes_count || 0,
-            comments_count: post.comments_count || 0,
-            user: {
-              name: profileData?.name || 'Anonymous',
-              avatar: profileData?.avatar
-            }
-          };
-        })
-      );
+        };
+      });
       
       return postsWithProfiles;
     }
