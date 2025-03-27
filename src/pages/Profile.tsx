@@ -7,13 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { UserProfile } from '@/types/auth';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { PostCard } from '@/components/post/PostCard';
 
 const Profile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, fetchProfile, isAuthenticated, isLoading: authLoading } = useAuth();
   const [profileUser, setProfileUser] = useState<UserProfile | null>(null);
-  const [activeTab, setActiveTab] = useState<'persona' | 'erotics'>('persona');
+  const [activeTab, setActiveTab] = useState<'persona' | 'erotica'>('persona');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
@@ -21,6 +24,49 @@ const Profile = () => {
   const [fetchAttempts, setFetchAttempts] = useState(0);
   
   const isCurrentUser = !id || id === user?.id;
+  const profileId = id || user?.id;
+  
+  const { data: userPosts = [], isLoading: postsLoading } = useQuery({
+    queryKey: ['userPosts', profileId],
+    queryFn: async () => {
+      if (!profileId) return [];
+      
+      const { data, error } = await supabase
+        .from('posts')
+        .select(`
+          id,
+          user_id,
+          content,
+          created_at,
+          likes_count,
+          comments_count,
+          media_url,
+          profiles:user_id(name)
+        `)
+        .eq('user_id', profileId)
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error('Error fetching user posts:', error);
+        return [];
+      }
+      
+      return data.map(post => ({
+        id: post.id,
+        user_id: post.user_id,
+        content: post.content,
+        images: post.media_url ? [post.media_url] : undefined,
+        created_at: post.created_at,
+        likes_count: post.likes_count,
+        comments_count: post.comments_count,
+        user: {
+          name: post.profiles?.name || 'Anonymous',
+          avatar: undefined
+        }
+      }));
+    },
+    enabled: !!profileId
+  });
   
   useEffect(() => {
     return () => {
@@ -114,7 +160,7 @@ const Profile = () => {
     getProfileData();
   };
   
-  const handleTabChange = (tab: 'persona' | 'erotics') => {
+  const handleTabChange = (tab: 'persona' | 'erotica') => {
     setActiveTab(tab);
   };
   
@@ -262,19 +308,27 @@ const Profile = () => {
           )}
         </div>
         
-        <div className="mb-4">
-          <div className="flex space-x-2">
+        <div className="mb-6">
+          <div className="grid grid-cols-2 gap-2 bg-secondary/30 p-1 rounded-xl">
             <button 
-              className={`px-4 py-2 rounded-full ${activeTab === 'persona' ? 'bg-secondary text-foreground/80' : 'bg-secondary/50 text-foreground/80 hover:bg-secondary/80'} transition-colors`}
-              onClick={() => setActiveTab('persona')}
+              className={`px-4 py-3 rounded-lg flex justify-center items-center transition-all ${
+                activeTab === 'persona' 
+                  ? 'bg-white dark:bg-card shadow-sm text-foreground' 
+                  : 'bg-transparent text-foreground/60 hover:text-foreground/80'
+              }`}
+              onClick={() => handleTabChange('persona')}
             >
-              Persona
+              <span className="font-medium">Persona</span>
             </button>
             <button 
-              className={`px-4 py-2 rounded-full ${activeTab === 'erotics' ? 'bg-secondary text-foreground/80' : 'bg-secondary/50 text-foreground/80 hover:bg-secondary/80'} transition-colors`}
-              onClick={() => setActiveTab('erotics')}
+              className={`px-4 py-3 rounded-lg flex justify-center items-center transition-all ${
+                activeTab === 'erotica' 
+                  ? 'bg-black text-white shadow-sm' 
+                  : 'bg-transparent text-foreground/60 hover:text-foreground/80'
+              }`}
+              onClick={() => handleTabChange('erotica')}
             >
-              Erotics
+              <span className="font-medium">Erotica</span>
             </button>
           </div>
         </div>
@@ -284,10 +338,35 @@ const Profile = () => {
             profile={profileUser}
             isCurrentUser={isCurrentUser}
           />
-        ) : activeTab === 'erotics' ? (
-          <div className="p-8 bg-white dark:bg-card rounded-2xl shadow-md text-center">
-            <h3 className="text-xl font-bold mb-4">Erotics Profile</h3>
-            <p className="text-foreground/70">This section is still under development. Coming soon!</p>
+        ) : activeTab === 'erotica' ? (
+          <div className="space-y-6">
+            {postsLoading ? (
+              <div className="animate-pulse">
+                <div className="h-64 bg-gray-300 rounded-xl mb-4"></div>
+                <div className="h-64 bg-gray-300 rounded-xl"></div>
+              </div>
+            ) : userPosts.length === 0 ? (
+              <div className="p-8 bg-white dark:bg-card rounded-2xl shadow-md text-center">
+                <h3 className="text-xl font-bold mb-4">No Posts Yet</h3>
+                <p className="text-foreground/70 mb-6">
+                  {isCurrentUser 
+                    ? "You haven't created any posts yet. Share your thoughts or stories!" 
+                    : "This user hasn't created any posts yet."}
+                </p>
+                {isCurrentUser && (
+                  <Button 
+                    className="bg-vice-purple hover:bg-vice-dark-purple"
+                    onClick={() => toast.info("Post creation coming soon!")}
+                  >
+                    Create Post
+                  </Button>
+                )}
+              </div>
+            ) : (
+              userPosts.map(post => (
+                <PostCard key={post.id} post={post} />
+              ))
+            )}
           </div>
         ) : null}
       </div>

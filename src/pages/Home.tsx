@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useQuery } from '@tanstack/react-query';
 
 interface Post {
   id: string;
@@ -23,49 +24,51 @@ interface Post {
   };
 }
 
-const mockPosts: Post[] = [
-  {
-    id: '1',
-    user_id: 'user-123',
-    content: "Just finished a photoshoot for my new profile. What do you all think of my new look? #NewProfilePic #ModelVibes",
-    images: ["/lovable-uploads/d35b405d-2dbf-4fcc-837b-1d48cb945bf4.png"],
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-    likes_count: 24,
-    comments_count: 5,
-    user: {
-      name: "Niharika Singh",
-      avatar: "/lovable-uploads/d35b405d-2dbf-4fcc-837b-1d48cb945bf4.png"
-    }
-  },
-  {
-    id: '2',
-    user_id: 'user-456',
-    content: "Looking for someone to connect with in Mumbai this weekend. Anyone up for coffee and good conversation? #MumbaiMeetup #WeekendVibes",
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    likes_count: 18,
-    comments_count: 12,
-    user: {
-      name: "Arjun Kumar"
-    }
-  },
-  {
-    id: '3',
-    user_id: 'user-789',
-    content: "Just updated my kinks section - feeling exposed but liberated! Anyone else feel nervous sharing their desires publicly? #AuthenticSelf #Vulnerability",
-    created_at: new Date(Date.now() - 172800000).toISOString(),
-    likes_count: 42,
-    comments_count: 8,
-    user: {
-      name: "Priya Desai",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1000&auto=format&fit=crop"
-    }
+const fetchPosts = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('posts')
+      .select(`
+        id,
+        user_id,
+        content,
+        created_at,
+        likes_count,
+        comments_count,
+        media_url,
+        profiles:user_id(name)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return data.map(post => ({
+      id: post.id,
+      user_id: post.user_id,
+      content: post.content,
+      images: post.media_url ? [post.media_url] : undefined,
+      created_at: post.created_at,
+      likes_count: post.likes_count,
+      comments_count: post.comments_count,
+      user: {
+        name: post.profiles?.name || 'Anonymous',
+        avatar: undefined
+      }
+    }));
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    return [];
   }
-];
+};
 
 const Home = () => {
   const { user, isAuthenticated } = useAuth();
   const [scrollY, setScrollY] = useState(0);
-  const [posts, setPosts] = useState<Post[]>(mockPosts);
+  
+  const { data: posts = [], isLoading, error } = useQuery({
+    queryKey: ['posts'],
+    queryFn: fetchPosts
+  });
   
   useEffect(() => {
     const handleScroll = () => {
@@ -144,11 +147,26 @@ const Home = () => {
       {isAuthenticated && (
         <section className="py-6 px-1 sm:px-2 md:px-4 bg-background mt-16 md:mt-16">
           <div className="container mx-auto max-w-3xl">
-            <div className="space-y-6">
-              {posts.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
-            </div>
+            {isLoading ? (
+              <div className="space-y-6">
+                <div className="bg-card rounded-xl shadow-md overflow-hidden animate-pulse h-72"></div>
+                <div className="bg-card rounded-xl shadow-md overflow-hidden animate-pulse h-72"></div>
+              </div>
+            ) : error ? (
+              <div className="text-center py-10">
+                <p className="text-red-500">Failed to load posts. Please try again later.</p>
+              </div>
+            ) : posts.length === 0 ? (
+              <div className="text-center py-10">
+                <p className="text-gray-500">No posts yet. Be the first to share something!</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {posts.map((post) => (
+                  <PostCard key={post.id} post={post} />
+                ))}
+              </div>
+            )}
           </div>
         </section>
       )}
