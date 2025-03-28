@@ -412,7 +412,7 @@ const Profile = () => {
           ) : (
             <div className="flex items-center">
               <div className="bg-vice-purple/20 text-vice-purple px-3 py-1 rounded-full text-sm">
-                Your Profile
+                My Profile
               </div>
             </div>
           )}

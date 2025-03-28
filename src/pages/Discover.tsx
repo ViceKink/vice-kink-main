@@ -31,7 +31,6 @@ const Discover = () => {
   
   const [matchedProfile, setMatchedProfile] = useState<{id: string; name: string; avatar?: string} | null>(null);
   const [showMatchAnimation, setShowMatchAnimation] = useState(false);
-  const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   
   const { data: userInteractions = [], isLoading: interactionsLoading } = useQuery({
     queryKey: ['userInteractions'],
@@ -228,7 +227,7 @@ const Discover = () => {
   ];
   
   return (
-    <div className="min-h-screen pt-20 pb-24 px-4">
+    <div className="min-h-screen py-24 px-4 md:px-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Discover</h1>
@@ -275,17 +274,6 @@ const Discover = () => {
           onClose={handleCloseMatchAnimation}
           matchedProfile={matchedProfile}
         />
-      )}
-      
-      {currentProfile && (
-        <div className="fixed bottom-6 left-0 right-0 flex justify-center z-10">
-          <NavLink
-            to={`/profile/${currentProfile.id}`}
-            className="profile-hover-button bg-black/80 text-white px-6 py-3 rounded-full font-medium flex items-center mx-auto"
-          >
-            View Profile
-          </NavLink>
-        </div>
       )}
     </div>
   );
