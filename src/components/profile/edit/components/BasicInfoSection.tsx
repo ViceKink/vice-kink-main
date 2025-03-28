@@ -37,20 +37,6 @@ export const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({ userData, ha
         </div>
         
         <SelectField
-          id="gender"
-          label="Gender"
-          value={userData.about?.gender || ''}
-          options={[
-            { value: 'Male', label: 'Male' },
-            { value: 'Female', label: 'Female' },
-            { value: 'Non-binary', label: 'Non-binary' },
-            { value: 'Other', label: 'Other' }
-          ]}
-          onChange={(value) => handleChange('gender', value)}
-          placeholder="Select your gender"
-        />
-        
-        <SelectField
           id="education"
           label="Education"
           value={userData.about?.education || ''}

@@ -44,7 +44,7 @@ const formatProfile = (profile: any): UserProfile => {
     bio: profile.bio || undefined,
     looking_for: profile.looking_for || undefined,
     lookingFor: profile.looking_for || undefined,
-    flirting_style: flirtingStyle || undefined,
+    flirting_style: typeof flirtingStyle === 'string' ? flirtingStyle : JSON.stringify(flirtingStyle),
     flirtingStyle: flirtingStyle || undefined,
     preferences: preferences || undefined,
     about: {
@@ -62,7 +62,7 @@ const formatProfile = (profile: any): UserProfile => {
       datingIntention: profile.dating_intention || undefined,
       languages: [],
       lifestyle: {
-        smoking: profile.smoking || undefined,
+        smoking: profile.smoking !== undefined ? profile.smoking : undefined,
         drinking: profile.drinking || undefined,
       }
     }
@@ -283,7 +283,7 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
     }
     
     // Split data into main profile fields and languages
-    const { languages, preferences, ...mainProfileData } = profileData;
+    const { languages, preferences, photos, ...mainProfileData } = profileData;
     const finalData: Record<string, any> = {};
     
     // Convert any camelCase to snake_case for database compatibility
@@ -409,6 +409,25 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
       } catch (error: any) {
         console.error('Error updating languages:', error);
         throw new Error(`Failed to update languages: ${error.message}`);
+      }
+    }
+    
+    // Update avatar with primary photo if available
+    if (photos && photos.length > 0) {
+      try {
+        const primaryPhoto = photos[0];
+        const { error: avatarError } = await supabase
+          .from('profiles')
+          .update({ avatar: primaryPhoto })
+          .eq('id', userId);
+          
+        if (avatarError) {
+          console.error('Error updating avatar:', avatarError);
+        } else {
+          console.log('Avatar updated successfully with primary photo:', primaryPhoto);
+        }
+      } catch (avatarError: any) {
+        console.error('Error updating avatar:', avatarError);
       }
     }
     
