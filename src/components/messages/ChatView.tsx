@@ -37,46 +37,58 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
   const messageContainerRef = useRef<HTMLDivElement>(null);
 
   // Get match details
-  const { data: match } = useQuery<MatchDetails | null>({
+  const { data: match, isLoading: matchLoading, error: matchError } = useQuery<MatchDetails | null>({
     queryKey: ['match', matchId],
     queryFn: async () => {
       if (!matchId || !user?.id) return null;
       
-      const { data, error } = await supabase
-        .from('matches')
-        .select(`
-          id,
-          user_id_1,
-          user_id_2,
-          matched_at,
-          profiles:user_id_1 (id, name, avatar),
-          profiles:user_id_2 (id, name, avatar)
-        `)
-        .eq('id', matchId)
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('matches')
+          .select(`
+            id,
+            user_id_1,
+            user_id_2,
+            matched_at,
+            profiles!user_id_1(id, name, avatar),
+            profiles!user_id_2(id, name, avatar)
+          `)
+          .eq('id', matchId)
+          .maybeSingle();
+          
+        if (error) {
+          console.error('Error fetching match:', error);
+          return null;
+        }
         
-      if (error) {
-        console.error('Error fetching match:', error);
+        if (!data) return null;
+        
+        // Determine which user is the other user
+        const otherUserId = data.user_id_1 === user.id ? data.user_id_2 : data.user_id_1;
+        const otherUserProfile = data.profiles_user_id_1 && data.profiles_user_id_2 ? 
+          (otherUserId === data.user_id_1 ? data.profiles_user_id_1 : data.profiles_user_id_2) :
+          null;
+          
+        if (!otherUserProfile) {
+          console.error('Could not find other user profile');
+          return null;
+        }
+          
+        return {
+          id: data.id,
+          user_id_1: data.user_id_1,
+          user_id_2: data.user_id_2,
+          matched_at: data.matched_at,
+          other_user: {
+            id: otherUserId,
+            name: otherUserProfile.name,
+            avatar: otherUserProfile.avatar
+          }
+        };
+      } catch (error) {
+        console.error('Error in match query:', error);
         return null;
       }
-      
-      // Determine which user is the other user
-      const otherUserId = data.user_id_1 === user.id ? data.user_id_2 : data.user_id_1;
-      const otherUserProfile = otherUserId === data.user_id_1 
-        ? data.profiles.user_id_1 
-        : data.profiles.user_id_2;
-        
-      return {
-        id: data.id,
-        user_id_1: data.user_id_1,
-        user_id_2: data.user_id_2,
-        matched_at: data.matched_at,
-        other_user: {
-          id: otherUserId,
-          name: otherUserProfile.name,
-          avatar: otherUserProfile.avatar
-        }
-      };
     },
     enabled: !!matchId && !!user?.id
   });
@@ -190,7 +202,7 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
     );
   }
 
-  if (!match) {
+  if (matchLoading) {
     return (
       <Card className="h-full flex flex-col">
         <CardContent className="p-4">
@@ -202,21 +214,36 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
     );
   }
 
+  if (matchError || !match) {
+    return (
+      <Card className="h-full flex flex-col">
+        <CardContent className="p-4">
+          <div className="flex flex-col items-center justify-center h-64 text-center">
+            <h3 className="text-lg font-medium text-destructive">Error loading conversation</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Please try again later
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="p-4 border-b">
         <div className="flex items-center">
           <Avatar className="h-10 w-10 mr-3">
-            <AvatarImage src={match?.other_user?.avatar} />
-            <AvatarFallback>{match?.other_user?.name?.charAt(0) || '?'}</AvatarFallback>
+            <AvatarImage src={match.other_user.avatar} />
+            <AvatarFallback>{match.other_user.name?.charAt(0) || '?'}</AvatarFallback>
           </Avatar>
           <div>
             <h3 className="text-sm font-medium">
-              {match?.other_user?.name}
+              {match.other_user.name}
             </h3>
             <span 
               className="text-xs text-primary cursor-pointer"
-              onClick={() => navigate(`/profile/${match?.other_user?.id}`)}
+              onClick={() => navigate(`/profile/${match.other_user.id}`)}
             >
               View profile
             </span>
@@ -237,7 +264,7 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
           <div className="flex flex-col items-center justify-center h-full text-center p-6">
             <h3 className="text-lg font-medium">No messages yet</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Start the conversation with {match?.other_user?.name}
+              Start the conversation with {match.other_user.name}
             </p>
           </div>
         ) : (

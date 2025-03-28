@@ -119,9 +119,10 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
     // First, get the user IDs who liked this user
     const { data: interactionsData, error: interactionsError } = await supabase
       .from('profile_interactions')
-      .select('user_id, interaction_type')
+      .select('user_id, interaction_type, created_at')
       .eq('target_profile_id', userId)
-      .in('interaction_type', ['like', 'superlike']);
+      .in('interaction_type', ['like', 'superlike'])
+      .order('created_at', { ascending: false });
       
     if (interactionsError) {
       console.error('Error getting interactions:', interactionsError);
@@ -149,7 +150,10 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
       throw profilesError;
     }
     
-    if (!profilesData) return [];
+    if (!profilesData || profilesData.length === 0) {
+      console.log('No profile data found for users who liked this user');
+      return [];
+    }
     
     console.log('Profiles fetched:', profilesData.length);
     
@@ -158,7 +162,7 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
       const interaction = interactionsData.find(i => i.user_id === profile.id);
       return {
         id: profile.id,
-        name: profile.name,
+        name: profile.name || 'Unknown User',
         age: profile.age || 0,
         location: profile.location || '',
         avatar: profile.avatar || '',

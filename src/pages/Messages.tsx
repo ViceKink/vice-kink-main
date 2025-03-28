@@ -50,10 +50,11 @@ const Messages = () => {
       if (!user?.id) return [];
       console.log('Fetching profiles who liked user:', user.id);
       const result = await getProfilesWhoLikedMe(user.id);
-      console.log('Likes result:', result);
+      console.log('Likes result:', result?.length || 0, 'profiles found');
       return result as Profile[];
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    refetchInterval: 10000 // Refetch every 10 seconds to check for new likes
   });
 
   // Filter matches and likes based on search query
@@ -68,7 +69,7 @@ const Messages = () => {
   return (
     <div className="container py-10">
       <Tabs defaultValue="matches" className="w-full">
-        <div className="pt-4 pb-6">
+        <div className="mb-6">
           <TabsList className="w-full max-w-xs mx-0">
             <TabsTrigger value="matches" onClick={() => setActiveTab('matches')}>
               Matches
