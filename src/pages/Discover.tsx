@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { X, Heart, Star, MapPin, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import MatchAnimation from '@/components/match/MatchAnimation';
 
 interface Profile {
   id: string;
@@ -29,6 +30,9 @@ const Discover = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  
+  const [matchedProfile, setMatchedProfile] = useState<{id: string; name: string; avatar?: string} | null>(null);
+  const [showMatchAnimation, setShowMatchAnimation] = useState(false);
   
   // Fetch user interactions to filter out profiles already interacted with
   const { data: userInteractions = [], isLoading: interactionsLoading } = useQuery({
@@ -112,14 +116,31 @@ const Discover = () => {
       type: 'like' | 'dislike' | 'superlike' 
     }) => {
       if (!user?.id) throw new Error('User not authenticated');
-      const success = await createInteraction(user.id, profileId, type);
-      if (!success) throw new Error(`Failed to ${type} profile`);
-      return { profileId, type };
+      const result = await createInteraction(user.id, profileId, type);
+      if (!result.success) throw new Error(`Failed to ${type} profile`);
+      return { profileId, type, matched: result.matched };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['userInteractions'] });
       queryClient.invalidateQueries({ queryKey: ['discoverProfiles'] });
-      queryClient.invalidateQueries({ queryKey: ['userMatches'] });
+      
+      // If a match occurred, show the match animation
+      if (data.matched) {
+        // Find the matched profile details
+        const matchedProfileData = profiles.find(p => p.id === data.profileId);
+        if (matchedProfileData) {
+          setMatchedProfile({
+            id: matchedProfileData.id,
+            name: matchedProfileData.name,
+            avatar: matchedProfileData.photos?.[0]
+          });
+          setShowMatchAnimation(true);
+          
+          // Also invalidate matches when a new match is created
+          queryClient.invalidateQueries({ queryKey: ['userMatches'] });
+          queryClient.invalidateQueries({ queryKey: ['likedByProfiles'] });
+        }
+      }
     }
   });
   
@@ -138,6 +159,12 @@ const Discover = () => {
   
   const handleViewProfile = (profileId: string) => {
     navigate(`/profile/${profileId}`);
+  };
+  
+  // Handle closing the match animation
+  const handleCloseMatchAnimation = () => {
+    setShowMatchAnimation(false);
+    setMatchedProfile(null);
   };
   
   // Show loading UI
@@ -251,6 +278,15 @@ const Discover = () => {
           </p>
         </div>
       </div>
+      
+      {/* Match Animation Dialog */}
+      {matchedProfile && (
+        <MatchAnimation 
+          isOpen={showMatchAnimation}
+          onClose={handleCloseMatchAnimation}
+          matchedProfile={matchedProfile}
+        />
+      )}
     </div>
   );
 };

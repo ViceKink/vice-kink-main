@@ -56,7 +56,7 @@ export const createMatch = async (currentUserId: string, targetUserId: string): 
       
     if (error) throw error;
     
-    toast.success("It's a match! 🎉");
+    // We don't show a toast here since we'll show a match animation instead
     return true;
   } catch (error) {
     console.error('Error creating match:', error);
@@ -72,8 +72,8 @@ export const createInteraction = async (
   userId: string, 
   targetProfileId: string, 
   interactionType: 'like' | 'dislike' | 'superlike'
-): Promise<boolean> => {
-  if (!userId || !targetProfileId) return false;
+): Promise<{success: boolean, matched: boolean}> => {
+  if (!userId || !targetProfileId) return {success: false, matched: false};
   
   try {
     const { error } = await supabase
@@ -91,13 +91,14 @@ export const createInteraction = async (
       const isMatched = await checkIfMatched(userId, targetProfileId);
       if (isMatched) {
         await createMatch(userId, targetProfileId);
+        return {success: true, matched: true};
       }
     }
     
-    return true;
+    return {success: true, matched: false};
   } catch (error) {
     console.error(`Error creating ${interactionType} interaction:`, error);
-    return false;
+    return {success: false, matched: false};
   }
 };
 
@@ -140,6 +141,62 @@ export const getUserMatches = async (userId: string) => {
     return data || [];
   } catch (error) {
     console.error('Error getting user matches:', error);
+    return [];
+  }
+};
+
+/**
+ * Get profiles who have liked/superliked the current user, but there's no match yet
+ */
+export const getProfilesWhoLikedMe = async (userId: string) => {
+  if (!userId) return [];
+  
+  try {
+    // Get all profiles who liked the current user
+    const { data, error } = await supabase
+      .from('profile_interactions')
+      .select(`
+        user_id,
+        interaction_type,
+        profiles!profile_interactions_user_id_fkey (
+          id,
+          name,
+          age,
+          location,
+          occupation,
+          religion,
+          height,
+          verified,
+          avatar
+        )
+      `)
+      .eq('target_profile_id', userId)
+      .in('interaction_type', ['like', 'superlike']);
+      
+    if (error) throw error;
+    
+    // Filter out users who already have a match with current user
+    const filteredLikers = await Promise.all(
+      data.map(async (interaction) => {
+        const isMatched = await checkIfMatched(userId, interaction.user_id);
+        return {
+          ...interaction,
+          alreadyMatched: isMatched
+        };
+      })
+    );
+    
+    // Only include profiles that don't already have a match
+    const profilesWhoLikedMe = filteredLikers
+      .filter(interaction => !interaction.alreadyMatched)
+      .map(interaction => ({
+        ...interaction.profiles,
+        interaction_type: interaction.interaction_type
+      }));
+    
+    return profilesWhoLikedMe;
+  } catch (error) {
+    console.error('Error getting profiles who liked me:', error);
     return [];
   }
 };
