@@ -68,18 +68,20 @@ const Messages = () => {
   return (
     <div className="container py-10">
       <Tabs defaultValue="matches" className="w-full">
-        <TabsList>
-          <TabsTrigger value="matches" onClick={() => setActiveTab('matches')}>
-            Matches
-          </TabsTrigger>
-          <TabsTrigger value="likes" onClick={() => setActiveTab('likes')}>
-            Likes
-          </TabsTrigger>
-        </TabsList>
+        <div className="pt-4 pb-6">
+          <TabsList className="w-full max-w-xs mx-0">
+            <TabsTrigger value="matches" onClick={() => setActiveTab('matches')}>
+              Matches
+            </TabsTrigger>
+            <TabsTrigger value="likes" onClick={() => setActiveTab('likes')}>
+              Likes
+            </TabsTrigger>
+          </TabsList>
+        </div>
         
         <Separator className="my-4" />
         
-        <div className="relative">
+        <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input 
             type="search"
@@ -90,7 +92,7 @@ const Messages = () => {
           />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-1">
             <TabsContent value="matches" className="space-y-2">
               <MatchesList 
