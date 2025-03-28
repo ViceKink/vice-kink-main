@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DiscoverProfile } from "./types";
 
 /**
- * Fetch profiles for discover page
+ * Fetch profiles for discover page with proper filtering
  */
 export const fetchProfilesToDiscover = async (userId: string, excludeIds: string[] = [], preferences: any = null) => {
   if (!userId) return [];
@@ -58,7 +58,7 @@ export const fetchProfilesToDiscover = async (userId: string, excludeIds: string
     
     if (!data) return [];
     
-    const profilesWithPhotos = await Promise.all(
+    const profilesWithDetails = await Promise.all(
       data.map(async (profile) => {
         // Fetch passions separately
         const { data: passionsData } = await supabase
@@ -88,129 +88,186 @@ export const fetchProfilesToDiscover = async (userId: string, excludeIds: string
         return {
           ...profile,
           distance: `${Math.floor(Math.random() * 10) + 1} kms away`,
-          photos: photos?.map(p => p.url) || [],
           passions: passionsData?.map(p => p.passion) || [],
-          vices: vicesData?.map(v => v.vices?.name).filter(Boolean) || [],
-          kinks: kinksData?.map(k => k.kinks?.name).filter(Boolean) || [],
-          about: profile.about || {}
+          vices: vicesData?.map(v => v.vices.name) || [],
+          kinks: kinksData?.map(k => k.kinks.name) || [],
+          photos: photos?.map(p => p.url) || []
         };
       })
     );
     
-    return profilesWithPhotos;
+    return profilesWithDetails;
   } catch (error) {
-    console.error('Error fetching profiles to discover:', error);
+    console.error('Error in fetchProfilesToDiscover:', error);
     return [];
   }
 };
 
 /**
- * Convert profile data for discover page
+ * Fetch a single profile by ID
  */
-export const convertProfileForDiscover = (profileData: any): DiscoverProfile => {
-  // Return a default profile if data is null
-  if (!profileData) {
-    return {
-      id: '',
-      name: 'Unknown',
-      age: 0,
-      location: '',
-      occupation: '',
-      religion: '',
-      height: '',
-      verified: false,
-      avatar: '',
-      photos: [],
-      bio: '',
-      passions: [],
-      vices: [],
-      kinks: [],
-      about: {}
-    };
-  }
+export const fetchProfileById = async (id: string) => {
+  if (!id) return null;
   
-  return {
-    id: profileData?.id || '',
-    name: profileData?.name || 'Unknown',
-    age: profileData?.age || 0,
-    location: profileData?.location || '',
-    occupation: profileData?.occupation || '',
-    religion: profileData?.religion || '',
-    height: profileData?.height || '',
-    verified: profileData?.verified || false,
-    avatar: profileData?.avatar || '',
-    photos: profileData?.photos || [],
-    bio: profileData?.bio || '',
-    passions: profileData?.passions || [],
-    vices: profileData?.vices || [],
-    kinks: profileData?.kinks || [],
-    about: profileData?.about || {}
-  };
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', id)
+      .single();
+      
+    if (error) throw error;
+    
+    // Fetch additional profile data
+    const [photos, passions, vices, kinks] = await Promise.all([
+      fetchProfilePhotos(id),
+      fetchProfilePassions(id),
+      fetchProfileVices(id),
+      fetchProfileKinks(id)
+    ]);
+    
+    return {
+      ...data,
+      photos,
+      passions,
+      vices,
+      kinks
+    };
+  } catch (error) {
+    console.error('Error fetching profile by ID:', error);
+    return null;
+  }
 };
 
 /**
- * Update the profile avatar when setting a main photo
+ * Fetch profile photos
  */
-export const updateProfileAvatar = async (userId: string, avatarUrl: string) => {
+export const fetchProfilePhotos = async (profileId: string) => {
+  if (!profileId) return [];
+  
   try {
-    if (!userId || !avatarUrl) return false;
-    
-    console.log('Updating profile avatar for user:', userId, 'with URL:', avatarUrl);
-    
-    // 1. First, update the avatar in the profiles table
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ avatar: avatarUrl })
-      .eq('id', userId);
+    const { data, error } = await supabase
+      .from('profile_photos')
+      .select('url, is_primary, order_index')
+      .eq('profile_id', profileId)
+      .order('order_index', { ascending: true });
       
-    if (profileError) {
-      console.error('Error updating profile avatar:', profileError);
-      return false;
-    }
+    if (error) throw error;
     
-    // 2. Set all photos to is_primary = false
-    const { error: resetError } = await supabase
+    return data?.map(photo => photo.url) || [];
+  } catch (error) {
+    console.error('Error fetching profile photos:', error);
+    return [];
+  }
+};
+
+/**
+ * Update the profile avatar
+ */
+export const updateProfileAvatar = async (profileId: string, photoUrl: string) => {
+  if (!profileId || !photoUrl) return false;
+  
+  try {
+    // First mark the selected photo as primary and all others as not primary
+    const { error: photoUpdateError } = await supabase
       .from('profile_photos')
       .update({ is_primary: false })
-      .eq('profile_id', userId);
+      .eq('profile_id', profileId);
       
-    if (resetError) {
-      console.error('Error resetting primary photo flags:', resetError);
+    if (photoUpdateError) {
+      console.error('Error resetting primary photo status:', photoUpdateError);
       return false;
     }
     
-    // 3. Find the photo with this URL and set it as is_primary = true
-    const { data: photoData, error: findError } = await supabase
+    // Set the selected photo as primary
+    const { error: setPrimaryError } = await supabase
       .from('profile_photos')
-      .select('id')
-      .eq('profile_id', userId)
-      .eq('url', avatarUrl)
-      .single();
+      .update({ is_primary: true })
+      .eq('profile_id', profileId)
+      .eq('url', photoUrl);
       
-    if (findError) {
-      console.error('Error finding photo record:', findError);
+    if (setPrimaryError) {
+      console.error('Error setting primary photo:', setPrimaryError);
       return false;
     }
     
-    if (photoData) {
-      const { error: updateError } = await supabase
-        .from('profile_photos')
-        .update({ 
-          is_primary: true,
-          order_index: 0  // Also ensure it's the first photo in order
-        })
-        .eq('id', photoData.id);
-        
-      if (updateError) {
-        console.error('Error setting photo as primary:', updateError);
-        return false;
-      }
+    // Update the avatar field in the profile
+    const { error: profileUpdateError } = await supabase
+      .from('profiles')
+      .update({ avatar: photoUrl })
+      .eq('id', profileId);
+      
+    if (profileUpdateError) {
+      console.error('Error updating profile avatar:', profileUpdateError);
+      return false;
     }
     
-    console.log('Successfully updated avatar and primary photo status');
     return true;
   } catch (error) {
     console.error('Error in updateProfileAvatar:', error);
     return false;
+  }
+};
+
+/**
+ * Fetch profile passions
+ */
+export const fetchProfilePassions = async (profileId: string) => {
+  if (!profileId) return [];
+  
+  try {
+    const { data, error } = await supabase
+      .from('profile_passions')
+      .select('passion')
+      .eq('profile_id', profileId);
+      
+    if (error) throw error;
+    
+    return data?.map(item => item.passion) || [];
+  } catch (error) {
+    console.error('Error fetching profile passions:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetch profile vices
+ */
+export const fetchProfileVices = async (profileId: string) => {
+  if (!profileId) return [];
+  
+  try {
+    const { data, error } = await supabase
+      .from('profile_vices')
+      .select('vices(name)')
+      .eq('profile_id', profileId);
+      
+    if (error) throw error;
+    
+    return data?.map(item => item.vices.name) || [];
+  } catch (error) {
+    console.error('Error fetching profile vices:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetch profile kinks
+ */
+export const fetchProfileKinks = async (profileId: string) => {
+  if (!profileId) return [];
+  
+  try {
+    const { data, error } = await supabase
+      .from('profile_kinks')
+      .select('kinks(name)')
+      .eq('profile_id', profileId);
+      
+    if (error) throw error;
+    
+    return data?.map(item => item.kinks.name) || [];
+  } catch (error) {
+    console.error('Error fetching profile kinks:', error);
+    return [];
   }
 };
