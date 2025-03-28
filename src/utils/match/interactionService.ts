@@ -121,8 +121,7 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
       .from('profile_interactions')
       .select('user_id, interaction_type, created_at')
       .eq('target_profile_id', userId)
-      .in('interaction_type', ['like', 'superlike'])
-      .order('created_at', { ascending: false });
+      .in('interaction_type', ['like', 'superlike']);
       
     if (interactionsError) {
       console.error('Error getting interactions:', interactionsError);
@@ -150,15 +149,15 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
       throw profilesError;
     }
     
+    console.log('Profiles data fetched:', profilesData);
+    
     if (!profilesData || profilesData.length === 0) {
       console.log('No profile data found for users who liked this user');
       return [];
     }
     
-    console.log('Profiles fetched:', profilesData.length);
-    
     // Combine the data
-    return profilesData.map(profile => {
+    const profilesWithInteractions = profilesData.map(profile => {
       const interaction = interactionsData.find(i => i.user_id === profile.id);
       return {
         id: profile.id,
@@ -171,6 +170,10 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
         interactionType: interaction?.interaction_type as 'like' | 'superlike'
       };
     });
+    
+    console.log('Mapped profiles with interactions:', profilesWithInteractions);
+    
+    return profilesWithInteractions;
   } catch (error) {
     console.error('Error getting profiles who liked me:', error);
     return [];
