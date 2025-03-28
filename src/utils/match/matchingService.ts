@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { MatchWithProfile } from "@/models/matchesTypes";
 
 /**
  * Checks if two users are matched (both have liked each other)
@@ -75,7 +76,7 @@ export const createMatch = async (currentUserId: string, targetUserId: string): 
 /**
  * Get all matches for a user
  */
-export const getUserMatches = async (userId: string) => {
+export const getUserMatches = async (userId: string): Promise<MatchWithProfile[]> => {
   if (!userId) return [];
   
   try {
@@ -134,5 +135,89 @@ export const getUserMatches = async (userId: string) => {
   } catch (error) {
     console.error('Error getting user matches:', error);
     return [];
+  }
+};
+
+/**
+ * Force check for matches that may have been missed
+ * This checks all mutual likes and creates matches for them
+ */
+export const forceCheckForMatches = async (userId: string): Promise<number> => {
+  if (!userId) return 0;
+  
+  try {
+    console.log('Force checking for missed matches for user:', userId);
+    
+    // Get all users the current user has liked
+    const { data: likedUsers, error: likedUsersError } = await supabase
+      .from('profile_interactions')
+      .select('target_profile_id')
+      .eq('user_id', userId)
+      .in('interaction_type', ['like', 'superlike']);
+      
+    if (likedUsersError) throw likedUsersError;
+    
+    if (!likedUsers || likedUsers.length === 0) {
+      console.log('No likes found from this user');
+      return 0;
+    }
+    
+    const likedUserIds = likedUsers.map(like => like.target_profile_id);
+    console.log('User has liked', likedUserIds.length, 'profiles');
+    
+    // Get all users who have liked the current user
+    const { data: likesReceived, error: likesReceivedError } = await supabase
+      .from('profile_interactions')
+      .select('user_id')
+      .eq('target_profile_id', userId)
+      .in('interaction_type', ['like', 'superlike']);
+      
+    if (likesReceivedError) throw likesReceivedError;
+    
+    if (!likesReceived || likesReceived.length === 0) {
+      console.log('No likes received by this user');
+      return 0;
+    }
+    
+    const userIdsWhoLikedMe = likesReceived.map(like => like.user_id);
+    console.log('User has been liked by', userIdsWhoLikedMe.length, 'profiles');
+    
+    // Find mutual likes (intersection of the two arrays)
+    const mutualLikes = likedUserIds.filter(id => userIdsWhoLikedMe.includes(id));
+    console.log('Found', mutualLikes.length, 'mutual likes');
+    
+    if (mutualLikes.length === 0) return 0;
+    
+    // Check which of these mutual likes do not already have a match
+    let newMatchesCreated = 0;
+    
+    for (const otherUserId of mutualLikes) {
+      // Check if a match already exists
+      const { data: existingMatch, error: checkMatchError } = await supabase
+        .from('matches')
+        .select('id')
+        .or(`(user_id_1.eq.${userId}.and.user_id_2.eq.${otherUserId}).or.(user_id_1.eq.${otherUserId}.and.user_id_2.eq.${userId})`)
+        .maybeSingle();
+        
+      if (checkMatchError) {
+        console.error('Error checking for existing match:', checkMatchError);
+        continue;
+      }
+      
+      if (!existingMatch) {
+        // Create a new match
+        const matchCreated = await createMatch(userId, otherUserId);
+        if (matchCreated) {
+          newMatchesCreated++;
+          console.log('Created new match between', userId, 'and', otherUserId);
+        }
+      }
+    }
+    
+    console.log('Created', newMatchesCreated, 'new matches');
+    return newMatchesCreated;
+  } catch (error) {
+    console.error('Error in forceCheckForMatches:', error);
+    return 0;
   }
 };
