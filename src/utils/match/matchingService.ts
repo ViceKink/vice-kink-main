@@ -112,15 +112,36 @@ export const getUserMatches = async (userId: string): Promise<MatchWithProfile[]
               other_user_id: match.other_user_id
             });
             
+            // Parse the JSON other_user field
+            const otherUser = typeof match.other_user === 'string' 
+              ? JSON.parse(match.other_user)
+              : match.other_user;
+            
             return {
               ...match,
+              other_user: {
+                id: otherUser.id,
+                name: otherUser.name,
+                avatar: otherUser.avatar
+              },
               last_message: lastMessage?.[0]?.content || null,
               unread_count: unreadCount || 0
             };
           } catch (err) {
             console.error('Error fetching message data for match:', match.match_id, err);
+            
+            // Handle JSON parsing error
+            const otherUser = typeof match.other_user === 'string' 
+              ? JSON.parse(match.other_user)
+              : match.other_user;
+            
             return {
               ...match,
+              other_user: {
+                id: otherUser.id,
+                name: otherUser.name,
+                avatar: otherUser.avatar
+              },
               last_message: null,
               unread_count: 0
             };
@@ -128,10 +149,24 @@ export const getUserMatches = async (userId: string): Promise<MatchWithProfile[]
         })
       );
       
-      return matchesWithMessages || [];
+      return matchesWithMessages as MatchWithProfile[];
     }
     
-    return data || [];
+    // Parse the other_user field before returning
+    return (data || []).map(match => {
+      const otherUser = typeof match.other_user === 'string' 
+        ? JSON.parse(match.other_user)
+        : match.other_user;
+        
+      return {
+        ...match,
+        other_user: {
+          id: otherUser.id,
+          name: otherUser.name,
+          avatar: otherUser.avatar
+        }
+      };
+    }) as MatchWithProfile[];
   } catch (error) {
     console.error('Error getting user matches:', error);
     return [];
@@ -140,7 +175,6 @@ export const getUserMatches = async (userId: string): Promise<MatchWithProfile[]
 
 /**
  * Force check for matches that may have been missed
- * This checks all mutual likes and creates matches for them
  */
 export const forceCheckForMatches = async (userId: string): Promise<number> => {
   if (!userId) return 0;

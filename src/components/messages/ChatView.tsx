@@ -17,6 +17,18 @@ interface ChatViewProps {
   matchId?: string | null;
 }
 
+interface MatchDetails {
+  id: string;
+  user_id_1: string;
+  user_id_2: string;
+  matched_at: string;
+  other_user: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+}
+
 const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -25,7 +37,7 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
   const messageContainerRef = useRef<HTMLDivElement>(null);
 
   // Get match details
-  const { data: match } = useQuery({
+  const { data: match } = useQuery<MatchDetails | null>({
     queryKey: ['match', matchId],
     queryFn: async () => {
       if (!matchId || !user?.id) return null;
@@ -37,8 +49,8 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
           user_id_1,
           user_id_2,
           matched_at,
-          profiles_1:user_id_1(id, name, avatar),
-          profiles_2:user_id_2(id, name, avatar)
+          profiles!user_id_1(id, name, avatar),
+          profiles!user_id_2(id, name, avatar)
         `)
         .eq('id', matchId)
         .single();
@@ -50,8 +62,8 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
       
       // Determine which user is the other user
       const otherUser = data.user_id_1 === user.id 
-        ? data.profiles_2 
-        : data.profiles_1;
+        ? data.profiles!user_id_2 
+        : data.profiles!user_id_1;
         
       return {
         ...data,
@@ -62,7 +74,7 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
   });
 
   // Get conversation messages
-  const { data: messages = [], isLoading: messagesLoading } = useQuery({
+  const { data: messages = [], isLoading: messagesLoading } = useQuery<Message[]>({
     queryKey: ['messages', match?.other_user?.id],
     queryFn: async () => {
       if (!user?.id || !match?.other_user?.id) return [];

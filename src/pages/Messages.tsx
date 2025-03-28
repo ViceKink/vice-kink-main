@@ -10,6 +10,7 @@ import { getProfilesWhoLikedMe } from '@/utils/match/interactionService';
 import MatchesList from '@/components/messages/MatchesList';
 import LikesList from '@/components/messages/LikesList';
 import ChatView from '@/components/messages/ChatView';
+import { Profile } from '@/models/profileTypes';
 
 const Messages = () => {
   const { user } = useAuth();
@@ -50,7 +51,7 @@ const Messages = () => {
       console.log('Fetching profiles who liked user:', user.id);
       const result = await getProfilesWhoLikedMe(user.id);
       console.log('Likes result:', result);
-      return result;
+      return result as Profile[];
     },
     enabled: !!user?.id
   });

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { InteractionType, InteractionResult } from "./types";
 import { toast } from "sonner";
 import { createMatch, checkIfMatched } from "./matchingService";
+import { Profile } from "@/models/profileTypes";
 
 /**
  * Create an interaction with a profile (like, dislike, superlike)
@@ -109,7 +110,7 @@ export const getUserInteractions = async (userId: string) => {
 /**
  * Get profiles that have liked the current user
  */
-export const getProfilesWhoLikedMe = async (userId: string) => {
+export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> => {
   if (!userId) return [];
   
   try {
@@ -161,7 +162,9 @@ export const getProfilesWhoLikedMe = async (userId: string) => {
         age: profile.age || 0,
         location: profile.location || '',
         avatar: profile.avatar || '',
-        interactionType: interaction?.interaction_type
+        photos: [], // Add empty photos array to match Profile type
+        verified: false, // Default to false as it's required by Profile type
+        interactionType: interaction?.interaction_type as 'like' | 'superlike'
       };
     });
   } catch (error) {

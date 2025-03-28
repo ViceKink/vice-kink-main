@@ -12,6 +12,7 @@ export interface Profile {
   verified: boolean;
   rating?: number;
   interactionType?: 'like' | 'superlike';
+  avatar?: string;
 }
 
 export interface ProfileWithInteraction extends Profile {
