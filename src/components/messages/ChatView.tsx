@@ -1,176 +1,126 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { MessageSquare, Send } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Message } from '@/models/matchesTypes';
-import { format } from 'date-fns';
+import { Send } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Textarea } from '@/components/ui/textarea';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
 
-interface ChatViewProps {
-  matchId?: string | null;
+interface Message {
+  id: string;
+  content: string;
+  sender_id: string;
+  receiver_id: string;
+  created_at: string;
+  read: boolean;
 }
 
-interface MatchDetails {
-  id: string;
-  user_id_1: string;
-  user_id_2: string;
-  matched_at: string;
-  other_user: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
+interface ChatViewProps {
+  matchId: string | null;
 }
 
 const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [messageText, setMessageText] = useState('');
-  const messageContainerRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+  const [otherUser, setOtherUser] = useState<{ id: string; name: string; avatar?: string } | null>(null);
 
-  // Get match details
-  const { data: match, isLoading: matchLoading, error: matchError } = useQuery<MatchDetails | null>({
+  // Query to fetch match details
+  const { data: matchData, isLoading: matchLoading } = useQuery({
     queryKey: ['match', matchId],
     queryFn: async () => {
       if (!matchId || !user?.id) return null;
       
-      try {
-        const { data, error } = await supabase
-          .from('matches')
-          .select(`
-            id,
-            user_id_1,
-            user_id_2,
-            matched_at,
-            profiles!user_id_1(id, name, avatar),
-            profiles!user_id_2(id, name, avatar)
-          `)
-          .eq('id', matchId)
-          .maybeSingle();
-          
-        if (error) {
-          console.error('Error fetching match:', error);
-          return null;
-        }
-        
-        if (!data) return null;
-        
-        // Determine which user is the other user
-        const otherUserId = data.user_id_1 === user.id ? data.user_id_2 : data.user_id_1;
-        const otherUserProfile = data.profiles_user_id_1 && data.profiles_user_id_2 ? 
-          (otherUserId === data.user_id_1 ? data.profiles_user_id_1 : data.profiles_user_id_2) :
-          null;
-          
-        if (!otherUserProfile) {
-          console.error('Could not find other user profile');
-          return null;
-        }
-          
-        return {
-          id: data.id,
-          user_id_1: data.user_id_1,
-          user_id_2: data.user_id_2,
-          matched_at: data.matched_at,
-          other_user: {
-            id: otherUserId,
-            name: otherUserProfile.name,
-            avatar: otherUserProfile.avatar
-          }
-        };
-      } catch (error) {
-        console.error('Error in match query:', error);
+      // Fetch match using RPC function for better performance
+      const { data, error } = await supabase
+        .rpc('get_user_matches', { user_id: user.id });
+      
+      if (error) {
+        console.error('Error fetching match:', error);
         return null;
       }
+      
+      // Find the specific match we're looking for
+      const specificMatch = data?.find(match => match.match_id === matchId);
+      if (!specificMatch) {
+        console.log('Match not found:', matchId);
+        return null;
+      }
+      
+      console.log('Found match:', specificMatch);
+      return specificMatch;
     },
     enabled: !!matchId && !!user?.id
   });
 
-  // Get conversation messages
-  const { data: messages = [], isLoading: messagesLoading } = useQuery<Message[]>({
-    queryKey: ['messages', match?.other_user?.id],
+  // Set other user information when match data changes
+  useEffect(() => {
+    if (matchData && matchData.other_user) {
+      setOtherUser({
+        id: matchData.other_user_id,
+        name: matchData.other_user.name || 'Unknown User',
+        avatar: matchData.other_user.avatar || ''
+      });
+    }
+  }, [matchData]);
+
+  // Query to fetch conversation messages
+  const { 
+    data: messages = [], 
+    isLoading: messagesLoading,
+    refetch: refetchMessages
+  } = useQuery({
+    queryKey: ['conversation', otherUser?.id],
     queryFn: async () => {
-      if (!user?.id || !match?.other_user?.id) return [];
+      if (!user?.id || !otherUser?.id) return [];
       
-      console.log('Fetching conversation between', user.id, 'and', match.other_user.id);
-      const { data, error } = await supabase.rpc('get_conversation', {
-        user1: user.id,
-        user2: match.other_user.id
+      // Mark messages as read when loading conversation
+      await supabase.rpc('mark_messages_as_read', {
+        user_id: user.id,
+        other_user_id: otherUser.id
       });
       
+      const { data, error } = await supabase
+        .rpc('get_conversation', {
+          user1: user.id,
+          user2: otherUser.id
+        });
+      
       if (error) {
-        console.error('Error fetching messages:', error);
+        console.error('Error fetching conversation:', error);
         return [];
       }
       
-      console.log('Messages fetched:', data?.length || 0);
       return data || [];
     },
-    enabled: !!user?.id && !!match?.other_user?.id,
-    refetchInterval: match?.other_user?.id ? 5000 : false // Poll every 5 seconds when conversation is selected
+    enabled: !!user?.id && !!otherUser?.id,
+    refetchInterval: 3000 // Refresh every 3 seconds
   });
 
-  // Mark messages as read
-  useEffect(() => {
-    const markMessagesAsRead = async () => {
-      if (!user?.id || !match?.other_user?.id) return;
-      
-      console.log('Marking messages as read from', match.other_user.id, 'to', user.id);
-      const { error } = await supabase.rpc('mark_messages_as_read', {
-        user_id: user.id,
-        other_user_id: match.other_user.id
-      });
-      
-      if (error) {
-        console.error('Error marking messages as read:', error);
-      } else {
-        console.log('Messages marked as read successfully');
-        queryClient.invalidateQueries({ queryKey: ['userMatches'] });
-      }
-    };
-    
-    if (match?.other_user?.id) {
-      markMessagesAsRead();
-    }
-  }, [match?.other_user?.id, user?.id, queryClient]);
-
-  // Scroll to bottom on new messages
-  useEffect(() => {
-    if (messageContainerRef.current) {
-      messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
-    }
-  }, [messages]);
-
-  // Send message mutation
+  // Mutation to send a new message
   const sendMessageMutation = useMutation({
-    mutationFn: async (message: { content: string, receiver_id: string }) => {
-      if (!user?.id) throw new Error('User not authenticated');
+    mutationFn: async (message: string) => {
+      if (!user?.id || !otherUser?.id) throw new Error('Missing user IDs');
       
-      console.log('Sending message from', user.id, 'to', message.receiver_id, ':', message.content);
-      const { data, error } = await supabase.rpc('send_message', {
-        sender: user.id,
-        receiver: message.receiver_id,
-        message_content: message.content
-      });
+      const { data, error } = await supabase
+        .rpc('send_message', {
+          sender: user.id,
+          receiver: otherUser.id,
+          message_content: message
+        });
       
-      if (error) {
-        console.error('Error in send_message RPC call:', error);
-        throw error;
-      }
-      
-      console.log('Message sent successfully, ID:', data);
-      return { success: true };
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       setMessageText('');
-      queryClient.invalidateQueries({ queryKey: ['messages', match?.other_user?.id] });
+      refetchMessages();
+      
+      // Also update the matches list to show the new message
       queryClient.invalidateQueries({ queryKey: ['userMatches'] });
     },
     onError: (error) => {
@@ -179,143 +129,112 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
     }
   });
 
-  const handleSendMessage = () => {
-    if (!messageText.trim() || !match?.other_user?.id) return;
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageText.trim()) return;
     
-    sendMessageMutation.mutate({
-      content: messageText.trim(),
-      receiver_id: match.other_user.id
-    });
+    sendMessageMutation.mutate(messageText);
   };
 
+  // If no match is selected, show a placeholder
   if (!matchId) {
     return (
-      <Card className="h-full flex flex-col">
-        <CardContent className="flex flex-col items-center justify-center h-full text-center p-6">
-          <MessageSquare className="w-16 h-16 mb-4 text-gray-300" />
-          <h3 className="text-lg font-medium">Select a conversation</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Choose a match from the list to start chatting
-          </p>
-        </CardContent>
+      <Card className="h-[70vh] flex flex-col items-center justify-center text-center p-6">
+        <h3 className="text-lg font-medium mb-2">Select a conversation</h3>
+        <p className="text-sm text-muted-foreground">
+          Choose a match to start chatting
+        </p>
       </Card>
     );
   }
 
+  // Loading state
   if (matchLoading) {
     return (
-      <Card className="h-full flex flex-col">
-        <CardContent className="p-4">
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </CardContent>
+      <Card className="h-[70vh] flex flex-col items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <p className="mt-4 text-sm text-muted-foreground">Loading conversation...</p>
       </Card>
     );
   }
 
-  if (matchError || !match) {
+  // Error state - match not found
+  if (!matchData) {
     return (
-      <Card className="h-full flex flex-col">
-        <CardContent className="p-4">
-          <div className="flex flex-col items-center justify-center h-64 text-center">
-            <h3 className="text-lg font-medium text-destructive">Error loading conversation</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Please try again later
-            </p>
-          </div>
-        </CardContent>
+      <Card className="h-[70vh] flex flex-col items-center justify-center text-center p-6">
+        <h3 className="text-lg font-medium mb-2">Conversation not found</h3>
+        <p className="text-sm text-muted-foreground">
+          This match may no longer exist
+        </p>
       </Card>
     );
   }
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="p-4 border-b">
-        <div className="flex items-center">
-          <Avatar className="h-10 w-10 mr-3">
-            <AvatarImage src={match.other_user.avatar} />
-            <AvatarFallback>{match.other_user.name?.charAt(0) || '?'}</AvatarFallback>
-          </Avatar>
-          <div>
-            <h3 className="text-sm font-medium">
-              {match.other_user.name}
-            </h3>
-            <span 
-              className="text-xs text-primary cursor-pointer"
-              onClick={() => navigate(`/profile/${match.other_user.id}`)}
-            >
-              View profile
-            </span>
-          </div>
+    <Card className="h-[70vh] flex flex-col">
+      {/* Chat header */}
+      <div className="p-4 border-b flex items-center">
+        <Avatar className="h-10 w-10 mr-3">
+          <AvatarImage src={otherUser?.avatar} />
+          <AvatarFallback>{otherUser?.name?.charAt(0) || '?'}</AvatarFallback>
+        </Avatar>
+        <div>
+          <h3 className="font-medium">{otherUser?.name}</h3>
         </div>
-      </CardHeader>
-      
-      <div 
-        ref={messageContainerRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4"
-        style={{ minHeight: "300px" }}
-      >
-        {messagesLoading ? (
-          <div className="flex justify-center items-center h-full">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center p-6">
-            <h3 className="text-lg font-medium">No messages yet</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Start the conversation with {match.other_user.name}
-            </p>
-          </div>
-        ) : (
-          messages.map((message: Message) => {
-            const isSentByMe = message.sender_id === user?.id;
-            
-            return (
-              <div
-                key={message.id}
-                className={`flex ${isSentByMe ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[75%] px-4 py-2 rounded-lg text-sm ${
-                    isSentByMe
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted'
-                  }`}
-                >
-                  <p>{message.content}</p>
-                  <div className={`text-xs mt-1 ${isSentByMe ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                    {format(new Date(message.created_at), 'p')}
-                  </div>
-                </div>
-              </div>
-            );
-          })
-        )}
       </div>
       
-      <CardContent className="p-4 border-t mt-auto">
-        <div className="flex gap-2">
-          <Input
-            placeholder="Type a message..."
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-          />
-          <Button
-            size="icon"
-            onClick={handleSendMessage}
-            disabled={!messageText.trim() || sendMessageMutation.isPending}
-          >
-            <Send size={18} />
-          </Button>
-        </div>
+      {/* Messages container */}
+      <CardContent className="flex-1 overflow-y-auto p-4 space-y-4 flex flex-col">
+        {messagesLoading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center text-center">
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">No messages yet</p>
+              <p className="text-xs text-muted-foreground">Send a message to start the conversation</p>
+            </div>
+          </div>
+        ) : (
+          messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex ${message.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}
+            >
+              <div
+                className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                  message.sender_id === user?.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary'
+                }`}
+              >
+                <p className="text-sm">{message.content}</p>
+                <p className="text-xs opacity-70 mt-1">
+                  {new Date(message.created_at).toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+            </div>
+          ))
+        )}
       </CardContent>
+      
+      {/* Message input */}
+      <form onSubmit={handleSendMessage} className="p-4 border-t flex gap-2">
+        <Textarea
+          placeholder="Type a message..."
+          value={messageText}
+          onChange={(e) => setMessageText(e.target.value)}
+          className="resize-none"
+          rows={1}
+        />
+        <Button type="submit" size="icon" disabled={sendMessageMutation.isPending}>
+          <Send className="h-4 w-4" />
+        </Button>
+      </form>
     </Card>
   );
 };

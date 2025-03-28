@@ -116,49 +116,40 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
   try {
     console.log('Getting profiles who liked user:', userId);
     
-    // First, get the user IDs who liked this user
-    const { data: interactionsData, error: interactionsError } = await supabase
+    // Directly query for profiles who have liked this user by joining tables
+    // This is a more efficient approach using a single query
+    const { data, error } = await supabase
       .from('profile_interactions')
-      .select('user_id, interaction_type, created_at')
+      .select(`
+        user_id,
+        interaction_type,
+        profiles!profile_interactions_user_id_fkey (
+          id, 
+          name, 
+          age, 
+          location, 
+          avatar, 
+          verified
+        )
+      `)
       .eq('target_profile_id', userId)
       .in('interaction_type', ['like', 'superlike']);
-      
-    if (interactionsError) {
-      console.error('Error getting interactions:', interactionsError);
-      throw interactionsError;
+    
+    if (error) {
+      console.error('Error getting profiles who liked me:', error);
+      throw error;
     }
     
-    if (!interactionsData || interactionsData.length === 0) {
+    console.log('Raw liked-by data:', data);
+    
+    if (!data || data.length === 0) {
       console.log('No likes found for this user');
       return [];
     }
     
-    console.log('Found', interactionsData.length, 'users who liked this user');
-    
-    // Get the user IDs
-    const userIds = interactionsData.map(interaction => interaction.user_id);
-    
-    // Then fetch the profile data for those users
-    const { data: profilesData, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, name, age, location, avatar')
-      .in('id', userIds);
-      
-    if (profilesError) {
-      console.error('Error getting profiles:', profilesError);
-      throw profilesError;
-    }
-    
-    console.log('Profiles data fetched:', profilesData);
-    
-    if (!profilesData || profilesData.length === 0) {
-      console.log('No profile data found for users who liked this user');
-      return [];
-    }
-    
-    // Combine the data
-    const profilesWithInteractions = profilesData.map(profile => {
-      const interaction = interactionsData.find(i => i.user_id === profile.id);
+    // Transform the joined data into the Profile format
+    const profiles = data.map(item => {
+      const profile = item.profiles as any;
       return {
         id: profile.id,
         name: profile.name || 'Unknown User',
@@ -166,14 +157,13 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
         location: profile.location || '',
         avatar: profile.avatar || '',
         photos: [], // Add empty photos array to match Profile type
-        verified: false, // Default to false as it's required by Profile type
-        interactionType: interaction?.interaction_type as 'like' | 'superlike'
+        verified: profile.verified || false,
+        interactionType: item.interaction_type as 'like' | 'superlike'
       };
     });
     
-    console.log('Mapped profiles with interactions:', profilesWithInteractions);
-    
-    return profilesWithInteractions;
+    console.log('Transformed profiles who liked me:', profiles);
+    return profiles;
   } catch (error) {
     console.error('Error getting profiles who liked me:', error);
     return [];
