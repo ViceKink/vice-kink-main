@@ -1,380 +1,376 @@
 
-import { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { MessageSquare, Heart, Send } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
-import { supabase } from '@/integrations/supabase/client';
-import { getUserMatches } from '@/utils/matchUtils';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Send,
+  Search,
+  User2
+} from 'lucide-react';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
-interface Message {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  content: string;
-  created_at: string;
-  read: boolean;
-}
-
-interface Match {
-  match_id: string;
-  matched_at: string;
-  other_user_id: string;
-  other_user: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
-}
+import { supabase } from '@/integrations/supabase/client';
+import { MatchWithProfile, Message } from '@/models/matchesTypes';
 
 const Messages = () => {
   const { user } = useAuth();
-  const [activeConversation, setActiveConversation] = useState<string | null>(null);
-  const [newMessage, setNewMessage] = useState('');
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
+  const messageContainerRef = useRef<HTMLDivElement>(null);
+
+  const [selectedMatch, setSelectedMatch] = useState<MatchWithProfile | null>(null);
+  const [messageText, setMessageText] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Fetch user matches
   const { data: matches = [], isLoading: matchesLoading } = useQuery({
     queryKey: ['userMatches'],
     queryFn: async () => {
       if (!user?.id) return [];
-      return getUserMatches(user.id);
+      
+      const { data, error } = await supabase.rpc('get_user_matches', { 
+        user_id: user.id 
+      });
+      
+      if (error) {
+        console.error('Error fetching matches:', error);
+        return [];
+      }
+      
+      // Process matches to add last message and unread count
+      const matchesWithExtras = await Promise.all(
+        data.map(async (match) => {
+          // Get last message
+          const { data: lastMessage, error: messageError } = await supabase.rpc(
+            'get_last_message', 
+            { 
+              user1: user.id, 
+              user2: match.other_user_id 
+            }
+          );
+          
+          // Get unread count
+          const { count, error: countError } = await supabase.rpc(
+            'count_unread_messages', 
+            { 
+              user_id: user.id, 
+              other_user_id: match.other_user_id 
+            }
+          );
+          
+          if (messageError) console.error('Error fetching last message:', messageError);
+          if (countError) console.error('Error counting unread messages:', countError);
+          
+          return {
+            ...match,
+            last_message: lastMessage?.content || '',
+            unread_count: count || 0
+          };
+        })
+      );
+      
+      // Sort by most recent message first
+      return matchesWithExtras.sort((a, b) => {
+        if (!a.last_message && !b.last_message) return 0;
+        if (!a.last_message) return 1;
+        if (!b.last_message) return -1;
+        return new Date(b.matched_at).getTime() - new Date(a.matched_at).getTime();
+      });
     },
     enabled: !!user?.id
   });
-  
-  // Fetch conversation messages
+
+  // Fetch messages for selected match
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
-    queryKey: ['conversationMessages', activeConversation],
+    queryKey: ['messages', selectedMatch?.other_user_id],
     queryFn: async () => {
-      if (!user?.id || !activeConversation) return [];
+      if (!user?.id || !selectedMatch?.other_user_id) return [];
       
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${activeConversation}),and(sender_id.eq.${activeConversation},receiver_id.eq.${user.id})`)
-        .order('created_at', { ascending: true });
-        
+      const { data, error } = await supabase.rpc('get_conversation', {
+        user1: user.id,
+        user2: selectedMatch.other_user_id
+      });
+      
       if (error) {
         console.error('Error fetching messages:', error);
         return [];
       }
       
-      // Mark received messages as read
-      const unreadMessages = data.filter(msg => 
-        msg.receiver_id === user.id && !msg.read
-      );
-      
-      if (unreadMessages.length > 0) {
-        const unreadIds = unreadMessages.map(msg => msg.id);
-        
-        await supabase
-          .from('messages')
-          .update({ read: true })
-          .in('id', unreadIds);
-      }
-      
       return data || [];
     },
-    enabled: !!user?.id && !!activeConversation,
-    refetchInterval: 3000 // Poll for new messages every 3 seconds
+    enabled: !!user?.id && !!selectedMatch?.other_user_id
   });
-  
+
+  // Mark messages as read when conversation is opened
+  useEffect(() => {
+    const markMessagesAsRead = async () => {
+      if (!user?.id || !selectedMatch?.other_user_id) return;
+      
+      const { error } = await supabase.rpc('mark_messages_as_read', {
+        user_id: user.id,
+        other_user_id: selectedMatch.other_user_id
+      });
+      
+      if (error) {
+        console.error('Error marking messages as read:', error);
+      } else {
+        // Invalidate queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ['userMatches'] });
+      }
+    };
+    
+    if (selectedMatch) {
+      markMessagesAsRead();
+    }
+  }, [selectedMatch, user?.id, queryClient]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (messageContainerRef.current) {
+      messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async (content: string) => {
-      if (!user?.id || !activeConversation || !content.trim()) {
-        throw new Error('Cannot send message');
-      }
+    mutationFn: async (message: { content: string, receiver_id: string }) => {
+      if (!user?.id) throw new Error('User not authenticated');
       
-      const { data, error } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: user.id,
-          receiver_id: activeConversation,
-          content: content.trim(),
-          read: false
-        })
-        .select();
-        
+      const { error } = await supabase.rpc('send_message', {
+        sender: user.id,
+        receiver: message.receiver_id,
+        message_content: message.content
+      });
+      
       if (error) throw error;
-      return data;
+      
+      return { success: true };
     },
     onSuccess: () => {
-      setNewMessage('');
-      queryClient.invalidateQueries({ queryKey: ['conversationMessages', activeConversation] });
+      setMessageText('');
+      queryClient.invalidateQueries({ queryKey: ['messages', selectedMatch?.other_user_id] });
+      queryClient.invalidateQueries({ queryKey: ['userMatches'] });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Error sending message:', error);
       toast.error('Failed to send message');
     }
   });
-  
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newMessage.trim()) {
-      sendMessageMutation.mutate(newMessage);
-    }
-  };
-  
-  const timeAgo = (timestamp: string) => {
-    const now = new Date();
-    const date = new Date(timestamp);
-    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  const handleSendMessage = () => {
+    if (!messageText.trim() || !selectedMatch) return;
     
-    let interval = Math.floor(seconds / 31536000);
-    if (interval >= 1) {
-      return `${interval} year${interval === 1 ? '' : 's'} ago`;
-    }
-    
-    interval = Math.floor(seconds / 2592000);
-    if (interval >= 1) {
-      return `${interval} month${interval === 1 ? '' : 's'} ago`;
-    }
-    
-    interval = Math.floor(seconds / 86400);
-    if (interval >= 1) {
-      return `${interval} day${interval === 1 ? '' : 's'} ago`;
-    }
-    
-    interval = Math.floor(seconds / 3600);
-    if (interval >= 1) {
-      return `${interval} hour${interval === 1 ? '' : 's'} ago`;
-    }
-    
-    interval = Math.floor(seconds / 60);
-    if (interval >= 1) {
-      return `${interval} minute${interval === 1 ? '' : 's'} ago`;
-    }
-    
-    return `${Math.floor(seconds)} second${seconds === 1 ? '' : 's'} ago`;
-  };
-  
-  // Get unread messages count for a conversation
-  const getUnreadCount = (otherUserId: string) => {
-    return matches.find(match => match.other_user_id === otherUserId)?.unread_count || 0;
-  };
-  
-  // Get last message for a conversation
-  const getActiveMatchDetails = () => {
-    return matches.find(match => match.other_user_id === activeConversation);
+    sendMessageMutation.mutate({
+      content: messageText.trim(),
+      receiver_id: selectedMatch.other_user_id
+    });
   };
 
-  const isLoading = matchesLoading || (messagesLoading && !!activeConversation);
-  
-  if (isLoading) {
+  const filteredMatches = matches.filter(match => 
+    match.other_user.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Show loading UI
+  if (matchesLoading && !matches.length) {
     return (
-      <div className="container mx-auto px-4 max-w-6xl pt-20 pb-24 md:pb-10">
-        <h1 className="text-2xl md:text-3xl font-bold mb-6">Messages</h1>
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-300 rounded w-24"></div>
-          <div className="h-[600px] bg-gray-300 rounded"></div>
+      <div className="min-h-screen pt-24 px-4 pb-4 md:px-6">
+        <div className="max-w-6xl mx-auto">
+          <h1 className="text-2xl font-bold mb-6">Messages</h1>
+          <div className="animate-pulse">
+            <div className="h-12 bg-gray-200 rounded-lg mb-4"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="h-[500px] bg-gray-200 rounded-lg"></div>
+              <div className="h-[500px] bg-gray-200 rounded-lg md:col-span-2"></div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
-  
+
   return (
-    <div className="container mx-auto px-4 max-w-6xl pt-20 pb-24 md:pb-10">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6">Messages</h1>
-      
-      <Tabs defaultValue="messages" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="messages" className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Messages
-          </TabsTrigger>
-          <TabsTrigger value="likes" className="flex items-center gap-2">
-            <Heart className="h-4 w-4" />
-            Matches
-          </TabsTrigger>
-        </TabsList>
+    <div className="min-h-screen pt-24 px-4 pb-4 md:px-6">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-2xl font-bold mb-6">Messages</h1>
         
-        <TabsContent value="messages" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Conversations List */}
-            <div className="md:col-span-1 bg-card rounded-lg shadow-sm border border-border overflow-hidden">
-              <div className="p-3 border-b border-border">
-                <h2 className="font-medium">Conversations</h2>
-              </div>
-              
-              <div className="divide-y divide-border">
-                {matches.length === 0 ? (
-                  <div className="p-4 text-center text-muted-foreground">
-                    No matches yet. Start liking profiles to find matches!
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+            <Input
+              placeholder="Search conversations..."
+              className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-180px)]">
+          {/* Matches List */}
+          <Card className="md:h-full overflow-hidden">
+            <CardContent className="p-0 h-full">
+              <div className="h-full overflow-y-auto">
+                {filteredMatches.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center text-center p-6 h-full">
+                    <User2 className="w-12 h-12 mb-2 text-gray-400" />
+                    <h3 className="text-lg font-medium">No matches yet</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Start liking profiles to get matches
+                    </p>
+                    <Button 
+                      className="mt-4" 
+                      onClick={() => navigate('/discover')}
+                    >
+                      Discover
+                    </Button>
                   </div>
                 ) : (
-                  matches.map((match) => (
-                    <div 
-                      key={match.match_id}
-                      className={`p-3 cursor-pointer transition-colors hover:bg-accent/50 ${
-                        activeConversation === match.other_user_id ? 'bg-accent' : ''
-                      }`}
-                      onClick={() => setActiveConversation(match.other_user_id)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={match.other_user.avatar || undefined} alt={match.other_user.name} />
-                          <AvatarFallback>{match.other_user.name[0]}</AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium">{match.other_user.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {timeAgo(match.matched_at)}
-                            </span>
+                  <ul className="divide-y">
+                    {filteredMatches.map((match) => (
+                      <li
+                        key={match.match_id}
+                        className={`cursor-pointer hover:bg-gray-50 ${
+                          selectedMatch?.match_id === match.match_id ? 'bg-gray-100' : ''
+                        }`}
+                        onClick={() => setSelectedMatch(match)}
+                      >
+                        <div className="flex items-start p-4">
+                          <Avatar className="h-12 w-12 mr-3 flex-shrink-0">
+                            <AvatarImage src={match.other_user.avatar} />
+                            <AvatarFallback>{match.other_user.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex justify-between items-baseline">
+                              <h3 className="text-sm font-medium truncate">
+                                {match.other_user.name}
+                              </h3>
+                              <span className="text-xs text-gray-500">
+                                {format(new Date(match.matched_at), 'P')}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-500 truncate">
+                              {match.last_message || "No messages yet"}
+                            </p>
+                            {match.unread_count > 0 && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary text-primary-foreground mt-1">
+                                {match.unread_count}
+                              </span>
+                            )}
                           </div>
-                          
-                          <p className="text-sm text-muted-foreground truncate">
-                            {match.last_message || "Start a conversation"}
-                          </p>
                         </div>
-                      </div>
-                    </div>
-                  ))
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
-            </div>
-            
-            {/* Messages */}
-            <div className="md:col-span-2 bg-card rounded-lg shadow-sm border border-border overflow-hidden flex flex-col h-[600px]">
-              {activeConversation ? (
-                <>
-                  <div className="p-3 border-b border-border">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage 
-                          src={getActiveMatchDetails()?.other_user.avatar || undefined} 
-                          alt={getActiveMatchDetails()?.other_user.name || 'User'} 
-                        />
-                        <AvatarFallback>
-                          {getActiveMatchDetails()?.other_user.name?.[0] || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium">
-                        {getActiveMatchDetails()?.other_user.name || 'User'}
-                      </span>
-                    </div>
+            </CardContent>
+          </Card>
+          
+          {/* Messages */}
+          <Card className="md:col-span-2 md:h-full flex flex-col">
+            {selectedMatch ? (
+              <>
+                <div className="p-4 border-b flex items-center">
+                  <Avatar className="h-10 w-10 mr-3">
+                    <AvatarImage src={selectedMatch.other_user.avatar} />
+                    <AvatarFallback>{selectedMatch.other_user.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="text-sm font-medium">
+                      {selectedMatch.other_user.name}
+                    </h3>
+                    <span 
+                      className="text-xs text-primary cursor-pointer"
+                      onClick={() => navigate(`/profile/${selectedMatch.other_user_id}`)}
+                    >
+                      View profile
+                    </span>
                   </div>
-                  
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                    {messages.length === 0 ? (
-                      <div className="flex h-full items-center justify-center">
-                        <div className="text-center text-muted-foreground">
-                          <p>No messages yet</p>
-                          <p className="text-sm">Send a message to start a conversation</p>
-                        </div>
-                      </div>
-                    ) : (
-                      messages.map((message) => (
-                        <div 
+                </div>
+                
+                <div 
+                  ref={messageContainerRef}
+                  className="flex-1 overflow-y-auto p-4 space-y-4"
+                  style={{ minHeight: "300px" }}
+                >
+                  {messagesLoading ? (
+                    <div className="flex justify-center items-center h-full">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center p-6">
+                      <h3 className="text-lg font-medium">No messages yet</h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Start the conversation with {selectedMatch.other_user.name}
+                      </p>
+                    </div>
+                  ) : (
+                    messages.map((message) => {
+                      const isSentByMe = message.sender_id === user?.id;
+                      
+                      return (
+                        <div
                           key={message.id}
-                          className={`flex ${message.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}
+                          className={`flex ${isSentByMe ? 'justify-end' : 'justify-start'}`}
                         >
-                          <div className={`max-w-[70%] rounded-lg p-3 ${
-                            message.sender_id === user?.id 
-                              ? 'bg-vice-purple text-white rounded-br-none' 
-                              : 'bg-accent rounded-bl-none'
-                          }`}>
-                            <p className="text-sm">{message.content}</p>
-                            <span className={`text-xs mt-1 block ${
-                              message.sender_id === user?.id ? 'text-white/70' : 'text-muted-foreground'
-                            }`}>
-                              {timeAgo(message.created_at)}
-                            </span>
+                          <div
+                            className={`max-w-[75%] px-4 py-2 rounded-lg text-sm ${
+                              isSentByMe
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted'
+                            }`}
+                          >
+                            <p>{message.content}</p>
+                            <div className={`text-xs mt-1 ${isSentByMe ? 'text-primary-foreground/70' : 'text-gray-500'}`}>
+                              {format(new Date(message.created_at), 'p')}
+                            </div>
                           </div>
                         </div>
-                      ))
-                    )}
-                  </div>
-                  
-                  <div className="p-3 border-t border-border">
-                    <form onSubmit={handleSendMessage} className="flex gap-2">
-                      <input 
-                        type="text" 
-                        placeholder="Type a message..." 
-                        className="flex-1 rounded-full border border-input bg-background px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-vice-purple"
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                      />
-                      <button 
-                        type="submit"
-                        className="bg-vice-purple hover:bg-vice-dark-purple text-white rounded-full px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1"
-                        disabled={!newMessage.trim()}
-                      >
-                        <Send className="h-4 w-4" />
-                        Send
-                      </button>
-                    </form>
-                  </div>
-                </>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                  <MessageSquare className="h-16 w-16 text-muted-foreground mb-4" />
-                  <h3 className="text-xl font-medium mb-2">Your Messages</h3>
-                  <p className="text-muted-foreground max-w-md mb-4">
-                    Select a conversation from the list to start chatting
-                  </p>
+                      );
+                    })
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="likes" className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {matches.length === 0 ? (
-              <div className="col-span-full bg-card p-8 rounded-lg text-center">
-                <Heart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-xl font-medium mb-2">No matches yet</h3>
-                <p className="text-muted-foreground max-w-md mx-auto mb-4">
-                  When you and someone else like each other, you'll see them here
+                
+                <div className="p-4 border-t">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Type a message..."
+                      value={messageText}
+                      onChange={(e) => setMessageText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                    />
+                    <Button
+                      size="icon"
+                      onClick={handleSendMessage}
+                      disabled={!messageText.trim() || sendMessageMutation.isPending}
+                    >
+                      <Send size={18} />
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-center p-6">
+                <h3 className="text-lg font-medium">Select a conversation</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Choose a match from the list to start chatting
                 </p>
               </div>
-            ) : (
-              matches.map((match) => (
-                <div 
-                  key={match.match_id}
-                  className="bg-card rounded-lg shadow-sm overflow-hidden border border-border hover:shadow-md transition-shadow"
-                >
-                  <div className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={match.other_user.avatar || undefined} alt={match.other_user.name} />
-                        <AvatarFallback>{match.other_user.name[0]}</AvatarFallback>
-                      </Avatar>
-                      
-                      <div>
-                        <h3 className="font-medium">{match.other_user.name}</h3>
-                        <p className="text-xs text-muted-foreground">
-                          Matched {timeAgo(match.matched_at)}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between gap-2 mt-4">
-                      <button 
-                        className="flex-1 bg-vice-purple hover:bg-vice-dark-purple text-white rounded-lg py-2 text-sm font-medium transition-colors"
-                        onClick={() => setActiveConversation(match.other_user_id)}
-                      >
-                        Message
-                      </button>
-                      <button 
-                        className="flex-1 bg-transparent border border-border hover:bg-accent rounded-lg py-2 text-sm font-medium transition-colors"
-                        onClick={() => { window.location.href = `/profile/${match.other_user_id}`; }}
-                      >
-                        View Profile
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
             )}
-          </div>
-        </TabsContent>
-      </Tabs>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };

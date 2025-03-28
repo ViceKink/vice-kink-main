@@ -48,13 +48,10 @@ export const createMatch = async (currentUserId: string, targetUserId: string): 
   
   try {
     // Create a match record in the database
-    const { error } = await supabase
-      .from('matches')
-      .insert({
-        user_id_1: currentUserId < targetUserId ? currentUserId : targetUserId,
-        user_id_2: currentUserId < targetUserId ? targetUserId : currentUserId,
-        matched_at: new Date().toISOString()
-      });
+    const { error } = await supabase.rpc('create_match', {
+      user_id_a: currentUserId,
+      user_id_b: targetUserId
+    });
       
     if (error) throw error;
     
@@ -75,29 +72,16 @@ export const getUserMatches = async (userId: string) => {
   
   try {
     // Get all matches where the user is either user_id_1 or user_id_2
-    const { data, error } = await supabase
-      .from('matches')
-      .select('*, profiles_1:profiles!matches_user_id_1_fkey(*), profiles_2:profiles!matches_user_id_2_fkey(*)')
-      .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`);
+    const { data, error } = await supabase.rpc('get_user_matches', {
+      user_id: userId
+    });
       
     if (error) throw error;
     
-    if (!data) return [];
-    
-    // Format the match data to always return the OTHER user's profile
-    return data.map(match => {
-      const otherUserId = match.user_id_1 === userId ? match.user_id_2 : match.user_id_1;
-      const otherUserProfile = match.user_id_1 === userId ? match.profiles_2 : match.profiles_1;
-      
-      return {
-        match_id: match.id,
-        matched_at: match.matched_at,
-        other_user_id: otherUserId,
-        other_user: otherUserProfile
-      };
-    });
+    return data || [];
   } catch (error) {
     console.error('Error getting user matches:', error);
     return [];
   }
 };
+
