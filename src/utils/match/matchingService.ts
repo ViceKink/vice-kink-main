@@ -9,8 +9,6 @@ export const checkIfMatched = async (currentUserId: string, targetUserId: string
   if (!currentUserId || !targetUserId) return false;
   
   try {
-    console.log('Checking if matched:', currentUserId, targetUserId);
-    
     // Check if current user liked target user
     const { data: userLiked, error: userLikedError } = await supabase
       .from('profile_interactions')
@@ -34,9 +32,7 @@ export const checkIfMatched = async (currentUserId: string, targetUserId: string
     if (targetLikedError) throw targetLikedError;
     
     // Match exists if both users liked each other
-    const isMatched = !!userLiked && !!targetLiked;
-    console.log('Match check result:', isMatched, 'userLiked:', !!userLiked, 'targetLiked:', !!targetLiked);
-    return isMatched;
+    return !!userLiked && !!targetLiked;
     
   } catch (error) {
     console.error('Error checking match:', error);
@@ -53,24 +49,7 @@ export const createMatch = async (currentUserId: string, targetUserId: string): 
   try {
     console.log('Creating match between', currentUserId, 'and', targetUserId);
     
-    // First check if match already exists to avoid duplicates
-    const { data: existingMatch, error: checkError } = await supabase
-      .from('matches')
-      .select('*')
-      .eq('user_id_1', Math.min(currentUserId, targetUserId))
-      .eq('user_id_2', Math.max(currentUserId, targetUserId))
-      .maybeSingle();
-      
-    if (checkError) {
-      console.error('Error checking for existing match:', checkError);
-    }
-    
-    if (existingMatch) {
-      console.log('Match already exists:', existingMatch);
-      return true;
-    }
-    
-    // Create a match record in the database using RPC
+    // Create a match record in the database
     const { data, error } = await supabase
       .rpc('create_match', {
         user_id_a: currentUserId,
@@ -83,9 +62,6 @@ export const createMatch = async (currentUserId: string, targetUserId: string): 
     }
     
     console.log('Match created successfully', data);
-    
-    // Manually trigger a match update by invalidating the query cache
-    // This will ensure the UI updates properly
     
     // We don't show a toast here since we'll show a match animation instead
     return true;
@@ -117,7 +93,6 @@ export const getUserMatches = async (userId: string) => {
     }
     
     console.log('Matches fetched:', data?.length || 0, 'matches found');
-    console.log('Matches result:', data);
     
     // For each match, fetch the last message and unread count
     if (data && data.length > 0) {
@@ -159,65 +134,5 @@ export const getUserMatches = async (userId: string) => {
   } catch (error) {
     console.error('Error getting user matches:', error);
     return [];
-  }
-};
-
-/**
- * Force check for potential matches and create them if found
- * This is a utility function that can be called to ensure matches are created
- */
-export const forceCheckForMatches = async (userId: string): Promise<number> => {
-  if (!userId) return 0;
-  
-  try {
-    console.log('Force checking for potential matches for user:', userId);
-    
-    // Get all profiles that the current user has liked
-    const { data: userLikes, error: likesError } = await supabase
-      .from('profile_interactions')
-      .select('target_profile_id')
-      .eq('user_id', userId)
-      .in('interaction_type', ['like', 'superlike']);
-      
-    if (likesError) throw likesError;
-    
-    if (!userLikes || userLikes.length === 0) {
-      console.log('User has not liked any profiles yet');
-      return 0;
-    }
-    
-    const targetIds = userLikes.map(like => like.target_profile_id);
-    console.log('User has liked these profiles:', targetIds);
-    
-    // Find which of these profiles have also liked the current user
-    const { data: mutualLikes, error: mutualError } = await supabase
-      .from('profile_interactions')
-      .select('user_id')
-      .eq('target_profile_id', userId)
-      .in('interaction_type', ['like', 'superlike'])
-      .in('user_id', targetIds);
-      
-    if (mutualError) throw mutualError;
-    
-    if (!mutualLikes || mutualLikes.length === 0) {
-      console.log('No mutual likes found');
-      return 0;
-    }
-    
-    console.log('Found mutual likes:', mutualLikes);
-    
-    // Create matches for all mutual likes if they don't exist yet
-    let matchesCreated = 0;
-    
-    for (const like of mutualLikes) {
-      const matchCreated = await createMatch(userId, like.user_id);
-      if (matchCreated) matchesCreated++;
-    }
-    
-    console.log(`Successfully created ${matchesCreated} new matches`);
-    return matchesCreated;
-  } catch (error) {
-    console.error('Error in forceCheckForMatches:', error);
-    return 0;
   }
 };
