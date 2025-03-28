@@ -1,14 +1,18 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PostCard } from '@/components/post/PostCard';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import CreatePostModal from '@/components/post/CreatePostModal';
 
 const Home = () => {
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredPosts, setFilteredPosts] = useState([]);
   
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['allPosts'],
@@ -19,6 +23,7 @@ const Home = () => {
         .select(`
           id,
           user_id,
+          title,
           content,
           created_at,
           likes_count,
@@ -83,6 +88,7 @@ const Home = () => {
         return {
           id: post.id,
           user_id: post.user_id,
+          title: post.title,
           content: post.content,
           images: post.media_url ? [post.media_url] : undefined,
           created_at: post.created_at,
@@ -101,9 +107,32 @@ const Home = () => {
     }
   });
   
+  useEffect(() => {
+    if (posts.length > 0) {
+      if (!searchQuery) {
+        setFilteredPosts(posts);
+        return;
+      }
+      
+      const query = searchQuery.toLowerCase();
+      const filtered = posts.filter(post => 
+        (post.title && post.title.toLowerCase().includes(query)) ||
+        (post.content && post.content.toLowerCase().includes(query)) ||
+        (post.user.name && post.user.name.toLowerCase().includes(query)) ||
+        (post.community_name && post.community_name.toLowerCase().includes(query))
+      );
+      
+      setFilteredPosts(filtered);
+    }
+  }, [searchQuery, posts]);
+  
   const handleCreatePost = () => {
-    toast.info('Post creation coming soon!');
-    // Future implementation: setShowCreatePostModal(true);
+    setShowCreatePostModal(true);
+  };
+  
+  const handlePostCreation = (content, type, comicData) => {
+    console.log('Post created:', { content, type, comicData });
+    setShowCreatePostModal(false);
   };
   
   if (isLoading) {
@@ -132,27 +161,64 @@ const Home = () => {
           </Button>
         </div>
         
-        {posts.length === 0 ? (
+        <div className="relative mb-6">
+          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-foreground/50" />
+          </div>
+          <Input
+            type="text"
+            placeholder="Search posts, communities, or users..."
+            className="pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        
+        {filteredPosts.length === 0 ? (
           <div className="p-8 bg-white dark:bg-card rounded-2xl shadow-md text-center">
-            <h3 className="text-xl font-bold mb-4">No Posts Yet</h3>
-            <p className="text-foreground/70 mb-6">
-              Be the first to create a post and share your thoughts!
-            </p>
-            <Button 
-              className="bg-vice-purple hover:bg-vice-dark-purple"
-              onClick={handleCreatePost}
-            >
-              Create Post
-            </Button>
+            {searchQuery ? (
+              <>
+                <h3 className="text-xl font-bold mb-4">No Results Found</h3>
+                <p className="text-foreground/70 mb-6">
+                  No posts match your search for "{searchQuery}"
+                </p>
+                <Button 
+                  variant="outline"
+                  onClick={() => setSearchQuery('')}
+                >
+                  Clear Search
+                </Button>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl font-bold mb-4">No Posts Yet</h3>
+                <p className="text-foreground/70 mb-6">
+                  Be the first to create a post and share your thoughts!
+                </p>
+                <Button 
+                  className="bg-vice-purple hover:bg-vice-dark-purple"
+                  onClick={handleCreatePost}
+                >
+                  Create Post
+                </Button>
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-6">
-            {posts.map(post => (
+            {filteredPosts.map(post => (
               <PostCard key={post.id} post={post} />
             ))}
           </div>
         )}
       </div>
+      
+      {showCreatePostModal && (
+        <CreatePostModal 
+          onClose={() => setShowCreatePostModal(false)}
+          onPost={handlePostCreation}
+        />
+      )}
     </div>
   );
 };

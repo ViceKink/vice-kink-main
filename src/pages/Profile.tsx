@@ -10,6 +10,7 @@ import { UserProfile } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { PostCard } from '@/components/post/PostCard';
+import CreatePostModal from '@/components/post/CreatePostModal';
 
 const Profile = () => {
   const { id } = useParams();
@@ -22,6 +23,7 @@ const Profile = () => {
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [fetchAttempts, setFetchAttempts] = useState(0);
+  const [showCreatePostModal, setShowCreatePostModal] = useState(false);
   
   const isCurrentUser = !id || id === user?.id;
   const profileId = id || user?.id;
@@ -213,6 +215,10 @@ const Profile = () => {
   
   const handleTabChange = (tab: 'persona' | 'erotica') => {
     setActiveTab(tab);
+  };
+  
+  const handleCreatePost = () => {
+    setShowCreatePostModal(true);
   };
   
   if (authLoading) {
@@ -407,7 +413,7 @@ const Profile = () => {
                 {isCurrentUser && (
                   <Button 
                     className="bg-vice-purple hover:bg-vice-dark-purple"
-                    onClick={() => toast.info("Post creation coming soon!")}
+                    onClick={handleCreatePost}
                   >
                     Create Post
                   </Button>
@@ -421,6 +427,17 @@ const Profile = () => {
           </div>
         ) : null}
       </div>
+      
+      {showCreatePostModal && (
+        <CreatePostModal 
+          onClose={() => setShowCreatePostModal(false)}
+          onPost={(content, type, comicData) => {
+            setShowCreatePostModal(false);
+            // Optionally, refresh the posts
+            queryClient.invalidateQueries({ queryKey: ['userPosts', userId] });
+          }}
+        />
+      )}
     </div>
   );
 };

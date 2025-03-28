@@ -15,6 +15,7 @@ import { Link } from 'react-router-dom';
 interface Post {
   id: string;
   user_id: string;
+  title?: string;
   content: string;
   images?: string[];
   created_at: string;
@@ -36,8 +37,44 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const { user, isAuthenticated } = useAuth();
   const [liked, setLiked] = useState(false);
   const [comment, setComment] = useState('');
+  const [localComments, setLocalComments] = useState([]);
+  const [localLikesCount, setLocalLikesCount] = useState(post.likes_count);
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
+  
+  // Fetch comments for this post
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!post.id) return;
+      
+      const { data, error } = await supabase
+        .from('comments')
+        .select(`
+          id, 
+          content, 
+          created_at, 
+          user_id,
+          profiles(name, avatar)
+        `)
+        .eq('post_id', post.id)
+        .order('created_at', { ascending: true });
+      
+      if (!error && data) {
+        setLocalComments(data.map(comment => ({
+          id: comment.id,
+          content: comment.content,
+          created_at: comment.created_at,
+          user: {
+            id: comment.user_id,
+            name: comment.profiles?.name || 'Anonymous',
+            avatar: comment.profiles?.avatar
+          }
+        })));
+      }
+    };
+    
+    fetchComments();
+  }, [post.id]);
   
   // Check if the user has already liked the post
   useEffect(() => {
@@ -87,8 +124,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     },
     onSuccess: (data) => {
       setLiked(data.action === 'like');
+      setLocalLikesCount(prev => data.action === 'like' ? prev + 1 : prev - 1);
       queryClient.invalidateQueries({ queryKey: ['allPosts'] });
       queryClient.invalidateQueries({ queryKey: ['userPosts', post.user_id] });
+      if (post.community_id) {
+        queryClient.invalidateQueries({ queryKey: ['communityPosts', post.community_id] });
+      }
     },
     onError: (error) => {
       toast.error('Failed to update like');
@@ -101,21 +142,44 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     mutationFn: async () => {
       if (!user?.id || !comment.trim()) throw new Error('User not authenticated or empty comment');
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('comments')
         .insert({
           user_id: user.id,
           post_id: post.id,
           content: comment.trim()
-        });
+        })
+        .select(`
+          id, 
+          content, 
+          created_at, 
+          user_id,
+          profiles(name, avatar)
+        `)
+        .single();
         
       if (error) throw error;
-      return { success: true };
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Add the new comment to local state
+      setLocalComments(prev => [...prev, {
+        id: data.id,
+        content: data.content,
+        created_at: data.created_at,
+        user: {
+          id: data.user_id,
+          name: data.profiles?.name || 'Anonymous',
+          avatar: data.profiles?.avatar
+        }
+      }]);
+      
       setComment('');
       queryClient.invalidateQueries({ queryKey: ['allPosts'] });
       queryClient.invalidateQueries({ queryKey: ['userPosts', post.user_id] });
+      if (post.community_id) {
+        queryClient.invalidateQueries({ queryKey: ['communityPosts', post.community_id] });
+      }
       toast.success('Comment added');
     },
     onError: (error) => {
@@ -193,7 +257,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           <div className="flex flex-col">
             {post.community_name && (
               <div className="text-xs text-vice-purple font-medium">
-                {post.community_name}
+                <Link 
+                  to={`/community/${post.community_id}`}
+                  className="hover:underline"
+                >
+                  {post.community_name}
+                </Link>
               </div>
             )}
             <Link 
@@ -208,6 +277,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       </div>
       
       <div className="px-4 pb-3">
+        {post.title && (
+          <h3 className="font-semibold text-lg mb-2">{post.title}</h3>
+        )}
         <p className="whitespace-pre-line">{post.content}</p>
       </div>
       
@@ -236,8 +308,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       
       <div className="px-4 py-2 border-t border-border text-sm text-foreground/60">
         <div className="flex justify-between">
-          <div>{post.likes_count + (liked && !likeMutation.isPending ? 1 : 0)} likes</div>
-          <div>{post.comments_count} comments</div>
+          <div>{localLikesCount} likes</div>
+          <div>{localComments.length} comments</div>
         </div>
       </div>
       
@@ -260,6 +332,32 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           {!isMobile && "Comment"}
         </Button>
       </div>
+      
+      {/* Display existing comments */}
+      {localComments.length > 0 && (
+        <div className="px-4 py-3 border-t border-border">
+          <h4 className="text-sm font-medium mb-3">Comments</h4>
+          <div className="space-y-3">
+            {localComments.map(comment => (
+              <div key={comment.id} className="flex items-start gap-2">
+                <Avatar className="h-7 w-7">
+                  <AvatarImage src={comment.user.avatar} alt={comment.user.name} />
+                  <AvatarFallback>{comment.user.name[0]}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <div className="bg-muted rounded-lg p-2">
+                    <div className="font-medium text-xs">{comment.user.name}</div>
+                    <div className="text-sm mt-1">{comment.content}</div>
+                  </div>
+                  <div className="text-xs text-foreground/60 mt-1">
+                    {timeAgo(comment.created_at)}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       <form onSubmit={handleCommentSubmit} className="px-4 py-3 border-t border-border flex items-center gap-2">
         <Avatar className="h-8 w-8">
