@@ -15,7 +15,7 @@ export const LifestyleSection: React.FC<LifestyleSectionProps> = ({
   handleLifestyleChange 
 }) => {
   return (
-    <div>
+    <div className="mt-8">
       <h3 className="text-lg font-medium mb-4">Lifestyle</h3>
       
       <div className="grid gap-4">
@@ -23,14 +23,13 @@ export const LifestyleSection: React.FC<LifestyleSectionProps> = ({
           <Label htmlFor="smoking">Smoking</Label>
           <SelectField
             id="smoking"
-            label=""
-            value={userData.about?.lifestyle?.smoking ? 'yes' : 'no'}
+            value={userData.about?.lifestyle?.smoking === true ? 'true' : userData.about?.lifestyle?.smoking === false ? 'false' : ''}
             options={[
-              { value: 'yes', label: 'Yes' },
-              { value: 'no', label: 'No' }
+              { value: 'true', label: 'Smoker' },
+              { value: 'false', label: 'Non-smoker' }
             ]}
-            onChange={(value) => handleLifestyleChange('smoking', value === 'yes')}
-            placeholder="Do you smoke?"
+            onChange={(value) => handleLifestyleChange('smoking', value === 'true')}
+            placeholder="Select smoking preference"
           />
         </div>
         
@@ -38,11 +37,10 @@ export const LifestyleSection: React.FC<LifestyleSectionProps> = ({
           <Label htmlFor="drinking">Drinking</Label>
           <SelectField
             id="drinking"
-            label=""
             value={userData.about?.lifestyle?.drinking || ''}
             options={drinkingOptions}
             onChange={(value) => handleLifestyleChange('drinking', value)}
-            placeholder="Drinking habits"
+            placeholder="Select drinking preference"
           />
         </div>
       </div>

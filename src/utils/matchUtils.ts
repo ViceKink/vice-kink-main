@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -191,18 +190,18 @@ export const getProfilesWhoLikedMe = async (userId: string) => {
       .filter(interaction => !interaction.alreadyMatched)
       .map(interaction => {
         // Type safety check
-        const profile = interaction.profiles;
-        if (profile) {
+        const profileData = interaction.profiles;
+        if (profileData && 'id' in profileData) {
           return {
-            id: profile.id,
-            name: profile.name,
-            age: profile.age,
-            location: profile.location,
-            occupation: profile.occupation,
-            religion: profile.religion,
-            height: profile.height,
-            verified: profile.verified,
-            avatar: profile.avatar,
+            id: profileData.id,
+            name: profileData.name,
+            age: profileData.age,
+            location: profileData.location,
+            occupation: profileData.occupation,
+            religion: profileData.religion,
+            height: profileData.height,
+            verified: profileData.verified,
+            avatar: profileData.avatar,
             interaction_type: interaction.interaction_type
           };
         }

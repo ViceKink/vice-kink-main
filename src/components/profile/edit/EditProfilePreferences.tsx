@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { UserProfile } from '@/types/auth';
+import { UserProfile, UserPreferences } from '@/types/auth';
 import {
   Select,
   SelectContent,
@@ -23,7 +23,7 @@ const EditProfilePreferences: React.FC<EditProfilePreferencesProps> = ({
   userData,
   updateField,
 }) => {
-  const preferences = userData.preferences || {};
+  const preferences = userData.preferences || {} as UserPreferences;
   
   const handlePreferenceChange = (key: string, value: any) => {
     const updatedPreferences = {

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile, FlirtingStyle, UserPreferences } from '@/types/auth';
 
@@ -43,7 +42,9 @@ const formatProfile = (profile: any): UserProfile => {
     verified: profile.verified || false,
     quote: profile.quote || undefined,
     bio: profile.bio || undefined,
+    looking_for: profile.looking_for || undefined,
     lookingFor: profile.looking_for || undefined,
+    flirting_style: flirtingStyle || undefined,
     flirtingStyle: flirtingStyle || undefined,
     preferences: preferences || undefined,
     about: {
@@ -57,6 +58,7 @@ const formatProfile = (profile: any): UserProfile => {
       ethnicity: profile.ethnicity || undefined,
       education: profile.education || undefined,
       relationshipType: profile.relationship_type || undefined,
+      relationship_type: profile.relationship_type || undefined,
       datingIntention: profile.dating_intention || undefined,
       languages: [],
       lifestyle: {

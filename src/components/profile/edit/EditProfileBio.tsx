@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { UserProfile } from '@/context/AuthContext';
+import { UserProfile } from '@/types/auth';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -57,13 +57,13 @@ const EditProfileBio = ({ userData, updateField }: EditProfileBioProps) => {
           <Label htmlFor="lookingFor">Looking For</Label>
           <Input
             id="lookingFor"
-            value={userData.lookingFor || ''}
+            value={userData.lookingFor || userData.looking_for || ''}
             onChange={(e) => updateField('lookingFor', e.target.value)}
             placeholder="What are you looking for?"
             maxLength={100}
           />
           <p className="text-xs text-muted-foreground text-right">
-            {getCharLength(userData.lookingFor || '')}/100
+            {getCharLength(userData.lookingFor || userData.looking_for || '')}/100
           </p>
         </div>
       </div>

@@ -1,3 +1,4 @@
+
 import React, { 
   createContext, 
   useState, 
@@ -7,7 +8,7 @@ import React, {
 } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { UserProfile, FlirtingStyle } from '@/types/auth';
+import { UserProfile, FlirtingStyle, UserPreferences } from '@/types/auth';
 import { fetchUserProfile, updateUserProfile } from '@/utils/authUtils';
 
 type AuthContextType = {

@@ -14,8 +14,9 @@ const EditProfileAbout: React.FC<EditProfileAboutProps> = ({
   updateField 
 }) => {
   const handleChange = (key: string, value: any) => {
+    const currentAbout = userData.about || {};
     const updatedAbout = {
-      ...(userData.about || {}),
+      ...currentAbout,
       [key]: value
     };
     
@@ -23,13 +24,15 @@ const EditProfileAbout: React.FC<EditProfileAboutProps> = ({
   };
   
   const handleLifestyleChange = (key: string, value: any) => {
+    const currentLifestyle = userData.about?.lifestyle || {};
     const updatedLifestyle = {
-      ...(userData.about?.lifestyle || {}),
+      ...currentLifestyle,
       [key]: value
     };
     
+    const currentAbout = userData.about || {};
     const updatedAbout = {
-      ...(userData.about || {}),
+      ...currentAbout,
       lifestyle: updatedLifestyle
     };
     

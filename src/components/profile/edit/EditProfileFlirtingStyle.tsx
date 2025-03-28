@@ -3,10 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { FlirtingStyle } from '@/types/auth';
+import { FlirtingStyle, UserProfile } from '@/types/auth';
 
 interface EditProfileFlirtingStyleProps {
-  userData: any;
+  userData: Partial<UserProfile>;
   updateField: (field: string, value: any) => void;
 }
 

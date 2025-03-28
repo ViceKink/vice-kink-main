@@ -38,15 +38,15 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
   
   const handleZodiacChange = (zodiac: string) => {
     // Update zodiac in about object
-    const updatedAbout = { ...(userData.about || {}) };
-    updatedAbout.zodiac = zodiac;
-    updateField('about', updatedAbout);
+    const currentAbout = userData.about || {};
+    currentAbout.zodiac = zodiac;
+    updateField('about', currentAbout);
   };
   
   const handleGenderChange = (value: string) => {
-    const updatedAbout = { ...(userData.about || {}) };
-    updatedAbout.gender = value;
-    updateField('about', updatedAbout);
+    const currentAbout = userData.about || {};
+    currentAbout.gender = value;
+    updateField('about', currentAbout);
   };
 
   return (
