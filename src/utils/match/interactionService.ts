@@ -70,20 +70,42 @@ export const getUserInteractions = async (userId: string) => {
 /**
  * Get profiles that have liked the current user
  */
-export const getLikedByProfiles = async (userId: string) => {
+export const getProfilesWhoLikedMe = async (userId: string) => {
   if (!userId) return [];
   
   try {
+    // Using a direct query instead of RPC as the function may not exist
     const { data, error } = await supabase
-      .rpc('get_liked_by_profiles', {
-        current_user_id: userId
-      });
+      .from('profile_interactions')
+      .select(`
+        target_profile_id,
+        interaction_type,
+        profiles!profile_interactions_user_id_fkey (
+          id,
+          name,
+          age,
+          location,
+          avatar
+        )
+      `)
+      .eq('target_profile_id', userId)
+      .in('interaction_type', ['like', 'superlike']);
       
     if (error) throw error;
     
-    return data || [];
+    // Transform the data to match the expected format
+    const formattedData = data.map(item => ({
+      id: item.profiles?.id || '',
+      name: item.profiles?.name || '',
+      age: item.profiles?.age || 0,
+      location: item.profiles?.location || '',
+      avatar: item.profiles?.avatar || '',
+      interaction_type: item.interaction_type
+    }));
+    
+    return formattedData;
   } catch (error) {
-    console.error('Error getting liked-by profiles:', error);
+    console.error('Error getting profiles who liked me:', error);
     return [];
   }
 };

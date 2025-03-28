@@ -24,9 +24,7 @@ export const fetchProfilesToDiscover = async (userId: string, excludeIds: string
         verified,
         avatar,
         bio,
-        passions,
-        vices,
-        kinks,
+        quote,
         about
       `);
       
@@ -59,8 +57,29 @@ export const fetchProfilesToDiscover = async (userId: string, excludeIds: string
       return [];
     }
     
+    if (!data) return [];
+    
     const profilesWithPhotos = await Promise.all(
       data.map(async (profile) => {
+        // Fetch passions separately
+        const { data: passionsData } = await supabase
+          .from('profile_passions')
+          .select('passion')
+          .eq('profile_id', profile.id);
+          
+        // Fetch vices
+        const { data: vicesData } = await supabase
+          .from('profile_vices')
+          .select('vices(name)')
+          .eq('profile_id', profile.id);
+          
+        // Fetch kinks
+        const { data: kinksData } = await supabase
+          .from('profile_kinks')
+          .select('kinks(name)')
+          .eq('profile_id', profile.id);
+        
+        // Fetch photos
         const { data: photos } = await supabase
           .from('profile_photos')
           .select('url')
@@ -70,7 +89,10 @@ export const fetchProfilesToDiscover = async (userId: string, excludeIds: string
         return {
           ...profile,
           distance: `${Math.floor(Math.random() * 10) + 1} kms away`,
-          photos: photos?.map(p => p.url) || []
+          photos: photos?.map(p => p.url) || [],
+          passions: passionsData?.map(p => p.passion) || [],
+          vices: vicesData?.map(v => v.vices?.name).filter(Boolean) || [],
+          kinks: kinksData?.map(k => k.kinks?.name).filter(Boolean) || []
         };
       })
     );

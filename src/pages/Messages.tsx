@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
@@ -22,7 +21,11 @@ import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { MatchWithProfile, Message } from '@/models/matchesTypes';
-import { getUserMatches, getProfilesWhoLikedMe, createInteraction } from '@/utils/matchUtils';
+import { 
+  getUserMatches,
+  getProfilesWhoLikedMe, 
+  createInteraction 
+} from '@/utils/match';
 
 const Messages = () => {
   const { user } = useAuth();
@@ -35,7 +38,6 @@ const Messages = () => {
   const [messageText, setMessageText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch user matches
   const { data: matches = [], isLoading: matchesLoading } = useQuery({
     queryKey: ['userMatches'],
     queryFn: async () => {
@@ -45,7 +47,6 @@ const Messages = () => {
     enabled: !!user?.id
   });
 
-  // Fetch users who liked the current user
   const { data: likedByProfiles = [], isLoading: likedByLoading } = useQuery({
     queryKey: ['likedByProfiles'],
     queryFn: async () => {
@@ -55,7 +56,6 @@ const Messages = () => {
     enabled: !!user?.id
   });
 
-  // Fetch messages for selected match
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ['messages', selectedMatch?.other_user_id],
     queryFn: async () => {
@@ -76,7 +76,6 @@ const Messages = () => {
     enabled: !!user?.id && !!selectedMatch?.other_user_id
   });
 
-  // Mark messages as read when conversation is opened
   useEffect(() => {
     const markMessagesAsRead = async () => {
       if (!user?.id || !selectedMatch?.other_user_id) return;
@@ -89,7 +88,6 @@ const Messages = () => {
       if (error) {
         console.error('Error marking messages as read:', error);
       } else {
-        // Invalidate queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['userMatches'] });
       }
     };
@@ -99,14 +97,12 @@ const Messages = () => {
     }
   }, [selectedMatch, user?.id, queryClient]);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     if (messageContainerRef.current) {
       messageContainerRef.current.scrollTop = messageContainerRef.current.scrollHeight;
     }
   }, [messages]);
 
-  // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (message: { content: string, receiver_id: string }) => {
       if (!user?.id) throw new Error('User not authenticated');
@@ -132,7 +128,6 @@ const Messages = () => {
     }
   });
 
-  // Like a profile mutation
   const likeProfileMutation = useMutation({
     mutationFn: async ({ 
       profileId, 
@@ -168,7 +163,6 @@ const Messages = () => {
     likeProfileMutation.mutate({ profileId, interactionType });
   };
 
-  // Filter matches or likes based on search query
   const filteredMatches = matches.filter((match: MatchWithProfile) => 
     match.other_user.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -177,7 +171,6 @@ const Messages = () => {
     profile.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Show loading UI
   if ((matchesLoading && !matches.length) || (likedByLoading && !likedByProfiles.length)) {
     return (
       <div className="min-h-screen pt-24 px-4 pb-4 md:px-6">
@@ -213,7 +206,6 @@ const Messages = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-180px)]">
-          {/* Matches and Likes Tabs */}
           <Card className="md:h-full overflow-hidden">
             <CardContent className="p-0 h-full flex flex-col">
               <Tabs defaultValue="matches" value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
@@ -350,7 +342,6 @@ const Messages = () => {
             </CardContent>
           </Card>
           
-          {/* Messages */}
           <Card className="md:col-span-2 md:h-full flex flex-col">
             {selectedMatch ? (
               <>
