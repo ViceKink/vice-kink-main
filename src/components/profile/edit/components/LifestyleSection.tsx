@@ -23,6 +23,7 @@ export const LifestyleSection: React.FC<LifestyleSectionProps> = ({
           <Label htmlFor="smoking">Smoking</Label>
           <SelectField
             id="smoking"
+            label="Smoking"
             value={userData.about?.lifestyle?.smoking === true ? 'true' : userData.about?.lifestyle?.smoking === false ? 'false' : ''}
             options={[
               { value: 'true', label: 'Smoker' },
@@ -37,6 +38,7 @@ export const LifestyleSection: React.FC<LifestyleSectionProps> = ({
           <Label htmlFor="drinking">Drinking</Label>
           <SelectField
             id="drinking"
+            label="Drinking"
             value={userData.about?.lifestyle?.drinking || ''}
             options={drinkingOptions}
             onChange={(value) => handleLifestyleChange('drinking', value)}

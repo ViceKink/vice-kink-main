@@ -191,7 +191,7 @@ export const getProfilesWhoLikedMe = async (userId: string) => {
       .map(interaction => {
         // Type safety check
         const profileData = interaction.profiles;
-        if (profileData && 'id' in profileData) {
+        if (profileData && typeof profileData === 'object' && 'id' in profileData) {
           return {
             id: profileData.id,
             name: profileData.name,
