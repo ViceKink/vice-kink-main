@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { X, Heart, Star, Filter, Sliders, List } from 'lucide-react';
+import { X, Heart, Star, Filter, Sliders } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -10,8 +11,7 @@ import { cn } from '@/lib/utils';
 import MatchAnimation from '@/components/match/MatchAnimation';
 import DiscoverFilters from '@/components/discover/DiscoverFilters';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import EmailSwiper from '@/components/ui/EmailSwiper';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 import { fetchProfilesToDiscover } from '@/utils/match/profileService';
 import { getUserInteractions, createInteraction } from '@/utils/match/interactionService';
@@ -21,7 +21,7 @@ interface Profile {
   name: string;
   age: number;
   location: string;
-  distance?: string;
+  distance: string;
   photos: string[];
   occupation?: string;
   religion?: string;
@@ -39,7 +39,6 @@ const Discover = () => {
   const [showMatchAnimation, setShowMatchAnimation] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState<any>(user?.preferences || null);
-  const [viewMode, setViewMode] = useState<'grid' | 'swiper'>('grid');
   
   const { data: userInteractions = [], isLoading: interactionsLoading } = useQuery({
     queryKey: ['userInteractions'],
@@ -139,7 +138,8 @@ const Discover = () => {
   const enhanceProfiles = (profiles: Profile[]) => {
     return profiles.map(profile => ({
       ...profile,
-      rating: profile.rating || Math.floor(Math.random() * 5) + 1
+      rating: profile.rating || Math.floor(Math.random() * 5) + 1,
+      distance: profile.distance || `${Math.floor(Math.random() * 10) + 1} kms away` // Ensure distance is always present
     }));
   }
   
@@ -216,41 +216,19 @@ const Discover = () => {
   
   return (
     <div className="min-h-screen py-24 px-4 md:px-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Discover</h1>
           
-          <div className="flex gap-3">
-            <Button 
-              variant={viewMode === 'grid' ? 'default' : 'outline'} 
-              size="sm" 
-              className="flex items-center gap-1"
-              onClick={() => setViewMode('grid')}
-            >
-              <List className="h-4 w-4" />
-              Grid
-            </Button>
-            
-            <Button 
-              variant={viewMode === 'swiper' ? 'default' : 'outline'} 
-              size="sm" 
-              className="flex items-center gap-1"
-              onClick={() => setViewMode('swiper')}
-            >
-              <Heart className="h-4 w-4" />
-              Cards
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex items-center gap-1"
-              onClick={() => setShowFilters(true)}
-            >
-              <Filter className="h-4 w-4" />
-              Filters
-            </Button>
-          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex items-center gap-1"
+            onClick={() => setShowFilters(true)}
+          >
+            <Filter className="h-4 w-4" />
+            Filters
+          </Button>
         </div>
         
         {displayProfiles.length === 0 ? (
@@ -261,19 +239,8 @@ const Discover = () => {
               Come back later for more matches
             </p>
           </div>
-        ) : viewMode === 'swiper' ? (
-          <div className="max-w-md mx-auto">
-            <EmailSwiper 
-              profiles={displayProfiles} 
-              onLike={handleLike}
-              onDislike={handleDislike}
-              onSuperLike={handleSuperLike}
-              onViewProfile={handleViewProfile}
-              onOpenFilters={() => setShowFilters(true)}
-            />
-          </div>
         ) : (
-          <>
+          <ScrollArea className="h-[calc(100vh-200px)]">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {displayProfiles.map((profile) => (
                 <ProfileCard 
@@ -286,29 +253,7 @@ const Discover = () => {
                 />
               ))}
             </div>
-            
-            <div className="mt-8">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious href="#" />
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink href="#" isActive>1</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink href="#">2</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationLink href="#">3</PaginationLink>
-                  </PaginationItem>
-                  <PaginationItem>
-                    <PaginationNext href="#" />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          </>
+          </ScrollArea>
         )}
         
         <div className="mt-8 text-center">
