@@ -282,6 +282,12 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
       delete profileData.email;
     }
     
+    // Check if there's a primary photo to update avatar
+    if (profileData.photos && profileData.photos.length > 0) {
+      console.log('Setting avatar from primary photo:', profileData.photos[0]);
+      profileData.avatar = profileData.photos[0];
+    }
+    
     // Split data into main profile fields and languages
     const { languages, preferences, ...mainProfileData } = profileData;
     const finalData: Record<string, any> = {};

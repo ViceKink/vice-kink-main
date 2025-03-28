@@ -215,3 +215,47 @@ export const getProfilesWhoLikedMe = async (userId: string) => {
     return [];
   }
 };
+
+/**
+ * Convert profile data for discover page
+ */
+export const convertProfileForDiscover = (profileData: any): DiscoverProfile => {
+  if (!profileData) {
+    // Return a default profile if data is null
+    return {
+      id: '',
+      name: 'Unknown',
+      age: 0,
+      location: '',
+      occupation: '',
+      religion: '',
+      height: '',
+      verified: false,
+      avatar: '',
+      photos: [],
+      bio: '',
+      passions: [],
+      vices: [],
+      kinks: [],
+      about: {}
+    };
+  }
+  
+  return {
+    id: profileData.id || '',
+    name: profileData.name || 'Unknown',
+    age: profileData.age || 0,
+    location: profileData.location || '',
+    occupation: profileData.occupation || '',
+    religion: profileData.religion || '',
+    height: profileData.height || '',
+    verified: profileData.verified || false,
+    avatar: profileData.avatar || '',
+    photos: profileData.photos || [],
+    bio: profileData.bio || '',
+    passions: profileData.passions || [],
+    vices: profileData.vices || [],
+    kinks: profileData.kinks || [],
+    about: profileData.about || {}
+  };
+};

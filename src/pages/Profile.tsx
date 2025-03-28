@@ -411,9 +411,6 @@ const Profile = () => {
             </NavLink>
           ) : (
             <div className="flex items-center">
-              <div className="bg-vice-purple/20 text-vice-purple px-3 py-1 rounded-full text-sm">
-                My Profile
-              </div>
             </div>
           )}
           

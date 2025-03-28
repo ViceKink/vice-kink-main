@@ -1,15 +1,24 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { UserProfile } from '@/types/auth';
+import { X, Heart, Star, ChevronLeft, Filter, Sliders, Settings } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/context/auth';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createInteraction, getUserInteractions } from '@/utils/matchUtils';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X, Heart, Star, MapPin, Check, Filter, List } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import ProfileCard from '@/components/discover/ProfileCard';
+import { useAuth } from '@/context/auth';
 import { cn } from '@/lib/utils';
+import { fetchProfilesToDiscover, createInteraction } from '@/utils/matchUtils';
 import MatchAnimation from '@/components/match/MatchAnimation';
+import DiscoverFilters from '@/components/discover/DiscoverFilters';
+import { IconButton } from '@/components/ui/icon-button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Profile {
   id: string;
