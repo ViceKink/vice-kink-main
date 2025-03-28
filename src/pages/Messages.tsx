@@ -45,7 +45,7 @@ const Messages = () => {
       
       // Process matches to add last message and unread count
       const matchesWithExtras = await Promise.all(
-        data.map(async (match) => {
+        data.map(async (match: any) => {
           // Get last message
           const { data: lastMessage, error: messageError } = await supabase.rpc(
             'get_last_message', 
@@ -56,7 +56,7 @@ const Messages = () => {
           );
           
           // Get unread count
-          const { count, error: countError } = await supabase.rpc(
+          const { data: countData, error: countError } = await supabase.rpc(
             'count_unread_messages', 
             { 
               user_id: user.id, 
@@ -69,8 +69,8 @@ const Messages = () => {
           
           return {
             ...match,
-            last_message: lastMessage?.content || '',
-            unread_count: count || 0
+            last_message: lastMessage && lastMessage.length > 0 ? lastMessage[0].content : '',
+            unread_count: countData || 0
           };
         })
       );
@@ -142,7 +142,7 @@ const Messages = () => {
     mutationFn: async (message: { content: string, receiver_id: string }) => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      const { error } = await supabase.rpc('send_message', {
+      const { data, error } = await supabase.rpc('send_message', {
         sender: user.id,
         receiver: message.receiver_id,
         message_content: message.content
@@ -172,7 +172,7 @@ const Messages = () => {
     });
   };
 
-  const filteredMatches = matches.filter(match => 
+  const filteredMatches = matches.filter((match: MatchWithProfile) => 
     match.other_user.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -232,7 +232,7 @@ const Messages = () => {
                   </div>
                 ) : (
                   <ul className="divide-y">
-                    {filteredMatches.map((match) => (
+                    {Array.isArray(filteredMatches) && filteredMatches.map((match: MatchWithProfile) => (
                       <li
                         key={match.match_id}
                         className={`cursor-pointer hover:bg-gray-50 ${
@@ -311,7 +311,7 @@ const Messages = () => {
                       </p>
                     </div>
                   ) : (
-                    messages.map((message) => {
+                    messages.map((message: Message) => {
                       const isSentByMe = message.sender_id === user?.id;
                       
                       return (

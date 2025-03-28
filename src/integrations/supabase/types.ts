@@ -706,9 +706,77 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      count_unread_messages: {
+        Args: {
+          user_id: string
+          other_user_id: string
+        }
+        Returns: number
+      }
+      create_match: {
+        Args: {
+          user_id_a: string
+          user_id_b: string
+        }
+        Returns: undefined
+      }
+      get_conversation: {
+        Args: {
+          user1: string
+          user2: string
+        }
+        Returns: {
+          id: string
+          sender_id: string
+          receiver_id: string
+          content: string
+          created_at: string
+          read: boolean
+        }[]
+      }
+      get_last_message: {
+        Args: {
+          user1: string
+          user2: string
+        }
+        Returns: {
+          id: string
+          sender_id: string
+          receiver_id: string
+          content: string
+          created_at: string
+          read: boolean
+        }[]
+      }
       get_profile_avatar: {
         Args: {
           profile_id: string
+        }
+        Returns: string
+      }
+      get_user_matches: {
+        Args: {
+          user_id: string
+        }
+        Returns: {
+          match_id: string
+          matched_at: string
+          other_user_id: string
+          other_user: Json
+        }[]
+      }
+      mark_messages_as_read: {
+        Args: {
+          user_id: string
+          other_user_id: string
+        }
+        Returns: undefined
+      }
+      send_message: {
+        Args: {
+          sender: string
+          receiver: string
+          message_content: string
         }
         Returns: string
       }

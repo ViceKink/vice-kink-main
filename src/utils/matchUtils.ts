@@ -48,10 +48,11 @@ export const createMatch = async (currentUserId: string, targetUserId: string): 
   
   try {
     // Create a match record in the database
-    const { error } = await supabase.rpc('create_match', {
-      user_id_a: currentUserId,
-      user_id_b: targetUserId
-    });
+    const { data, error } = await supabase
+      .rpc('create_match', {
+        user_id_a: currentUserId,
+        user_id_b: targetUserId
+      });
       
     if (error) throw error;
     
@@ -72,9 +73,10 @@ export const getUserMatches = async (userId: string) => {
   
   try {
     // Get all matches where the user is either user_id_1 or user_id_2
-    const { data, error } = await supabase.rpc('get_user_matches', {
-      user_id: userId
-    });
+    const { data, error } = await supabase
+      .rpc('get_user_matches', {
+        user_id: userId
+      });
       
     if (error) throw error;
     
@@ -84,4 +86,3 @@ export const getUserMatches = async (userId: string) => {
     return [];
   }
 };
-
