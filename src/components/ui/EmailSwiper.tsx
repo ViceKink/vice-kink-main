@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Heart, X, Star, Filter, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -41,7 +40,6 @@ const EmailSwiper = ({
   const cardRef = useRef<HTMLDivElement>(null);
   const startPosition = useRef({ x: 0, y: 0 });
 
-  // Handle when profiles run out
   const currentProfile = profiles[currentIndex];
   const hasProfiles = currentIndex < profiles.length;
 
@@ -50,7 +48,6 @@ const EmailSwiper = ({
     
     setSwipeDirection(direction);
     
-    // Animation will play, then handle the swipe completion after animation
     setTimeout(() => {
       if (direction === 'right') {
         onLike(currentProfile.id);
@@ -60,7 +57,6 @@ const EmailSwiper = ({
         onSuperLike(currentProfile.id);
       }
       
-      // Reset state and move to next profile
       setSwipeDirection('none');
       setSwipePosition({ x: 0, y: 0 });
       setCurrentIndex(prev => prev + 1);
@@ -110,7 +106,6 @@ const EmailSwiper = ({
     } else if (y < -swipeThreshold) {
       handleSwipe('up');
     } else {
-      // Reset if not enough movement
       setSwipePosition({ x: 0, y: 0 });
     }
   };
@@ -129,10 +124,8 @@ const EmailSwiper = ({
     };
   }, [isDragging, swipePosition]);
   
-  // Calculate rotation based on swipe position
   const getCardStyle = () => {
     if (swipeDirection !== 'none') {
-      // During exit animation
       const x = swipeDirection === 'left' ? -1000 : swipeDirection === 'right' ? 1000 : 0;
       const y = swipeDirection === 'up' ? -1000 : 0;
       const rotate = swipeDirection === 'left' ? -30 : swipeDirection === 'right' ? 30 : 0;
@@ -144,16 +137,14 @@ const EmailSwiper = ({
     }
     
     if (isDragging) {
-      // During dragging
       const { x, y } = swipePosition;
-      const rotate = x * 0.1; // Small rotation based on horizontal movement
+      const rotate = x * 0.1;
       
       return {
         transform: `translate3d(${x}px, ${y}px, 0) rotate(${rotate}deg)`,
       };
     }
     
-    // Default state
     return {
       transform: 'translate3d(0, 0, 0) rotate(0deg)',
       transition: 'transform 0.3s ease-out',
@@ -162,7 +153,6 @@ const EmailSwiper = ({
 
   return (
     <div className="w-full max-w-md mx-auto h-[580px] relative">
-      {/* Header with filters */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <List className="w-5 h-5 text-foreground/70" />
@@ -178,7 +168,6 @@ const EmailSwiper = ({
         </div>
       </div>
       
-      {/* Card container */}
       <div className="relative w-full h-[520px]">
         {hasProfiles ? (
           <div
@@ -202,7 +191,6 @@ const EmailSwiper = ({
                 className="w-full h-[400px] object-cover"
               />
               
-              {/* Info overlay at bottom of photo */}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-white">
                 <div className="flex justify-between items-start">
                   <div>
@@ -225,7 +213,6 @@ const EmailSwiper = ({
                 </div>
               </div>
               
-              {/* Like/Dislike indicators */}
               <div 
                 className={cn(
                   "absolute top-4 left-4 bg-vice-red text-white px-4 py-2 rounded-lg font-bold transform rotate-[-20deg] transition-opacity",
@@ -254,7 +241,6 @@ const EmailSwiper = ({
               </div>
             </div>
             
-            {/* Card details */}
             <div className="p-4 bg-white dark:bg-card">
               <div className="flex flex-wrap gap-2 mb-3">
                 <div className="flex items-center px-2 py-1 bg-secondary rounded-full">
@@ -290,28 +276,27 @@ const EmailSwiper = ({
         )}
       </div>
       
-      {/* Action buttons */}
       {hasProfiles && (
         <div className="absolute bottom-0 left-0 right-0 flex justify-center space-x-5 p-4">
           <button 
             onClick={() => handleSwipe('left')}
-            className="w-14 h-14 rounded-full bg-white dark:bg-card shadow-md flex items-center justify-center transition-transform hover:scale-105 hover:shadow-lg"
+            className="w-12 h-12 rounded-full bg-black shadow-md flex items-center justify-center transition-transform hover:scale-105 hover:shadow-lg border border-red-500"
           >
-            <X className="w-7 h-7 text-vice-red" />
+            <X className="w-6 h-6 text-red-500" />
           </button>
           
           <button 
             onClick={() => handleSwipe('up')}
-            className="w-12 h-12 rounded-full bg-white dark:bg-card shadow-md flex items-center justify-center transition-transform hover:scale-105 hover:shadow-lg"
+            className="w-10 h-10 rounded-full bg-black shadow-md flex items-center justify-center transition-transform hover:scale-105 hover:shadow-lg border border-orange-500"
           >
-            <Star className="w-6 h-6 text-vice-orange" />
+            <Star className="w-5 h-5 text-orange-500" />
           </button>
           
           <button 
             onClick={() => handleSwipe('right')}
-            className="w-14 h-14 rounded-full bg-white dark:bg-card shadow-md flex items-center justify-center transition-transform hover:scale-105 hover:shadow-lg"
+            className="w-12 h-12 rounded-full bg-black shadow-md flex items-center justify-center transition-transform hover:scale-105 hover:shadow-lg border border-purple-500"
           >
-            <Heart className="w-7 h-7 text-vice-purple" />
+            <Heart className="w-6 h-6 text-purple-500" />
           </button>
         </div>
       )}

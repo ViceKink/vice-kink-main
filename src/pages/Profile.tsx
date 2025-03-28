@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Settings, RefreshCw, Pencil, Heart, X, Star } from 'lucide-react';
@@ -35,7 +34,6 @@ const Profile = () => {
   const isCurrentUser = !id || id === user?.id;
   const profileId = id || user?.id;
 
-  // Handle profile interactions (like, dislike, superlike)
   const interactionMutation = useMutation({
     mutationFn: async ({ 
       profileId, 
@@ -61,7 +59,6 @@ const Profile = () => {
         toast.success('Profile passed');
       }
       
-      // If a match occurred, show the match animation
       if (data.matched && profileUser) {
         setMatchedProfile({
           id: profileUser.id,
@@ -70,7 +67,6 @@ const Profile = () => {
         });
         setShowMatchAnimation(true);
         
-        // Also invalidate matches when a new match is created
         queryClient.invalidateQueries({ queryKey: ['userMatches'] });
         queryClient.invalidateQueries({ queryKey: ['likedByProfiles'] });
       }
@@ -95,7 +91,6 @@ const Profile = () => {
     }
   };
   
-  // Close match animation
   const handleCloseMatchAnimation = () => {
     setShowMatchAnimation(false);
     setMatchedProfile(null);
@@ -491,40 +486,39 @@ const Profile = () => {
         ) : null}
       </div>
       
-      {/* Floating action buttons for non-current users */}
       {!isCurrentUser && (
         <div className="fixed bottom-24 right-4 flex flex-col gap-3 z-10">
           <button 
             onClick={handleDislike}
             className={cn(
-              "w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center",
+              "w-9 h-9 rounded-full bg-black shadow-lg flex items-center justify-center",
               "transform transition-transform hover:scale-105 border-2 border-red-500"
             )}
             aria-label="Dislike profile"
           >
-            <X className="w-6 h-6 text-red-500" />
+            <X className="w-4 h-4 text-red-500" />
           </button>
           
           <button 
             onClick={handleSuperLike}
             className={cn(
-              "w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center",
+              "w-9 h-9 rounded-full bg-black shadow-lg flex items-center justify-center",
               "transform transition-transform hover:scale-105 border-2 border-orange-500"
             )}
             aria-label="Super like profile"
           >
-            <Star className="w-6 h-6 text-orange-500" />
+            <Star className="w-4 h-4 text-orange-500" />
           </button>
           
           <button 
             onClick={handleLike}
             className={cn(
-              "w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center",
+              "w-9 h-9 rounded-full bg-black shadow-lg flex items-center justify-center",
               "transform transition-transform hover:scale-105 border-2 border-purple-500"
             )}
             aria-label="Like profile"
           >
-            <Heart className="w-6 h-6 text-purple-500" />
+            <Heart className="w-4 h-4 text-purple-500" />
           </button>
         </div>
       )}
@@ -541,7 +535,6 @@ const Profile = () => {
         />
       )}
 
-      {/* Match Animation Dialog */}
       {matchedProfile && (
         <MatchAnimation 
           isOpen={showMatchAnimation}

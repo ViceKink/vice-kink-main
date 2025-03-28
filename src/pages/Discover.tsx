@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -33,7 +32,6 @@ const Discover = () => {
   const [matchedProfile, setMatchedProfile] = useState<{id: string; name: string; avatar?: string} | null>(null);
   const [showMatchAnimation, setShowMatchAnimation] = useState(false);
   
-  // Fetch user interactions to filter out profiles already interacted with
   const { data: userInteractions = [], isLoading: interactionsLoading } = useQuery({
     queryKey: ['userInteractions'],
     queryFn: async () => {
@@ -43,10 +41,8 @@ const Discover = () => {
     enabled: !!user?.id
   });
   
-  // Extract profile IDs the user has already interacted with
   const interactedProfileIds = userInteractions.map(i => i.target_profile_id);
   
-  // Fetch profiles that haven't been interacted with yet
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ['discoverProfiles', interactedProfileIds],
     queryFn: async () => {
@@ -54,7 +50,6 @@ const Discover = () => {
       
       const excludedIds = [...interactedProfileIds, user.id];
       
-      // Handle empty excludedIds to avoid SQL error
       let query = supabase
         .from('profiles')
         .select(`
@@ -71,7 +66,7 @@ const Discover = () => {
       if (excludedIds.length > 0) {
         query = query.not('id', 'in', `(${excludedIds.join(',')})`);
       } else {
-        query = query.neq('id', user.id); // At least exclude the current user
+        query = query.neq('id', user.id);
       }
       
       query = query.limit(20);
@@ -104,7 +99,6 @@ const Discover = () => {
     enabled: !!user?.id
   });
   
-  // Handle profile interactions (like, dislike, superlike)
   const interactionMutation = useMutation({
     mutationFn: async ({ 
       profileId, 
@@ -122,9 +116,7 @@ const Discover = () => {
       queryClient.invalidateQueries({ queryKey: ['userInteractions'] });
       queryClient.invalidateQueries({ queryKey: ['discoverProfiles'] });
       
-      // If a match occurred, show the match animation
       if (data.matched) {
-        // Find the matched profile details
         const matchedProfileData = profiles.find(p => p.id === data.profileId);
         if (matchedProfileData) {
           setMatchedProfile({
@@ -134,7 +126,6 @@ const Discover = () => {
           });
           setShowMatchAnimation(true);
           
-          // Also invalidate matches when a new match is created
           queryClient.invalidateQueries({ queryKey: ['userMatches'] });
           queryClient.invalidateQueries({ queryKey: ['likedByProfiles'] });
         }
@@ -159,13 +150,11 @@ const Discover = () => {
     navigate(`/profile/${profileId}`);
   };
   
-  // Handle closing the match animation
   const handleCloseMatchAnimation = () => {
     setShowMatchAnimation(false);
     setMatchedProfile(null);
   };
   
-  // Show loading UI
   if (isLoading || interactionsLoading) {
     return (
       <div className="min-h-screen py-24 px-4 md:px-6 flex justify-center items-center">
@@ -178,7 +167,6 @@ const Discover = () => {
     );
   }
   
-  // Provide sample profiles if none are available
   const displayProfiles = profiles.length > 0 ? profiles : [
     {
       id: "profile-1",
@@ -280,7 +268,6 @@ const Discover = () => {
         </div>
       </div>
       
-      {/* Match Animation Dialog */}
       {matchedProfile && (
         <MatchAnimation 
           isOpen={showMatchAnimation}
@@ -304,7 +291,6 @@ const ProfileCard = ({ profile, onLike, onDislike, onSuperLike, onViewProfile }:
   return (
     <Card className="overflow-hidden border border-black/10 hover:shadow-md transition-shadow">
       <div className="relative">
-        {/* Profile Image */}
         <div 
           className="w-full h-[280px] bg-black cursor-pointer"
           onClick={onViewProfile}
@@ -322,7 +308,6 @@ const ProfileCard = ({ profile, onLike, onDislike, onSuperLike, onViewProfile }:
           )}
         </div>
         
-        {/* Info overlay */}
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white">
           <div className="flex items-baseline justify-between">
             <h3 className="text-xl font-bold flex items-center">
@@ -360,13 +345,12 @@ const ProfileCard = ({ profile, onLike, onDislike, onSuperLike, onViewProfile }:
         </div>
       </div>
       
-      {/* Action buttons */}
-      <div className="flex justify-between items-center p-3 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800">
+      <div className="flex justify-between items-center p-3 bg-black text-white border-t border-gray-800">
         <Button 
           size="sm" 
           variant="ghost" 
           onClick={onViewProfile}
-          className="text-foreground flex-1"
+          className="text-white flex-1 hover:bg-white/10"
         >
           View Profile
         </Button>
@@ -374,26 +358,26 @@ const ProfileCard = ({ profile, onLike, onDislike, onSuperLike, onViewProfile }:
         <div className="flex gap-2">
           <button 
             onClick={onDislike}
-            className="w-10 h-10 rounded-full bg-white dark:bg-gray-900 shadow flex items-center justify-center border border-red-500 hover:bg-red-50 dark:hover:bg-gray-800 transition-colors"
+            className="w-8 h-8 rounded-full bg-black shadow flex items-center justify-center border border-red-500 hover:bg-red-500/20 transition-colors"
             aria-label="Dislike"
           >
-            <X className="h-5 w-5 text-red-500" />
+            <X className="h-4 w-4 text-red-500" />
           </button>
           
           <button 
             onClick={onSuperLike}
-            className="w-10 h-10 rounded-full bg-white dark:bg-gray-900 shadow flex items-center justify-center border border-orange-500 hover:bg-orange-50 dark:hover:bg-gray-800 transition-colors"
+            className="w-8 h-8 rounded-full bg-black shadow flex items-center justify-center border border-orange-500 hover:bg-orange-500/20 transition-colors"
             aria-label="Super Like"
           >
-            <Star className="h-5 w-5 text-orange-500" />
+            <Star className="h-4 w-4 text-orange-500" />
           </button>
           
           <button 
             onClick={onLike}
-            className="w-10 h-10 rounded-full bg-white dark:bg-gray-900 shadow flex items-center justify-center border border-purple-500 hover:bg-purple-50 dark:hover:bg-gray-800 transition-colors"
+            className="w-8 h-8 rounded-full bg-black shadow flex items-center justify-center border border-purple-500 hover:bg-purple-500/20 transition-colors"
             aria-label="Like"
           >
-            <Heart className="h-5 w-5 text-purple-500" />
+            <Heart className="h-4 w-4 text-purple-500" />
           </button>
         </div>
       </div>

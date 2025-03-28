@@ -190,18 +190,19 @@ export const getProfilesWhoLikedMe = async (userId: string) => {
     const profilesWhoLikedMe = filteredLikers
       .filter(interaction => !interaction.alreadyMatched)
       .map(interaction => {
-        // Fix: Use proper type handling to avoid spread error
-        if (interaction.profiles) {
+        // Type safety check
+        const profile = interaction.profiles;
+        if (profile) {
           return {
-            id: interaction.profiles.id,
-            name: interaction.profiles.name,
-            age: interaction.profiles.age,
-            location: interaction.profiles.location,
-            occupation: interaction.profiles.occupation,
-            religion: interaction.profiles.religion,
-            height: interaction.profiles.height,
-            verified: interaction.profiles.verified,
-            avatar: interaction.profiles.avatar,
+            id: profile.id,
+            name: profile.name,
+            age: profile.age,
+            location: profile.location,
+            occupation: profile.occupation,
+            religion: profile.religion,
+            height: profile.height,
+            verified: profile.verified,
+            avatar: profile.avatar,
             interaction_type: interaction.interaction_type
           };
         }
