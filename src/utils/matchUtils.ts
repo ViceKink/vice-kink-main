@@ -15,7 +15,7 @@ export const checkIfMatched = async (currentUserId: string, targetUserId: string
       .select('*')
       .eq('user_id', currentUserId)
       .eq('target_profile_id', targetUserId)
-      .eq('interaction_type', 'like')
+      .in('interaction_type', ['like', 'superlike'])
       .maybeSingle();
       
     if (userLikedError) throw userLikedError;
@@ -26,7 +26,7 @@ export const checkIfMatched = async (currentUserId: string, targetUserId: string
       .select('*')
       .eq('user_id', targetUserId)
       .eq('target_profile_id', currentUserId)
-      .eq('interaction_type', 'like')
+      .in('interaction_type', ['like', 'superlike'])
       .maybeSingle();
       
     if (targetLikedError) throw targetLikedError;
@@ -62,6 +62,63 @@ export const createMatch = async (currentUserId: string, targetUserId: string): 
     console.error('Error creating match:', error);
     toast.error("Couldn't create match");
     return false;
+  }
+};
+
+/**
+ * Creates an interaction between users (like, dislike, superlike)
+ */
+export const createInteraction = async (
+  userId: string, 
+  targetProfileId: string, 
+  interactionType: 'like' | 'dislike' | 'superlike'
+): Promise<boolean> => {
+  if (!userId || !targetProfileId) return false;
+  
+  try {
+    const { error } = await supabase
+      .from('profile_interactions')
+      .insert({
+        user_id: userId,
+        target_profile_id: targetProfileId,
+        interaction_type: interactionType
+      });
+      
+    if (error) throw error;
+    
+    // Check for match if interaction is a like or superlike
+    if (interactionType === 'like' || interactionType === 'superlike') {
+      const isMatched = await checkIfMatched(userId, targetProfileId);
+      if (isMatched) {
+        await createMatch(userId, targetProfileId);
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`Error creating ${interactionType} interaction:`, error);
+    return false;
+  }
+};
+
+/**
+ * Get all interactions for a user
+ */
+export const getUserInteractions = async (userId: string) => {
+  if (!userId) return [];
+  
+  try {
+    const { data, error } = await supabase
+      .from('profile_interactions')
+      .select('target_profile_id, interaction_type')
+      .eq('user_id', userId);
+      
+    if (error) throw error;
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error getting user interactions:', error);
+    return [];
   }
 };
 

@@ -1,12 +1,15 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import EmailSwiper from '@/components/ui/EmailSwiper';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { checkIfMatched, createMatch } from '@/utils/matchUtils';
+import { createInteraction, getUserInteractions } from '@/utils/matchUtils';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { X, Heart, Star, MapPin, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface Profile {
   id: string;
@@ -27,40 +30,26 @@ const Discover = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
+  // Fetch user interactions to filter out profiles already interacted with
   const { data: userInteractions = [], isLoading: interactionsLoading } = useQuery({
     queryKey: ['userInteractions'],
     queryFn: async () => {
       if (!user?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('profile_interactions')
-        .select('target_profile_id, interaction_type')
-        .eq('user_id', user.id);
-        
-      if (error) {
-        console.error('Error fetching interactions:', error);
-        return [];
-      }
-      
-      return data || [];
+      return getUserInteractions(user.id);
     },
     enabled: !!user?.id
   });
   
-  const likedProfileIds = userInteractions
-    .filter(i => i.interaction_type === 'like')
-    .map(i => i.target_profile_id);
-    
-  const dislikedProfileIds = userInteractions
-    .filter(i => i.interaction_type === 'dislike')
-    .map(i => i.target_profile_id);
+  // Extract profile IDs the user has already interacted with
+  const interactedProfileIds = userInteractions.map(i => i.target_profile_id);
   
+  // Fetch profiles that haven't been interacted with yet
   const { data: profiles = [], isLoading } = useQuery({
-    queryKey: ['discoverProfiles', likedProfileIds, dislikedProfileIds],
+    queryKey: ['discoverProfiles', interactedProfileIds],
     queryFn: async () => {
       if (!user?.id) return [];
       
-      const excludedIds = [...likedProfileIds, ...dislikedProfileIds, user.id];
+      const excludedIds = [...interactedProfileIds, user.id];
       
       // Handle empty excludedIds to avoid SQL error
       let query = supabase
@@ -113,43 +102,29 @@ const Discover = () => {
     enabled: !!user?.id
   });
   
+  // Handle profile interactions (like, dislike, superlike)
   const interactionMutation = useMutation({
-    mutationFn: async ({ profileId, type }: { profileId: string, type: 'like' | 'dislike' | 'superlike' }) => {
+    mutationFn: async ({ 
+      profileId, 
+      type 
+    }: { 
+      profileId: string, 
+      type: 'like' | 'dislike' | 'superlike' 
+    }) => {
       if (!user?.id) throw new Error('User not authenticated');
-      
-      const { error } = await supabase
-        .from('profile_interactions')
-        .insert({
-          user_id: user.id,
-          target_profile_id: profileId,
-          interaction_type: type
-        });
-        
-      if (error) throw error;
-      
-      // Check if this is a match when the user likes another profile
-      if (type === 'like' || type === 'superlike') {
-        const isMatched = await checkIfMatched(user.id, profileId);
-        
-        if (isMatched) {
-          await createMatch(user.id, profileId);
-          
-          // Invalidate matches query to update the UI
-          queryClient.invalidateQueries({ queryKey: ['userMatches'] });
-        }
-      }
-      
+      const success = await createInteraction(user.id, profileId, type);
+      if (!success) throw new Error(`Failed to ${type} profile`);
       return { profileId, type };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userInteractions'] });
       queryClient.invalidateQueries({ queryKey: ['discoverProfiles'] });
+      queryClient.invalidateQueries({ queryKey: ['userMatches'] });
     }
   });
   
   const handleLike = (profileId: string) => {
     interactionMutation.mutate({ profileId, type: 'like' });
-    toast.success('Profile liked!');
   };
   
   const handleDislike = (profileId: string) => {
@@ -162,22 +137,17 @@ const Discover = () => {
   };
   
   const handleViewProfile = (profileId: string) => {
-    console.log('Viewing profile:', profileId);
     navigate(`/profile/${profileId}`);
-  };
-  
-  const handleOpenFilters = () => {
-    console.log('Opening filters');
-    toast.info('Filters coming soon!');
   };
   
   // Show loading UI
   if (isLoading || interactionsLoading) {
     return (
       <div className="min-h-screen py-24 px-4 md:px-6 flex justify-center items-center">
-        <div className="animate-pulse text-center">
-          <div className="h-8 w-40 bg-gray-300 rounded mb-4 mx-auto"></div>
-          <div className="h-[400px] w-full max-w-md bg-gray-300 rounded"></div>
+        <div className="animate-pulse text-center space-y-4">
+          <div className="h-8 w-40 bg-gray-300 rounded mx-auto"></div>
+          <div className="h-48 w-full max-w-md bg-gray-300 rounded mx-auto"></div>
+          <div className="h-48 w-full max-w-md bg-gray-300 rounded mx-auto"></div>
         </div>
       </div>
     );
@@ -193,7 +163,6 @@ const Discover = () => {
       distance: "4 kms away",
       photos: [
         "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1000&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1000&auto=format&fit=crop"
       ],
       occupation: "Interior Designer",
       religion: "Christian",
@@ -209,7 +178,6 @@ const Discover = () => {
       distance: "1.8 kms away",
       photos: [
         "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1000&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1000&auto=format&fit=crop"
       ],
       occupation: "Entrepreneur",
       religion: "Hindu",
@@ -225,7 +193,6 @@ const Discover = () => {
       distance: "2 kms away",
       photos: [
         "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?q=80&w=1000&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1499996860823-5214fcc65f8f?q=80&w=1000&auto=format&fit=crop"
       ],
       occupation: "Data Analyst",
       religion: "Hindu",
@@ -241,29 +208,12 @@ const Discover = () => {
       distance: "2 kms away",
       photos: [
         "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1000&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1557862921-37829c790f19?q=80&w=1000&auto=format&fit=crop"
       ],
       occupation: "Web Developer",
       religion: "Hindu",
       height: "5'8\"",
       rating: 5,
       verified: false
-    },
-    {
-      id: "profile-5",
-      name: "Rohit Bansal",
-      age: 28,
-      location: "Mumbai",
-      distance: "2 kms away",
-      photos: [
-        "https://images.unsplash.com/photo-1499996860823-5214fcc65f8f?q=80&w=1000&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1000&auto=format&fit=crop"
-      ],
-      occupation: "Photographer",
-      religion: "Hindu",
-      height: "5'9\"",
-      rating: 4,
-      verified: true
     }
   ];
   
@@ -272,14 +222,28 @@ const Discover = () => {
       <div className="max-w-3xl mx-auto">
         <h1 className="text-2xl font-bold mb-6 text-center">Discover</h1>
         
-        <EmailSwiper
-          profiles={displayProfiles}
-          onLike={handleLike}
-          onDislike={handleDislike}
-          onSuperLike={handleSuperLike}
-          onViewProfile={handleViewProfile}
-          onOpenFilters={handleOpenFilters}
-        />
+        <div className="space-y-4">
+          {displayProfiles.map((profile) => (
+            <ProfileCard 
+              key={profile.id}
+              profile={profile}
+              onLike={() => handleLike(profile.id)}
+              onDislike={() => handleDislike(profile.id)}
+              onSuperLike={() => handleSuperLike(profile.id)}
+              onViewProfile={() => handleViewProfile(profile.id)}
+            />
+          ))}
+        </div>
+        
+        {displayProfiles.length === 0 && (
+          <div className="p-8 text-center bg-card rounded-xl shadow">
+            <div className="text-6xl mb-4">✨</div>
+            <h3 className="text-xl font-semibold mb-2">You've seen all profiles</h3>
+            <p className="text-sm text-foreground/70 mb-6">
+              Come back later for more matches
+            </p>
+          </div>
+        )}
         
         <div className="mt-8 text-center">
           <p className="text-sm text-foreground/60">
@@ -288,6 +252,130 @@ const Discover = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+interface ProfileCardProps {
+  profile: Profile;
+  onLike: () => void;
+  onDislike: () => void;
+  onSuperLike: () => void;
+  onViewProfile: () => void;
+}
+
+const ProfileCard = ({ profile, onLike, onDislike, onSuperLike, onViewProfile }: ProfileCardProps) => {
+  return (
+    <Card className="overflow-hidden border-black border">
+      <div className="flex flex-col sm:flex-row">
+        <div className="relative w-full sm:w-1/3">
+          <img 
+            src={profile.photos[0] || 'https://via.placeholder.com/150'} 
+            alt={profile.name}
+            className="w-full h-48 sm:h-full object-cover"
+          />
+        </div>
+        
+        <CardContent className="p-4 flex-1 bg-black text-white">
+          <div className="flex justify-between items-start mb-1">
+            <div className="flex items-center gap-1">
+              <h3 className="text-xl font-semibold">{profile.name}</h3>
+              {profile.verified && (
+                <Check className="h-4 w-4 text-vice-purple rounded-full bg-white p-0.5" />
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <span>{profile.age}</span>
+              <span className="text-gray-400">•</span>
+              <span className="text-sm">{profile.distance}</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-1 mb-2">
+            <MapPin className="h-3 w-3 text-red-500" />
+            <span className="text-sm">{profile.location}</span>
+          </div>
+          
+          <div className="mb-3">
+            <span className="text-sm">Rating </span>
+            <span className="text-yellow-400">{'★'.repeat(profile.rating || 0)}</span>
+          </div>
+          
+          <div className="flex flex-wrap gap-2 mb-3">
+            {profile.height && (
+              <span className="px-2 py-1 bg-white/10 rounded-full text-xs">
+                {profile.height}
+              </span>
+            )}
+            
+            {profile.religion && (
+              <span className="px-2 py-1 bg-white/10 rounded-full text-xs">
+                {profile.religion}
+              </span>
+            )}
+            
+            {profile.occupation && (
+              <span className="px-2 py-1 bg-white/10 rounded-full text-xs">
+                {profile.occupation}
+              </span>
+            )}
+          </div>
+          
+          <div className="flex justify-between mt-4">
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full bg-white/10 hover:bg-white/20 border-none text-white"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewProfile();
+                }}
+              >
+                View Profile
+              </Button>
+            </div>
+            
+            <div className="flex gap-3">
+              <Button
+                size="icon"
+                variant="outline"
+                className="rounded-full bg-white/5 hover:bg-white/15 border-none w-10 h-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDislike();
+                }}
+              >
+                <X className="h-5 w-5 text-red-500" />
+              </Button>
+              
+              <Button
+                size="icon"
+                variant="outline"
+                className="rounded-full bg-white/5 hover:bg-white/15 border-none w-10 h-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSuperLike();
+                }}
+              >
+                <Star className="h-5 w-5 text-orange-500" />
+              </Button>
+              
+              <Button
+                size="icon"
+                variant="outline"
+                className="rounded-full bg-white/5 hover:bg-white/15 border-none w-10 h-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLike();
+                }}
+              >
+                <Heart className="h-5 w-5 text-purple-500" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </div>
+    </Card>
   );
 };
 
