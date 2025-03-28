@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -325,20 +324,20 @@ export const convertProfileForDiscover = (profileData: any): DiscoverProfile => 
   }
   
   return {
-    id: profileData.id || '',
-    name: profileData.name || 'Unknown',
-    age: profileData.age || 0,
-    location: profileData.location || '',
-    occupation: profileData.occupation || '',
-    religion: profileData.religion || '',
-    height: profileData.height || '',
-    verified: profileData.verified || false,
-    avatar: profileData.avatar || '',
-    photos: profileData.photos || [],
-    bio: profileData.bio || '',
-    passions: profileData.passions || [],
-    vices: profileData.vices || [],
-    kinks: profileData.kinks || [],
-    about: profileData.about || {}
+    id: profileData?.id || '',
+    name: profileData?.name || 'Unknown',
+    age: profileData?.age || 0,
+    location: profileData?.location || '',
+    occupation: profileData?.occupation || '',
+    religion: profileData?.religion || '',
+    height: profileData?.height || '',
+    verified: profileData?.verified || false,
+    avatar: profileData?.avatar || '',
+    photos: profileData?.photos || [],
+    bio: profileData?.bio || '',
+    passions: profileData?.passions || [],
+    vices: profileData?.vices || [],
+    kinks: profileData?.kinks || [],
+    about: profileData?.about || {}
   };
 };
