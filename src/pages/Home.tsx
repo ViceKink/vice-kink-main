@@ -4,25 +4,21 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PostCard } from '@/components/post/PostCard';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { PlusCircle, Search } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import CreatePostModal from '@/components/post/CreatePostModal';
 
 const Home = () => {
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   
-  const { data: posts = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['allPosts', searchQuery],
+  const { data: posts = [], isLoading } = useQuery({
+    queryKey: ['allPosts'],
     queryFn: async () => {
       // First fetch the posts
-      let postsQuery = supabase
+      const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
           id,
           user_id,
-          title,
           content,
           created_at,
           likes_count,
@@ -32,21 +28,9 @@ const Home = () => {
         `)
         .order('created_at', { ascending: false });
       
-      // Apply search filter if it exists
-      if (searchQuery) {
-        postsQuery = postsQuery.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
-      }
-      
-      const { data: postsData, error: postsError } = await postsQuery;
-      
       if (postsError) {
         console.error('Error fetching posts:', postsError);
         throw postsError;
-      }
-      
-      // If no posts found with search, return empty array
-      if (postsData.length === 0) {
-        return [];
       }
       
       // Collect unique user IDs from posts
@@ -99,7 +83,6 @@ const Home = () => {
         return {
           id: post.id,
           user_id: post.user_id,
-          title: post.title,
           content: post.content,
           images: post.media_url ? [post.media_url] : undefined,
           created_at: post.created_at,
@@ -119,13 +102,8 @@ const Home = () => {
   });
   
   const handleCreatePost = () => {
-    setShowCreatePostModal(true);
-  };
-  
-  const handlePostCreated = () => {
-    setShowCreatePostModal(false);
-    refetch();
-    toast.success('Post created successfully!');
+    toast.info('Post creation coming soon!');
+    // Future implementation: setShowCreatePostModal(true);
   };
   
   if (isLoading) {
@@ -139,9 +117,6 @@ const Home = () => {
       </div>
     );
   }
-  
-  const showSearchResultMessage = searchQuery && posts.length === 0;
-  const showEmptyStateMessage = !searchQuery && posts.length === 0;
   
   return (
     <div className="min-h-screen py-24 px-4 md:px-6">
@@ -157,32 +132,7 @@ const Home = () => {
           </Button>
         </div>
         
-        <div className="mb-6 relative">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search posts, communities, or users..."
-              className="pl-10 pr-4"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
-        
-        {showSearchResultMessage ? (
-          <div className="p-8 bg-white dark:bg-card rounded-2xl shadow-md text-center">
-            <h3 className="text-xl font-bold mb-4">No Results Found</h3>
-            <p className="text-foreground/70 mb-6">
-              We couldn't find any posts matching "{searchQuery}"
-            </p>
-            <Button 
-              variant="outline"
-              onClick={() => setSearchQuery('')}
-            >
-              Clear Search
-            </Button>
-          </div>
-        ) : showEmptyStateMessage ? (
+        {posts.length === 0 ? (
           <div className="p-8 bg-white dark:bg-card rounded-2xl shadow-md text-center">
             <h3 className="text-xl font-bold mb-4">No Posts Yet</h3>
             <p className="text-foreground/70 mb-6">
@@ -203,13 +153,6 @@ const Home = () => {
           </div>
         )}
       </div>
-      
-      {showCreatePostModal && (
-        <CreatePostModal 
-          onClose={() => setShowCreatePostModal(false)}
-          onPost={handlePostCreated}
-        />
-      )}
     </div>
   );
 };

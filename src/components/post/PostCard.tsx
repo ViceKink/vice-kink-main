@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Heart, MessageSquare, Search } from 'lucide-react';
+import { Heart, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,6 @@ import { Link } from 'react-router-dom';
 interface Post {
   id: string;
   user_id: string;
-  title?: string;
   content: string;
   images?: string[];
   created_at: string;
@@ -185,39 +184,30 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   return (
     <div className="bg-card rounded-xl shadow-md overflow-hidden border border-border">
       <div className="p-4">
-        <div className="flex flex-col gap-1">
-          {post.community_name && (
-            <Link 
-              to={`/community/${post.community_id}`} 
-              className="text-xs text-vice-purple font-medium hover:underline"
-            >
-              {post.community_name}
-            </Link>
-          )}
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={post.user.avatar} alt={post.user.name} />
+            <AvatarFallback>{post.user.name[0]}</AvatarFallback>
+          </Avatar>
           
-          <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={post.user.avatar} alt={post.user.name} />
-              <AvatarFallback>{post.user.name?.[0] || 'A'}</AvatarFallback>
-            </Avatar>
-            
-            <div className="flex flex-col">
-              <Link 
-                to={`/profile/${post.user_id}`} 
-                className="font-medium hover:underline"
-              >
-                {post.user.name}
-              </Link>
-              <div className="text-xs text-foreground/60">{timeAgo(post.created_at)}</div>
-            </div>
+          <div className="flex flex-col">
+            {post.community_name && (
+              <div className="text-xs text-vice-purple font-medium">
+                {post.community_name}
+              </div>
+            )}
+            <Link 
+              to={`/profile/${post.user_id}`} 
+              className="font-medium hover:underline"
+            >
+              {post.user.name}
+            </Link>
+            <div className="text-xs text-foreground/60">{timeAgo(post.created_at)}</div>
           </div>
         </div>
       </div>
       
       <div className="px-4 pb-3">
-        {post.title && (
-          <h3 className="font-bold text-lg mb-2">{post.title}</h3>
-        )}
         <p className="whitespace-pre-line">{post.content}</p>
       </div>
       
@@ -251,7 +241,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         </div>
       </div>
       
-      <div className="px-4 py-1 border-t border-border flex">
+      <div className="px-4 py-1 border-t border-border flex justify-between">
         <Button 
           variant="ghost" 
           className={cn("flex-1 flex items-center justify-center gap-2", liked && "text-red-500")}

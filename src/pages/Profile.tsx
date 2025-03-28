@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Settings, RefreshCw, Pencil, PlusCircle, Search } from 'lucide-react';
+import { ChevronLeft, Settings, RefreshCw, Pencil } from 'lucide-react';
 import BentoProfile from '@/components/ui/BentoProfile';
 import { useAuth } from '@/context/auth';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,6 @@ import { UserProfile } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { PostCard } from '@/components/post/PostCard';
-import CreatePostModal from '@/components/post/CreatePostModal';
-import { Input } from '@/components/ui/input';
 
 const Profile = () => {
   const { id } = useParams();
@@ -24,24 +22,21 @@ const Profile = () => {
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [fetchAttempts, setFetchAttempts] = useState(0);
-  const [showCreatePostModal, setShowCreatePostModal] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   
   const isCurrentUser = !id || id === user?.id;
   const profileId = id || user?.id;
   
-  const { data: userPosts = [], isLoading: postsLoading, refetch: refetchPosts } = useQuery({
-    queryKey: ['userPosts', profileId, searchQuery],
+  const { data: userPosts = [], isLoading: postsLoading } = useQuery({
+    queryKey: ['userPosts', profileId],
     queryFn: async () => {
       if (!profileId) return [];
       
       // First fetch the posts
-      let postsQuery = supabase
+      const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
           id,
           user_id,
-          title,
           content,
           created_at,
           likes_count,
@@ -51,13 +46,6 @@ const Profile = () => {
         `)
         .eq('user_id', profileId)
         .order('created_at', { ascending: false });
-        
-      // Apply search filter if it exists
-      if (searchQuery) {
-        postsQuery = postsQuery.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
-      }
-
-      const { data: postsData, error: postsError } = await postsQuery;
         
       if (postsError) {
         console.error('Error fetching user posts:', postsError);
@@ -77,7 +65,6 @@ const Profile = () => {
         console.error('Error fetching profile for posts:', profileError);
         return postsData.map(post => ({
           ...post,
-          title: post.title,
           images: post.media_url ? [post.media_url] : undefined,
           user: {
             name: 'Anonymous',
@@ -115,7 +102,6 @@ const Profile = () => {
         return {
           id: post.id,
           user_id: post.user_id,
-          title: post.title,
           content: post.content,
           images: post.media_url ? [post.media_url] : undefined,
           created_at: post.created_at,
@@ -229,15 +215,6 @@ const Profile = () => {
     setActiveTab(tab);
   };
   
-  const handleCreatePost = () => {
-    setShowCreatePostModal(true);
-  };
-  
-  const handlePostCreated = () => {
-    setShowCreatePostModal(false);
-    refetchPosts();
-  };
-  
   if (authLoading) {
     console.log("Auth loading...");
     return (
@@ -276,6 +253,7 @@ const Profile = () => {
   }
   
   if (isLoading) {
+    console.log("Profile data loading...");
     return (
       <div className="flex min-h-screen items-center justify-center flex-col p-4">
         <div className="text-center mb-4 max-w-md">
@@ -413,27 +391,6 @@ const Profile = () => {
           />
         ) : activeTab === 'erotica' ? (
           <div className="space-y-6">
-            {isCurrentUser && (
-              <div className="flex justify-between items-center mb-4">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search your posts..."
-                    className="pl-10 pr-4"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Button 
-                  onClick={handleCreatePost}
-                  className="bg-vice-purple hover:bg-vice-dark-purple ml-2"
-                >
-                  <PlusCircle className="mr-1.5 h-4 w-4" />
-                  Create Post
-                </Button>
-              </div>
-            )}
-            
             {postsLoading ? (
               <div className="animate-pulse">
                 <div className="h-64 bg-gray-300 rounded-xl mb-4"></div>
@@ -450,7 +407,7 @@ const Profile = () => {
                 {isCurrentUser && (
                   <Button 
                     className="bg-vice-purple hover:bg-vice-dark-purple"
-                    onClick={handleCreatePost}
+                    onClick={() => toast.info("Post creation coming soon!")}
                   >
                     Create Post
                   </Button>
@@ -464,13 +421,6 @@ const Profile = () => {
           </div>
         ) : null}
       </div>
-      
-      {showCreatePostModal && (
-        <CreatePostModal 
-          onClose={() => setShowCreatePostModal(false)}
-          onPost={handlePostCreated}
-        />
-      )}
     </div>
   );
 };
