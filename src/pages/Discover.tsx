@@ -1,45 +1,28 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { X, Heart, Star, Filter, Sliders } from 'lucide-react';
-import { toast } from 'sonner';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import ProfileCard from '@/components/discover/ProfileCard';
 import { useAuth } from '@/context/auth';
-import { cn } from '@/lib/utils';
 import MatchAnimation from '@/components/match/MatchAnimation';
 import DiscoverFilters from '@/components/discover/DiscoverFilters';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useQuery } from '@tanstack/react-query';
+import ProfilesGrid from '@/components/discover/ProfilesGrid';
+import DiscoverLoading from '@/components/discover/DiscoverLoading';
+import EmptyProfilesState from '@/components/discover/EmptyProfilesState';
+import { useProfileInteractions } from '@/hooks/useProfileInteractions';
 
 import { fetchProfilesToDiscover } from '@/utils/match/profileService';
-import { getUserInteractions, createInteraction } from '@/utils/match/interactionService';
-
-interface Profile {
-  id: string;
-  name: string;
-  age: number;
-  location: string;
-  distance: string;
-  photos: string[];
-  occupation?: string;
-  religion?: string;
-  height?: string;
-  verified: boolean;
-  rating?: number;
-}
+import { getUserInteractions } from '@/utils/match/interactionService';
 
 const Discover = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   
-  const [matchedProfile, setMatchedProfile] = useState<{id: string; name: string; avatar?: string} | null>(null);
-  const [showMatchAnimation, setShowMatchAnimation] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState<any>(user?.preferences || null);
   
+  // Fetch user interactions
   const { data: userInteractions = [], isLoading: interactionsLoading } = useQuery({
     queryKey: ['userInteractions'],
     queryFn: async () => {
@@ -52,6 +35,7 @@ const Discover = () => {
   
   const interactedProfileIds = userInteractions.map((i: any) => i.target_profile_id);
   
+  // Fetch profiles to discover
   const { data: profiles = [], isLoading } = useQuery({
     queryKey: ['discoverProfiles', interactedProfileIds, activeFilters],
     queryFn: async () => {
@@ -64,97 +48,34 @@ const Discover = () => {
     enabled: !!user?.id
   });
   
-  const interactionMutation = useMutation({
-    mutationFn: async ({ 
-      profileId, 
-      type 
-    }: { 
-      profileId: string, 
-      type: 'like' | 'dislike' | 'superlike' 
-    }) => {
-      if (!user?.id) throw new Error('User not authenticated');
-      console.log('Creating interaction:', user.id, '->', profileId, ':', type);
-      const result = await createInteraction(user.id, profileId, type);
-      console.log('Interaction result:', result);
-      if (!result.success) throw new Error(`Failed to ${type} profile`);
-      return { profileId, type, matched: result.matched };
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['userInteractions'] });
-      queryClient.invalidateQueries({ queryKey: ['discoverProfiles'] });
-      
-      if (data.matched) {
-        console.log('Match found!', data);
-        const matchedProfileData = profiles.find((p: Profile) => p.id === data.profileId);
-        if (matchedProfileData) {
-          setMatchedProfile({
-            id: matchedProfileData.id,
-            name: matchedProfileData.name,
-            avatar: matchedProfileData.photos?.[0]
-          });
-          setShowMatchAnimation(true);
-          
-          // Update matches and likes data
-          queryClient.invalidateQueries({ queryKey: ['userMatches'] });
-          queryClient.invalidateQueries({ queryKey: ['likedByProfiles'] });
-        }
-      }
-    },
-    onError: (error) => {
-      console.error('Error in interaction:', error);
-      toast.error('Failed to interact with profile');
-    }
-  });
-  
-  const handleLike = (profileId: string) => {
-    console.log('Like button clicked for', profileId);
-    interactionMutation.mutate({ profileId, type: 'like' });
-  };
-  
-  const handleDislike = (profileId: string) => {
-    console.log('Dislike button clicked for', profileId);
-    interactionMutation.mutate({ profileId, type: 'dislike' });
-  };
-  
-  const handleSuperLike = (profileId: string) => {
-    console.log('Super like button clicked for', profileId);
-    interactionMutation.mutate({ profileId, type: 'superlike' });
-    toast.success('Super like sent!');
-  };
+  // Profile interaction handlers
+  const { 
+    matchedProfile, 
+    showMatchAnimation,
+    handleLike,
+    handleDislike,
+    handleSuperLike,
+    handleCloseMatchAnimation
+  } = useProfileInteractions(user?.id, profiles);
   
   const handleViewProfile = (profileId: string) => {
     navigate(`/profile/${profileId}`);
-  };
-  
-  const handleCloseMatchAnimation = () => {
-    setShowMatchAnimation(false);
-    setMatchedProfile(null);
   };
   
   const handleApplyFilters = (preferences: any) => {
     setActiveFilters(preferences);
   };
   
-  const enhanceProfiles = (profiles: Profile[]) => {
+  // Enhance profiles with rating if missing
+  const enhanceProfiles = (profiles: any[]) => {
     return profiles.map(profile => ({
       ...profile,
       rating: profile.rating || Math.floor(Math.random() * 5) + 1,
-      distance: profile.distance || `${Math.floor(Math.random() * 10) + 1} kms away` // Ensure distance is always present
+      distance: profile.distance || `${Math.floor(Math.random() * 10) + 1} kms away`
     }));
   }
   
-  if (isLoading || interactionsLoading) {
-    return (
-      <div className="min-h-screen py-24 px-4 md:px-6 flex justify-center items-center">
-        <div className="animate-pulse text-center space-y-4">
-          <div className="h-8 w-40 bg-gray-300 rounded mx-auto"></div>
-          <div className="h-48 w-full max-w-md bg-gray-300 rounded mx-auto"></div>
-          <div className="h-48 w-full max-w-md bg-gray-300 rounded mx-auto"></div>
-        </div>
-      </div>
-    );
-  }
-  
+  // Display fallback profiles if none are available
   const displayProfiles = enhanceProfiles(profiles.length > 0 ? profiles : [
     {
       id: "profile-1",
@@ -231,29 +152,18 @@ const Discover = () => {
           </Button>
         </div>
         
-        {displayProfiles.length === 0 ? (
-          <div className="p-8 text-center bg-card rounded-xl shadow">
-            <div className="text-6xl mb-4">✨</div>
-            <h3 className="text-xl font-semibold mb-2">You've seen all profiles</h3>
-            <p className="text-sm text-foreground/70 mb-6">
-              Come back later for more matches
-            </p>
-          </div>
+        {isLoading || interactionsLoading ? (
+          <DiscoverLoading />
+        ) : displayProfiles.length === 0 ? (
+          <EmptyProfilesState />
         ) : (
-          <ScrollArea className="h-[calc(100vh-200px)]">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {displayProfiles.map((profile) => (
-                <ProfileCard 
-                  key={profile.id}
-                  profile={profile}
-                  onLike={() => handleLike(profile.id)}
-                  onDislike={() => handleDislike(profile.id)}
-                  onSuperLike={() => handleSuperLike(profile.id)}
-                  onViewProfile={() => handleViewProfile(profile.id)}
-                />
-              ))}
-            </div>
-          </ScrollArea>
+          <ProfilesGrid
+            profiles={displayProfiles}
+            onLike={handleLike}
+            onDislike={handleDislike}
+            onSuperLike={handleSuperLike}
+            onViewProfile={handleViewProfile}
+          />
         )}
         
         <div className="mt-8 text-center">
