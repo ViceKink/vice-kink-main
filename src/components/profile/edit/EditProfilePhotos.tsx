@@ -22,6 +22,8 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { toast } from 'sonner';
+import { updateProfileAvatar } from '@/utils/match/profileService';
 
 interface EditProfilePhotosProps {
   userData: Partial<UserProfile>;
@@ -330,7 +332,26 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
       const currentPhotos = userData.photos || [];
       const updatedPhotos = currentPhotos.filter(url => url !== photoUrl);
       
+      const isMainPhoto = currentPhotos.indexOf(photoUrl) === 0;
+      
       updateField('photos', updatedPhotos);
+      
+      if (isMainPhoto && updatedPhotos.length > 0) {
+        updateField('avatar', updatedPhotos[0]);
+        
+        if (userData.id) {
+          await updateProfileAvatar(userData.id, updatedPhotos[0]);
+        }
+      } else if (isMainPhoto && updatedPhotos.length === 0) {
+        updateField('avatar', '');
+        
+        if (userData.id) {
+          await supabase
+            .from('profiles')
+            .update({ avatar: null })
+            .eq('id', userData.id);
+        }
+      }
       
       if (userData.id) {
         const { data: photoRecord, error: fetchError } = await supabase
@@ -340,7 +361,7 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
           .eq('url', photoUrl)
           .single();
           
-        if (fetchError) {
+        if (fetchError && !fetchError.message.includes('No rows found')) {
           console.error('Error finding photo record:', fetchError);
         }
         
@@ -359,17 +380,60 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
         const fileName = urlParts[urlParts.length - 1];
         const filePath = `photos/${fileName}`;
         
-        const { error: storageError } = await supabase.storage
-          .from('profile-media')
-          .remove([filePath]);
-          
-        if (storageError) {
-          console.error('Error deleting photo from storage:', storageError);
+        try {
+          const { error: storageError } = await supabase.storage
+            .from('profile-media')
+            .remove([filePath]);
+            
+          if (storageError) {
+            console.error('Error deleting photo from storage:', storageError);
+          }
+        } catch (storageErr) {
+          console.error('Storage delete error:', storageErr);
+        }
+        
+        if (updatedPhotos.length > 0) {
+          await updatePhotoOrders(userData.id, updatedPhotos);
         }
       }
     } catch (err) {
       console.error('Error deleting photo:', err);
       setError('Failed to delete photo. Please try again.');
+    }
+  };
+  
+  const updatePhotoOrders = async (userId: string, photos: string[]) => {
+    try {
+      const { data: photoRecords, error: fetchError } = await supabase
+        .from('profile_photos')
+        .select('id, url')
+        .eq('profile_id', userId);
+        
+      if (fetchError) {
+        console.error('Error fetching photo records:', fetchError);
+        return;
+      }
+      
+      for (let i = 0; i < photos.length; i++) {
+        const url = photos[i];
+        const record = photoRecords?.find(r => r.url === url);
+        
+        if (record) {
+          const { error: updateError } = await supabase
+            .from('profile_photos')
+            .update({ 
+              order_index: i,
+              is_primary: i === 0
+            })
+            .eq('id', record.id);
+            
+          if (updateError) {
+            console.error('Error updating photo order:', updateError);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error updating photo orders:', err);
     }
   };
   
@@ -388,37 +452,16 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
     const updatedPhotos = arrayMove(userData.photos || [], oldIndex, newIndex);
     updateField('photos', updatedPhotos);
     
-    if (userData.id) {
-      try {
-        const { data: photoRecords, error: fetchError } = await supabase
-          .from('profile_photos')
-          .select('id, url, order_index')
-          .eq('profile_id', userData.id)
-          .order('order_index', { ascending: true });
-          
-        if (fetchError) {
-          console.error('Error fetching photo records:', fetchError);
-          return;
-        }
-        
-        for (let i = 0; i < updatedPhotos.length; i++) {
-          const photoUrl = updatedPhotos[i];
-          const photoRecord = photoRecords?.find(record => record.url === photoUrl);
-          
-          if (photoRecord) {
-            const { error: updateError } = await supabase
-              .from('profile_photos')
-              .update({ order_index: i })
-              .eq('id', photoRecord.id);
-              
-            if (updateError) {
-              console.error('Error updating photo order:', updateError);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error reordering photos in database:', err);
+    if (newIndex === 0 && oldIndex !== 0) {
+      const newMainPhoto = updatedPhotos[0];
+      updateField('avatar', newMainPhoto);
+      
+      if (userData.id) {
+        await updateProfileAvatar(userData.id, newMainPhoto);
+        toast.success('Main photo updated');
       }
+    } else if (userData.id) {
+      await updatePhotoOrders(userData.id, updatedPhotos);
     }
   };
   
@@ -433,50 +476,15 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
     updatedPhotos.unshift(photoUrl);
     
     updateField('photos', updatedPhotos);
-    
     updateField('avatar', photoUrl);
     
     if (userData.id) {
-      try {
-        const { error: avatarError } = await supabase
-          .from('profiles')
-          .update({ avatar: photoUrl })
-          .eq('id', userData.id);
-        
-        if (avatarError) {
-          console.error('Error updating avatar:', avatarError);
-        }
-        
-        const { data: photoRecords, error: fetchError } = await supabase
-          .from('profile_photos')
-          .select('id, url')
-          .eq('profile_id', userData.id);
-        
-        if (fetchError) {
-          console.error('Error fetching photo records:', fetchError);
-          return;
-        }
-        
-        for (let i = 0; i < updatedPhotos.length; i++) {
-          const url = updatedPhotos[i];
-          const record = photoRecords?.find(r => r.url === url);
-          
-          if (record) {
-            const { error: updateError } = await supabase
-              .from('profile_photos')
-              .update({ 
-                order_index: i,
-                is_primary: i === 0
-              })
-              .eq('id', record.id);
-              
-            if (updateError) {
-              console.error('Error updating photo order:', updateError);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error making photo main in database:', err);
+      const success = await updateProfileAvatar(userData.id, photoUrl);
+      
+      if (success) {
+        toast.success('Main photo updated');
+      } else {
+        toast.error('Failed to update main photo');
       }
     }
   };

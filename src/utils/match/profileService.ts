@@ -155,19 +155,62 @@ export const updateProfileAvatar = async (userId: string, avatarUrl: string) => 
   try {
     if (!userId || !avatarUrl) return false;
     
-    const { error } = await supabase
+    console.log('Updating profile avatar for user:', userId, 'with URL:', avatarUrl);
+    
+    // 1. First, update the avatar in the profiles table
+    const { error: profileError } = await supabase
       .from('profiles')
       .update({ avatar: avatarUrl })
       .eq('id', userId);
       
-    if (error) {
-      console.error('Error updating profile avatar:', error);
+    if (profileError) {
+      console.error('Error updating profile avatar:', profileError);
       return false;
     }
     
+    // 2. Set all photos to is_primary = false
+    const { error: resetError } = await supabase
+      .from('profile_photos')
+      .update({ is_primary: false })
+      .eq('profile_id', userId);
+      
+    if (resetError) {
+      console.error('Error resetting primary photo flags:', resetError);
+      return false;
+    }
+    
+    // 3. Find the photo with this URL and set it as is_primary = true
+    const { data: photoData, error: findError } = await supabase
+      .from('profile_photos')
+      .select('id')
+      .eq('profile_id', userId)
+      .eq('url', avatarUrl)
+      .single();
+      
+    if (findError) {
+      console.error('Error finding photo record:', findError);
+      return false;
+    }
+    
+    if (photoData) {
+      const { error: updateError } = await supabase
+        .from('profile_photos')
+        .update({ 
+          is_primary: true,
+          order_index: 0  // Also ensure it's the first photo in order
+        })
+        .eq('id', photoData.id);
+        
+      if (updateError) {
+        console.error('Error setting photo as primary:', updateError);
+        return false;
+      }
+    }
+    
+    console.log('Successfully updated avatar and primary photo status');
     return true;
   } catch (error) {
-    console.error('Error updating profile avatar:', error);
+    console.error('Error in updateProfileAvatar:', error);
     return false;
   }
 };
