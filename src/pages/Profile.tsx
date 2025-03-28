@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { UserProfile } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PostCard } from '@/components/post/PostCard';
 import CreatePostModal from '@/components/post/CreatePostModal';
 
@@ -24,6 +24,7 @@ const Profile = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [fetchAttempts, setFetchAttempts] = useState(0);
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+  const queryClient = useQueryClient();
   
   const isCurrentUser = !id || id === user?.id;
   const profileId = id || user?.id;
@@ -33,7 +34,6 @@ const Profile = () => {
     queryFn: async () => {
       if (!profileId) return [];
       
-      // First fetch the posts
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
@@ -54,7 +54,6 @@ const Profile = () => {
         return [];
       }
       
-      // Fetch profile information if there are posts
       if (postsData.length === 0) return [];
       
       const { data: profileData, error: profileError } = await supabase
@@ -75,12 +74,10 @@ const Profile = () => {
         }));
       }
       
-      // Get all community IDs
       const communityIds = postsData
         .filter(post => post.community_id)
         .map(post => post.community_id);
       
-      // Fetch community data if there are any community IDs
       let communitiesMap = {};
       
       if (communityIds.length > 0) {
@@ -97,7 +94,6 @@ const Profile = () => {
         }
       }
       
-      // Map the posts with profile and community information
       return postsData.map(post => {
         const community = post.community_id ? communitiesMap[post.community_id] : null;
         
@@ -397,12 +393,7 @@ const Profile = () => {
           />
         ) : activeTab === 'erotica' ? (
           <div className="space-y-6">
-            {postsLoading ? (
-              <div className="animate-pulse">
-                <div className="h-64 bg-gray-300 rounded-xl mb-4"></div>
-                <div className="h-64 bg-gray-300 rounded-xl"></div>
-              </div>
-            ) : userPosts.length === 0 ? (
+            {userPosts && userPosts.length === 0 ? (
               <div className="p-8 bg-white dark:bg-card rounded-2xl shadow-md text-center">
                 <h3 className="text-xl font-bold mb-4">No Posts Yet</h3>
                 <p className="text-foreground/70 mb-6">
@@ -420,7 +411,7 @@ const Profile = () => {
                 )}
               </div>
             ) : (
-              userPosts.map(post => (
+              userPosts && userPosts.map(post => (
                 <PostCard key={post.id} post={post} />
               ))
             )}
@@ -433,8 +424,9 @@ const Profile = () => {
           onClose={() => setShowCreatePostModal(false)}
           onPost={(content, type, comicData) => {
             setShowCreatePostModal(false);
-            // Optionally, refresh the posts
-            queryClient.invalidateQueries({ queryKey: ['userPosts', userId] });
+            if (profileUser && profileUser.id) {
+              queryClient.invalidateQueries({ queryKey: ['userPosts', profileUser.id] });
+            }
           }}
         />
       )}

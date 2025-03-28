@@ -1,16 +1,18 @@
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { PostCard } from '@/components/post/PostCard';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import CreatePostModal from '@/components/post/CreatePostModal';
 
 const Community = () => {
   const { id } = useParams();
   const [showCreatePostModal, setShowCreatePostModal] = React.useState(false);
+  const queryClient = useQueryClient();
   
   const { data: community, isLoading: communityLoading } = useQuery({
     queryKey: ['community', id],
@@ -177,6 +179,20 @@ const Community = () => {
           </div>
         )}
       </div>
+      
+      {showCreatePostModal && (
+        <CreatePostModal 
+          onClose={() => setShowCreatePostModal(false)}
+          onPost={() => {
+            setShowCreatePostModal(false);
+            // Refresh community posts
+            if (id) {
+              queryClient.invalidateQueries({ queryKey: ['communityPosts', id] });
+            }
+          }}
+          preselectedCommunityId={id}
+        />
+      )}
     </div>
   );
 };

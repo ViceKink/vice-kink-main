@@ -33,11 +33,22 @@ interface PostCardProps {
   post: Post;
 }
 
+interface Comment {
+  id: string;
+  content: string;
+  created_at: string;
+  user: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+}
+
 export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const { user, isAuthenticated } = useAuth();
   const [liked, setLiked] = useState(false);
   const [comment, setComment] = useState('');
-  const [localComments, setLocalComments] = useState([]);
+  const [localComments, setLocalComments] = useState<Comment[]>([]);
   const [localLikesCount, setLocalLikesCount] = useState(post.likes_count);
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
@@ -53,23 +64,60 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           id, 
           content, 
           created_at, 
-          user_id,
-          profiles(name, avatar)
+          user_id
         `)
         .eq('post_id', post.id)
         .order('created_at', { ascending: true });
       
-      if (!error && data) {
-        setLocalComments(data.map(comment => ({
-          id: comment.id,
-          content: comment.content,
-          created_at: comment.created_at,
-          user: {
-            id: comment.user_id,
-            name: comment.profiles?.name || 'Anonymous',
-            avatar: comment.profiles?.avatar
-          }
-        })));
+      if (error) {
+        console.error('Error fetching comments:', error);
+        return;
+      }
+      
+      if (data && data.length > 0) {
+        // Get all unique user IDs
+        const userIds = [...new Set(data.map(comment => comment.user_id))];
+        
+        // Fetch user profiles in a single query
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, name, avatar')
+          .in('id', userIds);
+        
+        if (profilesError) {
+          console.error('Error fetching profiles for comments:', profilesError);
+          return;
+        }
+        
+        // Create a map of user IDs to profiles
+        const profilesMap: Record<string, { name: string; avatar?: string }> = {};
+        
+        if (profilesData) {
+          profilesData.forEach(profile => {
+            profilesMap[profile.id] = {
+              name: profile.name || 'Anonymous',
+              avatar: profile.avatar
+            };
+          });
+        }
+        
+        // Map comments with user info
+        const commentsWithUsers = data.map(comment => {
+          const userProfile = profilesMap[comment.user_id] || { name: 'Anonymous' };
+          
+          return {
+            id: comment.id,
+            content: comment.content,
+            created_at: comment.created_at,
+            user: {
+              id: comment.user_id,
+              name: userProfile.name,
+              avatar: userProfile.avatar
+            }
+          };
+        });
+        
+        setLocalComments(commentsWithUsers);
       }
     };
     
@@ -149,30 +197,39 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           post_id: post.id,
           content: comment.trim()
         })
-        .select(`
-          id, 
-          content, 
-          created_at, 
-          user_id,
-          profiles(name, avatar)
-        `)
-        .single();
+        .select();
         
       if (error) throw error;
-      return data;
+      return data[0];
     },
-    onSuccess: (data) => {
-      // Add the new comment to local state
-      setLocalComments(prev => [...prev, {
-        id: data.id,
-        content: data.content,
-        created_at: data.created_at,
-        user: {
-          id: data.user_id,
-          name: data.profiles?.name || 'Anonymous',
-          avatar: data.profiles?.avatar
+    onSuccess: (newComment) => {
+      // Fetch the user profile for the comment
+      const getProfile = async () => {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('name, avatar')
+          .eq('id', user?.id)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching profile for new comment:', error);
+          return;
         }
-      }]);
+        
+        // Add the new comment to local state
+        setLocalComments(prev => [...prev, {
+          id: newComment.id,
+          content: newComment.content,
+          created_at: newComment.created_at,
+          user: {
+            id: user?.id || '',
+            name: profile?.name || user?.name || 'Anonymous',
+            avatar: profile?.avatar || user?.photos?.[0]
+          }
+        }]);
+      };
+      
+      getProfile();
       
       setComment('');
       queryClient.invalidateQueries({ queryKey: ['allPosts'] });
