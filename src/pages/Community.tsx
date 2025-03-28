@@ -190,7 +190,6 @@ const Community = () => {
               queryClient.invalidateQueries({ queryKey: ['communityPosts', id] });
             }
           }}
-          preselectedCommunityId={id}
         />
       )}
     </div>

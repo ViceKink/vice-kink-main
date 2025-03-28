@@ -366,7 +366,7 @@ const Profile = () => {
             <button 
               className={`px-4 py-3 rounded-lg flex justify-center items-center transition-all ${
                 activeTab === 'persona' 
-                  ? 'bg-white dark:bg-card shadow-sm text-foreground' 
+                  ? 'bg-white dark:bg-black text-foreground shadow-sm font-semibold' 
                   : 'bg-transparent text-foreground/60 hover:text-foreground/80'
               }`}
               onClick={() => handleTabChange('persona')}
