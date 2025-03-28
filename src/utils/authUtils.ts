@@ -3,7 +3,7 @@ import { UserProfile, FlirtingStyle, UserPreferences } from '@/types/auth';
 
 // Convert snake_case profile from Supabase to camelCase UserProfile
 const formatProfile = (profile: any): UserProfile => {
-  let flirtingStyle: string | FlirtingStyle = profile.flirting_style;
+  let flirtingStyle: string | FlirtingStyle | undefined = profile.flirting_style;
   
   // Try to parse flirting_style if it's a JSON string
   if (typeof profile.flirting_style === 'string' && profile.flirting_style) {
@@ -44,7 +44,7 @@ const formatProfile = (profile: any): UserProfile => {
     bio: profile.bio || undefined,
     looking_for: profile.looking_for || undefined,
     lookingFor: profile.looking_for || undefined,
-    flirting_style: flirtingStyle || undefined,
+    flirting_style: profile.flirting_style || undefined,
     flirtingStyle: flirtingStyle || undefined,
     preferences: preferences || undefined,
     about: {

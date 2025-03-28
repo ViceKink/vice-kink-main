@@ -1,5 +1,27 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+/**
+ * Interface for profiles in discover view
+ */
+export interface DiscoverProfile {
+  id: string;
+  name: string;
+  age: number;
+  location: string;
+  occupation?: string;
+  religion?: string;
+  height?: string;
+  verified: boolean;
+  avatar?: string;
+  photos: string[];
+  bio?: string;
+  passions?: string[];
+  vices?: string[];
+  kinks?: string[];
+  about: Record<string, any>;
+}
 
 /**
  * Checks if two users are matched (both have liked each other)
@@ -193,15 +215,15 @@ export const getProfilesWhoLikedMe = async (userId: string) => {
         const profileData = interaction.profiles;
         if (profileData && typeof profileData === 'object' && 'id' in profileData) {
           return {
-            id: profileData.id,
-            name: profileData.name,
-            age: profileData.age,
-            location: profileData.location,
-            occupation: profileData.occupation,
-            religion: profileData.religion,
-            height: profileData.height,
-            verified: profileData.verified,
-            avatar: profileData.avatar,
+            id: profileData.id || '',
+            name: profileData.name || 'Unknown',
+            age: profileData.age || 0,
+            location: profileData.location || '',
+            occupation: profileData.occupation || '',
+            religion: profileData.religion || '',
+            height: profileData.height || '',
+            verified: profileData.verified || false,
+            avatar: profileData.avatar || '',
             interaction_type: interaction.interaction_type
           };
         }
@@ -212,6 +234,67 @@ export const getProfilesWhoLikedMe = async (userId: string) => {
     return profilesWhoLikedMe;
   } catch (error) {
     console.error('Error getting profiles who liked me:', error);
+    return [];
+  }
+};
+
+/**
+ * Fetch profiles for discover page
+ */
+export const fetchProfilesToDiscover = async (userId: string, excludeIds: string[] = []) => {
+  if (!userId) return [];
+  
+  try {
+    const excludedIds = [...excludeIds, userId];
+    
+    let query = supabase
+      .from('profiles')
+      .select(`
+        id,
+        name,
+        age,
+        location,
+        occupation,
+        religion,
+        height,
+        verified,
+        avatar
+      `);
+      
+    if (excludedIds.length > 0) {
+      query = query.not('id', 'in', `(${excludedIds.join(',')})`);
+    } else {
+      query = query.neq('id', userId);
+    }
+    
+    query = query.limit(20);
+    
+    const { data, error } = await query;
+      
+    if (error) {
+      console.error('Error fetching profiles:', error);
+      return [];
+    }
+    
+    const profilesWithPhotos = await Promise.all(
+      data.map(async (profile) => {
+        const { data: photos } = await supabase
+          .from('profile_photos')
+          .select('url')
+          .eq('profile_id', profile.id)
+          .order('order_index', { ascending: true });
+          
+        return {
+          ...profile,
+          distance: `${Math.floor(Math.random() * 10) + 1} kms away`,
+          photos: photos?.map(p => p.url) || []
+        };
+      })
+    );
+    
+    return profilesWithPhotos;
+  } catch (error) {
+    console.error('Error fetching profiles to discover:', error);
     return [];
   }
 };
