@@ -136,3 +136,53 @@
 .stagger-1 { animation-delay: 0.1s; }
 .stagger-2 { animation-delay: 0.2s; }
 .stagger-3 { animation-delay: 0.3s; }
+
+/* Improved hover animations for UI buttons */
+@keyframes glow-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.3);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(147, 51, 234, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(147, 51, 234, 0);
+  }
+}
+
+.btn-action:hover {
+  animation: glow-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes border-glow {
+  0% {
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+  50% {
+    border-color: rgba(255, 255, 255, 1);
+  }
+  100% {
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+.border-pulse {
+  animation: border-glow 2s ease-in-out infinite;
+}
+
+/* Profile action buttons animation */
+@keyframes action-button-scale {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.action-button-hover:hover {
+  animation: action-button-scale 0.6s ease-in-out;
+}

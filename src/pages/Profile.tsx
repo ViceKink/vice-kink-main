@@ -491,34 +491,37 @@ const Profile = () => {
           <button 
             onClick={handleDislike}
             className={cn(
-              "w-9 h-9 rounded-full bg-black shadow-lg flex items-center justify-center",
-              "transform transition-transform hover:scale-105 border-2 border-red-500"
+              "w-11 h-11 rounded-full bg-black shadow-lg flex items-center justify-center",
+              "transform transition-transform hover:scale-105 border-2 border-red-500 animate-fade-in",
+              "animate-float"
             )}
             aria-label="Dislike profile"
           >
-            <X className="w-4 h-4 text-red-500" />
+            <X className="w-5 h-5 text-red-500" />
           </button>
           
           <button 
             onClick={handleSuperLike}
             className={cn(
-              "w-9 h-9 rounded-full bg-black shadow-lg flex items-center justify-center",
-              "transform transition-transform hover:scale-105 border-2 border-orange-500"
+              "w-11 h-11 rounded-full bg-black shadow-lg flex items-center justify-center",
+              "transform transition-transform hover:scale-105 border-2 border-orange-500 animate-fade-in delay-75",
+              "animate-float delay-75"
             )}
             aria-label="Super like profile"
           >
-            <Star className="w-4 h-4 text-orange-500" />
+            <Star className="w-5 h-5 text-orange-500" />
           </button>
           
           <button 
             onClick={handleLike}
             className={cn(
-              "w-9 h-9 rounded-full bg-black shadow-lg flex items-center justify-center",
-              "transform transition-transform hover:scale-105 border-2 border-purple-500"
+              "w-11 h-11 rounded-full bg-black shadow-lg flex items-center justify-center",
+              "transform transition-transform hover:scale-105 border-2 border-purple-500 animate-fade-in delay-150",
+              "animate-float delay-150"
             )}
             aria-label="Like profile"
           >
-            <Heart className="w-4 h-4 text-purple-500" />
+            <Heart className="w-5 h-5 text-purple-500" />
           </button>
         </div>
       )}

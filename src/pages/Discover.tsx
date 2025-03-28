@@ -350,7 +350,7 @@ const ProfileCard = ({ profile, onLike, onDislike, onSuperLike, onViewProfile }:
           size="sm" 
           variant="ghost" 
           onClick={onViewProfile}
-          className="text-white flex-1 hover:bg-white/10"
+          className="text-white flex-1 hover:bg-white/10 mr-10"
         >
           View Profile
         </Button>
