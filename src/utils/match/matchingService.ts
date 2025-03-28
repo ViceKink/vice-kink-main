@@ -47,6 +47,8 @@ export const createMatch = async (currentUserId: string, targetUserId: string): 
   if (!currentUserId || !targetUserId) return false;
   
   try {
+    console.log('Creating match between', currentUserId, 'and', targetUserId);
+    
     // Create a match record in the database
     const { data, error } = await supabase
       .rpc('create_match', {
@@ -54,7 +56,12 @@ export const createMatch = async (currentUserId: string, targetUserId: string): 
         user_id_b: targetUserId
       });
       
-    if (error) throw error;
+    if (error) {
+      console.error('Error in createMatch RPC call:', error);
+      throw error;
+    }
+    
+    console.log('Match created successfully', data);
     
     // We don't show a toast here since we'll show a match animation instead
     return true;
@@ -72,13 +79,56 @@ export const getUserMatches = async (userId: string) => {
   if (!userId) return [];
   
   try {
+    console.log('Getting matches for user:', userId);
+    
     // Get all matches where the user is either user_id_1 or user_id_2
     const { data, error } = await supabase
       .rpc('get_user_matches', {
         user_id: userId
       });
       
-    if (error) throw error;
+    if (error) {
+      console.error('Error in getUserMatches RPC call:', error);
+      throw error;
+    }
+    
+    console.log('Matches fetched:', data?.length || 0, 'matches found');
+    
+    // For each match, fetch the last message and unread count
+    if (data && data.length > 0) {
+      const matchesWithMessages = await Promise.all(
+        data.map(async (match) => {
+          try {
+            // Get last message
+            const { data: lastMessage } = await supabase.rpc('get_last_message', {
+              user1: userId,
+              user2: match.other_user_id
+            });
+            
+            // Get unread count
+            const { data: unreadCount } = await supabase.rpc('count_unread_messages', {
+              user_id: userId,
+              other_user_id: match.other_user_id
+            });
+            
+            return {
+              ...match,
+              last_message: lastMessage?.[0]?.content || null,
+              unread_count: unreadCount || 0
+            };
+          } catch (err) {
+            console.error('Error fetching message data for match:', match.match_id, err);
+            return {
+              ...match,
+              last_message: null,
+              unread_count: 0
+            };
+          }
+        })
+      );
+      
+      return matchesWithMessages || [];
+    }
     
     return data || [];
   } catch (error) {

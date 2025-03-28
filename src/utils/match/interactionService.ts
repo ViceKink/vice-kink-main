@@ -17,21 +17,55 @@ export const createInteraction = async (
   }
   
   try {
-    const { data, error } = await supabase
+    console.log('Creating interaction:', userId, '->', targetProfileId, ':', interactionType);
+    
+    // First, check if the interaction already exists to avoid duplicates
+    const { data: existingInteraction, error: checkError } = await supabase
       .from('profile_interactions')
-      .insert({
-        user_id: userId,
-        target_profile_id: targetProfileId,
-        interaction_type: interactionType
-      });
+      .select('*')
+      .eq('user_id', userId)
+      .eq('target_profile_id', targetProfileId)
+      .maybeSingle();
       
-    if (error) throw error;
+    if (checkError) {
+      console.error('Error checking for existing interaction:', checkError);
+    }
+    
+    if (existingInteraction) {
+      console.log('Existing interaction found:', existingInteraction);
+      // If interaction already exists, update it
+      const { error: updateError } = await supabase
+        .from('profile_interactions')
+        .update({ interaction_type: interactionType })
+        .eq('id', existingInteraction.id);
+        
+      if (updateError) {
+        console.error('Error updating interaction:', updateError);
+        throw updateError;
+      }
+    } else {
+      // Create new interaction
+      const { error: insertError } = await supabase
+        .from('profile_interactions')
+        .insert({
+          user_id: userId,
+          target_profile_id: targetProfileId,
+          interaction_type: interactionType
+        });
+        
+      if (insertError) {
+        console.error('Error creating interaction:', insertError);
+        throw insertError;
+      }
+    }
     
     // If it's a like or superlike, check if there's a match
     if (interactionType === 'like' || interactionType === 'superlike') {
+      console.log('Checking for match after like/superlike');
       const isMatched = await checkIfMatched(userId, targetProfileId);
       
       if (isMatched) {
+        console.log('Match found! Creating match in database');
         // Create a match in the database
         await createMatch(userId, targetProfileId);
         return { success: true, matched: true };
@@ -53,13 +87,18 @@ export const getUserInteractions = async (userId: string) => {
   if (!userId) return [];
   
   try {
+    console.log('Getting interactions for user:', userId);
     const { data, error } = await supabase
       .from('profile_interactions')
       .select('*')
       .eq('user_id', userId);
       
-    if (error) throw error;
+    if (error) {
+      console.error('Error getting user interactions:', error);
+      throw error;
+    }
     
+    console.log('Interactions fetched:', data?.length || 0, 'interactions found');
     return data || [];
   } catch (error) {
     console.error('Error getting user interactions:', error);
@@ -74,6 +113,8 @@ export const getProfilesWhoLikedMe = async (userId: string) => {
   if (!userId) return [];
   
   try {
+    console.log('Getting profiles who liked user:', userId);
+    
     // First, get the user IDs who liked this user
     const { data: interactionsData, error: interactionsError } = await supabase
       .from('profile_interactions')
@@ -81,11 +122,17 @@ export const getProfilesWhoLikedMe = async (userId: string) => {
       .eq('target_profile_id', userId)
       .in('interaction_type', ['like', 'superlike']);
       
-    if (interactionsError) throw interactionsError;
+    if (interactionsError) {
+      console.error('Error getting interactions:', interactionsError);
+      throw interactionsError;
+    }
     
     if (!interactionsData || interactionsData.length === 0) {
+      console.log('No likes found for this user');
       return [];
     }
+    
+    console.log('Found', interactionsData.length, 'users who liked this user');
     
     // Get the user IDs
     const userIds = interactionsData.map(interaction => interaction.user_id);
@@ -96,9 +143,14 @@ export const getProfilesWhoLikedMe = async (userId: string) => {
       .select('id, name, age, location, avatar')
       .in('id', userIds);
       
-    if (profilesError) throw profilesError;
+    if (profilesError) {
+      console.error('Error getting profiles:', profilesError);
+      throw profilesError;
+    }
     
     if (!profilesData) return [];
+    
+    console.log('Profiles fetched:', profilesData.length);
     
     // Combine the data
     return profilesData.map(profile => {

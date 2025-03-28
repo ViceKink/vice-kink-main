@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { X, Heart, Star, Filter, Sliders } from 'lucide-react';
@@ -41,6 +42,7 @@ const Discover = () => {
     queryKey: ['userInteractions'],
     queryFn: async () => {
       if (!user?.id) return [];
+      console.log('Fetching user interactions for:', user.id);
       return getUserInteractions(user.id);
     },
     enabled: !!user?.id
@@ -52,6 +54,9 @@ const Discover = () => {
     queryKey: ['discoverProfiles', interactedProfileIds, activeFilters],
     queryFn: async () => {
       if (!user?.id) return [];
+      console.log('Fetching discover profiles for user:', user.id);
+      console.log('Already interacted with:', interactedProfileIds.length, 'profiles');
+      console.log('Filters:', activeFilters);
       return fetchProfilesToDiscover(user.id, interactedProfileIds, activeFilters);
     },
     enabled: !!user?.id
@@ -66,7 +71,9 @@ const Discover = () => {
       type: 'like' | 'dislike' | 'superlike' 
     }) => {
       if (!user?.id) throw new Error('User not authenticated');
+      console.log('Creating interaction:', user.id, '->', profileId, ':', type);
       const result = await createInteraction(user.id, profileId, type);
+      console.log('Interaction result:', result);
       if (!result.success) throw new Error(`Failed to ${type} profile`);
       return { profileId, type, matched: result.matched };
     },
@@ -75,6 +82,7 @@ const Discover = () => {
       queryClient.invalidateQueries({ queryKey: ['discoverProfiles'] });
       
       if (data.matched) {
+        console.log('Match found!', data);
         const matchedProfileData = profiles.find((p: Profile) => p.id === data.profileId);
         if (matchedProfileData) {
           setMatchedProfile({
@@ -84,22 +92,30 @@ const Discover = () => {
           });
           setShowMatchAnimation(true);
           
+          // Update matches and likes data
           queryClient.invalidateQueries({ queryKey: ['userMatches'] });
           queryClient.invalidateQueries({ queryKey: ['likedByProfiles'] });
         }
       }
+    },
+    onError: (error) => {
+      console.error('Error in interaction:', error);
+      toast.error('Failed to interact with profile');
     }
   });
   
   const handleLike = (profileId: string) => {
+    console.log('Like button clicked for', profileId);
     interactionMutation.mutate({ profileId, type: 'like' });
   };
   
   const handleDislike = (profileId: string) => {
+    console.log('Dislike button clicked for', profileId);
     interactionMutation.mutate({ profileId, type: 'dislike' });
   };
   
   const handleSuperLike = (profileId: string) => {
+    console.log('Super like button clicked for', profileId);
     interactionMutation.mutate({ profileId, type: 'superlike' });
     toast.success('Super like sent!');
   };

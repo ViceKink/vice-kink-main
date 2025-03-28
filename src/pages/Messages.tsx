@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
@@ -14,7 +15,8 @@ import {
   User2,
   Heart,
   MessageSquare,
-  Star
+  Star,
+  AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -37,23 +39,37 @@ const Messages = () => {
   const [selectedMatch, setSelectedMatch] = useState<MatchWithProfile | null>(null);
   const [messageText, setMessageText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isDebugMode, setIsDebugMode] = useState(false);
+
+  // Debug information click handler
+  const toggleDebugMode = () => {
+    setIsDebugMode(!isDebugMode);
+  };
 
   const { data: matches = [], isLoading: matchesLoading } = useQuery({
     queryKey: ['userMatches'],
     queryFn: async () => {
       if (!user?.id) return [];
-      return getUserMatches(user.id);
+      console.log('Fetching matches for user:', user.id);
+      const result = await getUserMatches(user.id);
+      console.log('Matches result:', result);
+      return result;
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    refetchInterval: 30000 // Refetch every 30 seconds
   });
 
   const { data: likedByProfiles = [], isLoading: likedByLoading } = useQuery({
     queryKey: ['likedByProfiles'],
     queryFn: async () => {
       if (!user?.id) return [];
-      return getProfilesWhoLikedMe(user.id);
+      console.log('Fetching profiles who liked user:', user.id);
+      const result = await getProfilesWhoLikedMe(user.id);
+      console.log('Likes result:', result);
+      return result;
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    refetchInterval: 30000 // Refetch every 30 seconds
   });
 
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
@@ -61,6 +77,7 @@ const Messages = () => {
     queryFn: async () => {
       if (!user?.id || !selectedMatch?.other_user_id) return [];
       
+      console.log('Fetching conversation between', user.id, 'and', selectedMatch.other_user_id);
       const { data, error } = await supabase.rpc('get_conversation', {
         user1: user.id,
         user2: selectedMatch.other_user_id
@@ -71,15 +88,18 @@ const Messages = () => {
         return [];
       }
       
+      console.log('Messages fetched:', data?.length || 0);
       return data || [];
     },
-    enabled: !!user?.id && !!selectedMatch?.other_user_id
+    enabled: !!user?.id && !!selectedMatch?.other_user_id,
+    refetchInterval: selectedMatch ? 5000 : false // Only poll when a conversation is selected
   });
 
   useEffect(() => {
     const markMessagesAsRead = async () => {
       if (!user?.id || !selectedMatch?.other_user_id) return;
       
+      console.log('Marking messages as read from', selectedMatch.other_user_id, 'to', user.id);
       const { error } = await supabase.rpc('mark_messages_as_read', {
         user_id: user.id,
         other_user_id: selectedMatch.other_user_id
@@ -88,6 +108,7 @@ const Messages = () => {
       if (error) {
         console.error('Error marking messages as read:', error);
       } else {
+        console.log('Messages marked as read successfully');
         queryClient.invalidateQueries({ queryKey: ['userMatches'] });
       }
     };
@@ -107,14 +128,19 @@ const Messages = () => {
     mutationFn: async (message: { content: string, receiver_id: string }) => {
       if (!user?.id) throw new Error('User not authenticated');
       
+      console.log('Sending message from', user.id, 'to', message.receiver_id, ':', message.content);
       const { data, error } = await supabase.rpc('send_message', {
         sender: user.id,
         receiver: message.receiver_id,
         message_content: message.content
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error in send_message RPC call:', error);
+        throw error;
+      }
       
+      console.log('Message sent successfully, ID:', data);
       return { success: true };
     },
     onSuccess: () => {
@@ -137,7 +163,10 @@ const Messages = () => {
       interactionType: 'like' | 'superlike' 
     }) => {
       if (!user?.id) throw new Error('User not authenticated');
-      return await createInteraction(user.id, profileId, interactionType);
+      console.log('Liking profile', profileId, 'as', interactionType);
+      const result = await createInteraction(user.id, profileId, interactionType);
+      console.log('Like result:', result);
+      return result;
     },
     onSuccess: (result) => {
       if (result.matched) {
@@ -147,6 +176,10 @@ const Messages = () => {
       }
       queryClient.invalidateQueries({ queryKey: ['likedByProfiles'] });
       queryClient.invalidateQueries({ queryKey: ['userMatches'] });
+    },
+    onError: (error) => {
+      console.error('Error liking profile:', error);
+      toast.error('Failed to like profile');
     }
   });
 
@@ -191,7 +224,26 @@ const Messages = () => {
   return (
     <div className="min-h-screen pt-24 px-4 pb-4 md:px-6">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Messages</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Messages</h1>
+          
+          {isDebugMode && (
+            <div className="text-xs p-2 bg-gray-100 rounded">
+              <p>User ID: {user?.id}</p>
+              <p>Matches: {matches.length}</p>
+              <p>Likes: {likedByProfiles.length}</p>
+            </div>
+          )}
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={toggleDebugMode} 
+            className="text-gray-400"
+          >
+            {isDebugMode ? "Hide Debug" : <AlertCircle size={16} />}
+          </Button>
+        </div>
         
         <div className="mb-4">
           <div className="relative">
@@ -306,8 +358,8 @@ const Messages = () => {
                                 <h3 className="text-sm font-medium truncate">
                                   {profile.name}
                                 </h3>
-                                <Badge variant={profile.interaction_type === 'superlike' ? 'destructive' : 'outline'}>
-                                  {profile.interaction_type === 'superlike' ? 'Super Like' : 'Like'}
+                                <Badge variant={profile.interactionType === 'superlike' ? 'destructive' : 'outline'}>
+                                  {profile.interactionType === 'superlike' ? 'Super Like' : 'Like'}
                                 </Badge>
                               </div>
                               <p className="text-sm text-gray-500 mb-2">
