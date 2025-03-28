@@ -49,8 +49,8 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
           user_id_1,
           user_id_2,
           matched_at,
-          profiles!user_id_1(id, name, avatar),
-          profiles!user_id_2(id, name, avatar)
+          profiles:user_id_1 (id, name, avatar),
+          profiles:user_id_2 (id, name, avatar)
         `)
         .eq('id', matchId)
         .single();
@@ -61,13 +61,21 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
       }
       
       // Determine which user is the other user
-      const otherUser = data.user_id_1 === user.id 
-        ? data.profiles['user_id_2'] 
-        : data.profiles['user_id_1'];
+      const otherUserId = data.user_id_1 === user.id ? data.user_id_2 : data.user_id_1;
+      const otherUserProfile = otherUserId === data.user_id_1 
+        ? data.profiles.user_id_1 
+        : data.profiles.user_id_2;
         
       return {
-        ...data,
-        other_user: otherUser
+        id: data.id,
+        user_id_1: data.user_id_1,
+        user_id_2: data.user_id_2,
+        matched_at: data.matched_at,
+        other_user: {
+          id: otherUserId,
+          name: otherUserProfile.name,
+          avatar: otherUserProfile.avatar
+        }
       };
     },
     enabled: !!matchId && !!user?.id
@@ -199,16 +207,16 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
       <CardHeader className="p-4 border-b">
         <div className="flex items-center">
           <Avatar className="h-10 w-10 mr-3">
-            <AvatarImage src={match.other_user.avatar} />
-            <AvatarFallback>{match.other_user.name?.charAt(0) || '?'}</AvatarFallback>
+            <AvatarImage src={match?.other_user?.avatar} />
+            <AvatarFallback>{match?.other_user?.name?.charAt(0) || '?'}</AvatarFallback>
           </Avatar>
           <div>
             <h3 className="text-sm font-medium">
-              {match.other_user.name}
+              {match?.other_user?.name}
             </h3>
             <span 
               className="text-xs text-primary cursor-pointer"
-              onClick={() => navigate(`/profile/${match.other_user.id}`)}
+              onClick={() => navigate(`/profile/${match?.other_user?.id}`)}
             >
               View profile
             </span>
@@ -229,7 +237,7 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
           <div className="flex flex-col items-center justify-center h-full text-center p-6">
             <h3 className="text-lg font-medium">No messages yet</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Start the conversation with {match.other_user.name}
+              Start the conversation with {match?.other_user?.name}
             </p>
           </div>
         ) : (
