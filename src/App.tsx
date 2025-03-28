@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
+import Community from "./pages/Community";
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient({
@@ -66,6 +67,7 @@ const App = () => {
                     <Settings />
                   </ProtectedRoute>
                 } />
+                <Route path="/community/:id" element={<Community />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

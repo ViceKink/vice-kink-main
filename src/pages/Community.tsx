@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { PostCard } from '@/components/post/PostCard';
 import { Button } from '@/components/ui/button';
@@ -9,14 +10,34 @@ import { PlusCircle, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import CreatePostModal from '@/components/post/CreatePostModal';
 
-const Home = () => {
+const Community = () => {
+  const { id } = useParams<{ id: string }>();
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
-  const { data: posts = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['allPosts', searchQuery],
+  const { data: community } = useQuery({
+    queryKey: ['community', id],
     queryFn: async () => {
-      // First fetch the posts
+      const { data, error } = await supabase
+        .from('communities')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching community:', error);
+        throw error;
+      }
+      
+      return data;
+    },
+    enabled: !!id
+  });
+  
+  const { data: posts = [], isLoading, refetch } = useQuery({
+    queryKey: ['communityPosts', id, searchQuery],
+    queryFn: async () => {
+      // First fetch the posts for this community
       let postsQuery = supabase
         .from('posts')
         .select(`
@@ -30,6 +51,7 @@ const Home = () => {
           media_url,
           community_id
         `)
+        .eq('community_id', id)
         .order('created_at', { ascending: false });
       
       // Apply search filter if it exists
@@ -42,11 +64,6 @@ const Home = () => {
       if (postsError) {
         console.error('Error fetching posts:', postsError);
         throw postsError;
-      }
-      
-      // If no posts found with search, return empty array
-      if (postsData.length === 0) {
-        return [];
       }
       
       // Collect unique user IDs from posts
@@ -69,32 +86,9 @@ const Home = () => {
         return acc;
       }, {});
       
-      // Get all community IDs
-      const communityIds = postsData
-        .filter(post => post.community_id)
-        .map(post => post.community_id);
-      
-      // Fetch community data if there are any community IDs
-      let communitiesMap = {};
-      
-      if (communityIds.length > 0) {
-        const { data: communitiesData, error: communitiesError } = await supabase
-          .from('communities')
-          .select('id, name')
-          .in('id', communityIds);
-        
-        if (!communitiesError && communitiesData) {
-          communitiesMap = communitiesData.reduce((acc, community) => {
-            acc[community.id] = community;
-            return acc;
-          }, {});
-        }
-      }
-      
       // Merge the post data with profile information
       const postsWithProfiles = postsData.map(post => {
         const profile = profilesMap[post.user_id] || { name: 'Anonymous' };
-        const community = post.community_id ? communitiesMap[post.community_id] : null;
         
         return {
           id: post.id,
@@ -106,7 +100,7 @@ const Home = () => {
           likes_count: post.likes_count || 0,
           comments_count: post.comments_count || 0,
           community_id: post.community_id,
-          community_name: community ? community.name : undefined,
+          community_name: community?.name,
           user: {
             name: profile.name || 'Anonymous',
             avatar: profile.avatar
@@ -115,7 +109,8 @@ const Home = () => {
       });
       
       return postsWithProfiles;
-    }
+    },
+    enabled: !!id
   });
   
   const handleCreatePost = () => {
@@ -140,14 +135,11 @@ const Home = () => {
     );
   }
   
-  const showSearchResultMessage = searchQuery && posts.length === 0;
-  const showEmptyStateMessage = !searchQuery && posts.length === 0;
-  
   return (
     <div className="min-h-screen py-24 px-4 md:px-6">
       <div className="max-w-xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Home</h1>
+          <h1 className="text-2xl font-bold">{community?.name || 'Community'}</h1>
           <Button 
             onClick={handleCreatePost}
             className="bg-vice-purple hover:bg-vice-dark-purple"
@@ -161,7 +153,7 @@ const Home = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search posts, communities, or users..."
+              placeholder="Search posts..."
               className="pl-10 pr-4"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -169,24 +161,11 @@ const Home = () => {
           </div>
         </div>
         
-        {showSearchResultMessage ? (
-          <div className="p-8 bg-white dark:bg-card rounded-2xl shadow-md text-center">
-            <h3 className="text-xl font-bold mb-4">No Results Found</h3>
-            <p className="text-foreground/70 mb-6">
-              We couldn't find any posts matching "{searchQuery}"
-            </p>
-            <Button 
-              variant="outline"
-              onClick={() => setSearchQuery('')}
-            >
-              Clear Search
-            </Button>
-          </div>
-        ) : showEmptyStateMessage ? (
+        {posts.length === 0 ? (
           <div className="p-8 bg-white dark:bg-card rounded-2xl shadow-md text-center">
             <h3 className="text-xl font-bold mb-4">No Posts Yet</h3>
             <p className="text-foreground/70 mb-6">
-              Be the first to create a post and share your thoughts!
+              Be the first to create a post in this community!
             </p>
             <Button 
               className="bg-vice-purple hover:bg-vice-dark-purple"
@@ -208,10 +187,11 @@ const Home = () => {
         <CreatePostModal 
           onClose={() => setShowCreatePostModal(false)}
           onPost={handlePostCreated}
+          initialCommunityId={id}
         />
       )}
     </div>
   );
 };
 
-export default Home;
+export default Community;

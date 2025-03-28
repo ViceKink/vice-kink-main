@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/context/auth';
 import CreatePostModal from '@/components/post/CreatePostModal';
+import { toast } from 'sonner';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -26,10 +27,13 @@ const Navbar = () => {
     };
   }, [scrolled]);
 
-  const handleCreatePost = (content: string, type: 'text' | 'comic', comicData?: any) => {
-    console.log('Creating post:', { content, type, comicData });
-    // In a real implementation, this would call an API to create the post
+  const handleCreatePost = () => {
+    setCreatePostOpen(true);
+  };
+
+  const handlePostCreated = () => {
     setCreatePostOpen(false);
+    toast.success('Post created successfully!');
   };
 
   return (
@@ -95,14 +99,14 @@ const Navbar = () => {
               {isAuthenticated && (
                 <Button 
                   variant="ghost" 
-                  onClick={() => setCreatePostOpen(true)}
+                  onClick={handleCreatePost}
                   className="h-10 w-10 md:h-10 md:w-auto md:px-4 rounded-full hover:bg-vice-purple/10 text-foreground/80 hover:text-vice-purple"
                 >
                   <PlusCircle className="h-6 w-6 md:mr-2" />
                   <span className="hidden md:inline">Create Post</span>
                 </Button>
               )}
-              {isAuthenticated && (
+              {isAuthenticated ? (
                 <NavLink
                   to="/profile"
                   className={({ isActive }) =>
@@ -121,6 +125,12 @@ const Navbar = () => {
                     )}
                   </Avatar>
                   <span className="sr-only">Profile</span>
+                </NavLink>
+              ) : (
+                <NavLink to="/auth">
+                  <Button className="bg-vice-purple hover:bg-vice-dark-purple">
+                    Sign In
+                  </Button>
                 </NavLink>
               )}
             </div>
@@ -186,7 +196,7 @@ const Navbar = () => {
       {createPostOpen && (
         <CreatePostModal 
           onClose={() => setCreatePostOpen(false)}
-          onPost={handleCreatePost}
+          onPost={handlePostCreated}
         />
       )}
     </>
