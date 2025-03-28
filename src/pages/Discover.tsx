@@ -1,32 +1,18 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { UserProfile } from '@/types/auth';
-import { X, Heart, Star, ChevronLeft, Filter, Sliders, Settings, Check, MapPin } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { X, Heart, Star, Filter, Sliders } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Card } from '@/components/ui/card';
 import ProfileCard from '@/components/discover/ProfileCard';
 import { useAuth } from '@/context/auth';
 import { cn } from '@/lib/utils';
-import { 
-  getUserInteractions, 
-  createInteraction, 
-  fetchProfilesToDiscover 
-} from '@/utils/matchUtils';
 import MatchAnimation from '@/components/match/MatchAnimation';
 import DiscoverFilters from '@/components/discover/DiscoverFilters';
-import { IconButton } from '@/components/ui/icon-button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+
+import { fetchProfilesToDiscover } from '@/utils/match/profileService';
+import { getUserInteractions, createInteraction } from '@/utils/match/interactionService';
 
 interface Profile {
   id: string;
@@ -49,6 +35,7 @@ const Discover = () => {
   const [matchedProfile, setMatchedProfile] = useState<{id: string; name: string; avatar?: string} | null>(null);
   const [showMatchAnimation, setShowMatchAnimation] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<any>(user?.preferences || null);
   
   const { data: userInteractions = [], isLoading: interactionsLoading } = useQuery({
     queryKey: ['userInteractions'],
@@ -62,10 +49,10 @@ const Discover = () => {
   const interactedProfileIds = userInteractions.map((i: any) => i.target_profile_id);
   
   const { data: profiles = [], isLoading } = useQuery({
-    queryKey: ['discoverProfiles', interactedProfileIds],
+    queryKey: ['discoverProfiles', interactedProfileIds, activeFilters],
     queryFn: async () => {
       if (!user?.id) return [];
-      return fetchProfilesToDiscover(user.id, interactedProfileIds);
+      return fetchProfilesToDiscover(user.id, interactedProfileIds, activeFilters);
     },
     enabled: !!user?.id
   });
@@ -124,6 +111,10 @@ const Discover = () => {
   const handleCloseMatchAnimation = () => {
     setShowMatchAnimation(false);
     setMatchedProfile(null);
+  };
+  
+  const handleApplyFilters = (preferences: any) => {
+    setActiveFilters(preferences);
   };
   
   if (isLoading || interactionsLoading) {
@@ -255,6 +246,7 @@ const Discover = () => {
       <DiscoverFilters 
         isOpen={showFilters}
         onClose={() => setShowFilters(false)}
+        onApplyFilters={handleApplyFilters}
       />
     </div>
   );

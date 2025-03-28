@@ -434,13 +434,24 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
     
     updateField('photos', updatedPhotos);
     
+    updateField('avatar', photoUrl);
+    
     if (userData.id) {
       try {
+        const { error: avatarError } = await supabase
+          .from('profiles')
+          .update({ avatar: photoUrl })
+          .eq('id', userData.id);
+        
+        if (avatarError) {
+          console.error('Error updating avatar:', avatarError);
+        }
+        
         const { data: photoRecords, error: fetchError } = await supabase
           .from('profile_photos')
           .select('id, url')
           .eq('profile_id', userData.id);
-          
+        
         if (fetchError) {
           console.error('Error fetching photo records:', fetchError);
           return;
@@ -453,7 +464,10 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
           if (record) {
             const { error: updateError } = await supabase
               .from('profile_photos')
-              .update({ order_index: i })
+              .update({ 
+                order_index: i,
+                is_primary: i === 0
+              })
               .eq('id', record.id);
               
             if (updateError) {
@@ -561,4 +575,3 @@ const EditProfilePhotos = ({ userData, updateField }: EditProfilePhotosProps) =>
 };
 
 export default EditProfilePhotos;
-

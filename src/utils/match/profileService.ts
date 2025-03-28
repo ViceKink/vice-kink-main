@@ -5,7 +5,7 @@ import { DiscoverProfile } from "./types";
 /**
  * Fetch profiles for discover page
  */
-export const fetchProfilesToDiscover = async (userId: string, excludeIds: string[] = []) => {
+export const fetchProfilesToDiscover = async (userId: string, excludeIds: string[] = [], preferences: any = null) => {
   if (!userId) return [];
   
   try {
@@ -22,8 +22,27 @@ export const fetchProfilesToDiscover = async (userId: string, excludeIds: string
         religion,
         height,
         verified,
-        avatar
+        avatar,
+        bio,
+        passions,
+        vices,
+        kinks,
+        about
       `);
+      
+    // Apply filters from preferences if any
+    if (preferences) {
+      if (preferences.preferred_gender && preferences.preferred_gender.length > 0) {
+        query = query.in('gender', preferences.preferred_gender);
+      }
+      
+      if (preferences.age_range && preferences.age_range.min && preferences.age_range.max) {
+        query = query.gte('age', preferences.age_range.min)
+                     .lte('age', preferences.age_range.max);
+      }
+      
+      // Apply other filters as needed
+    }
       
     if (excludedIds.length > 0) {
       query = query.not('id', 'in', `(${excludedIds.join(',')})`);
@@ -67,8 +86,8 @@ export const fetchProfilesToDiscover = async (userId: string, excludeIds: string
  * Convert profile data for discover page
  */
 export const convertProfileForDiscover = (profileData: any): DiscoverProfile => {
+  // Return a default profile if data is null
   if (!profileData) {
-    // Return a default profile if data is null
     return {
       id: '',
       name: 'Unknown',
@@ -105,4 +124,28 @@ export const convertProfileForDiscover = (profileData: any): DiscoverProfile => 
     kinks: profileData?.kinks || [],
     about: profileData?.about || {}
   };
+};
+
+/**
+ * Update the profile avatar when setting a main photo
+ */
+export const updateProfileAvatar = async (userId: string, avatarUrl: string) => {
+  try {
+    if (!userId || !avatarUrl) return false;
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ avatar: avatarUrl })
+      .eq('id', userId);
+      
+    if (error) {
+      console.error('Error updating profile avatar:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating profile avatar:', error);
+    return false;
+  }
 };
