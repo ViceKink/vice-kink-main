@@ -62,8 +62,8 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
       
       // Determine which user is the other user
       const otherUser = data.user_id_1 === user.id 
-        ? data.profiles!user_id_2 
-        : data.profiles!user_id_1;
+        ? data.profiles['user_id_2'] 
+        : data.profiles['user_id_1'];
         
       return {
         ...data,
