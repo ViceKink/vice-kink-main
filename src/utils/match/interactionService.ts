@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { InteractionType, InteractionResult, DiscoverProfile } from "./types";
+import { InteractionType, InteractionResult } from "./types";
 import { toast } from "sonner";
 import { createMatch, checkIfMatched } from "./matchingService";
 
@@ -74,36 +74,44 @@ export const getProfilesWhoLikedMe = async (userId: string) => {
   if (!userId) return [];
   
   try {
-    // Using a direct query instead of RPC as the function may not exist
-    const { data, error } = await supabase
+    // First, get the user IDs who liked this user
+    const { data: interactionsData, error: interactionsError } = await supabase
       .from('profile_interactions')
-      .select(`
-        target_profile_id,
-        interaction_type,
-        profiles!profile_interactions_user_id_fkey (
-          id,
-          name,
-          age,
-          location,
-          avatar
-        )
-      `)
+      .select('user_id, interaction_type')
       .eq('target_profile_id', userId)
       .in('interaction_type', ['like', 'superlike']);
       
-    if (error) throw error;
+    if (interactionsError) throw interactionsError;
     
-    // Transform the data to match the expected format
-    const formattedData = data.map(item => ({
-      id: item.profiles?.id || '',
-      name: item.profiles?.name || '',
-      age: item.profiles?.age || 0,
-      location: item.profiles?.location || '',
-      avatar: item.profiles?.avatar || '',
-      interaction_type: item.interaction_type
-    }));
+    if (!interactionsData || interactionsData.length === 0) {
+      return [];
+    }
     
-    return formattedData;
+    // Get the user IDs
+    const userIds = interactionsData.map(interaction => interaction.user_id);
+    
+    // Then fetch the profile data for those users
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, name, age, location, avatar')
+      .in('id', userIds);
+      
+    if (profilesError) throw profilesError;
+    
+    if (!profilesData) return [];
+    
+    // Combine the data
+    return profilesData.map(profile => {
+      const interaction = interactionsData.find(i => i.user_id === profile.id);
+      return {
+        id: profile.id,
+        name: profile.name,
+        age: profile.age || 0,
+        location: profile.location || '',
+        avatar: profile.avatar || '',
+        interactionType: interaction?.interaction_type
+      };
+    });
   } catch (error) {
     console.error('Error getting profiles who liked me:', error);
     return [];

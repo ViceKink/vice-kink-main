@@ -24,8 +24,7 @@ export const fetchProfilesToDiscover = async (userId: string, excludeIds: string
         verified,
         avatar,
         bio,
-        quote,
-        about
+        quote
       `);
       
     // Apply filters from preferences if any
@@ -92,7 +91,8 @@ export const fetchProfilesToDiscover = async (userId: string, excludeIds: string
           photos: photos?.map(p => p.url) || [],
           passions: passionsData?.map(p => p.passion) || [],
           vices: vicesData?.map(v => v.vices?.name).filter(Boolean) || [],
-          kinks: kinksData?.map(k => k.kinks?.name).filter(Boolean) || []
+          kinks: kinksData?.map(k => k.kinks?.name).filter(Boolean) || [],
+          about: profile.about || {}
         };
       })
     );
