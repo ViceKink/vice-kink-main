@@ -1,6 +1,7 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Settings, RefreshCw, Pencil } from 'lucide-react';
+import { ChevronLeft, Settings, RefreshCw, Pencil, Heart, X, Star } from 'lucide-react';
 import BentoProfile from '@/components/ui/BentoProfile';
 import { useAuth } from '@/context/auth';
 import { Button } from '@/components/ui/button';
@@ -8,9 +9,12 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { UserProfile } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { PostCard } from '@/components/post/PostCard';
 import CreatePostModal from '@/components/post/CreatePostModal';
+import { createInteraction } from '@/utils/matchUtils';
+import MatchAnimation from '@/components/match/MatchAnimation';
+import { cn } from '@/lib/utils';
 
 const Profile = () => {
   const { id } = useParams();
@@ -24,10 +28,78 @@ const Profile = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [fetchAttempts, setFetchAttempts] = useState(0);
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+  const [showMatchAnimation, setShowMatchAnimation] = useState(false);
+  const [matchedProfile, setMatchedProfile] = useState<{id: string; name: string; avatar?: string} | null>(null);
   const queryClient = useQueryClient();
   
   const isCurrentUser = !id || id === user?.id;
   const profileId = id || user?.id;
+
+  // Handle profile interactions (like, dislike, superlike)
+  const interactionMutation = useMutation({
+    mutationFn: async ({ 
+      profileId, 
+      type 
+    }: { 
+      profileId: string, 
+      type: 'like' | 'dislike' | 'superlike' 
+    }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      const result = await createInteraction(user.id, profileId, type);
+      if (!result.success) throw new Error(`Failed to ${type} profile`);
+      return { profileId, type, matched: result.matched };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['userInteractions'] });
+      queryClient.invalidateQueries({ queryKey: ['discoverProfiles'] });
+      
+      if (data.type === 'like') {
+        toast.success('Profile liked!');
+      } else if (data.type === 'superlike') {
+        toast.success('Profile super liked!');
+      } else {
+        toast.success('Profile passed');
+      }
+      
+      // If a match occurred, show the match animation
+      if (data.matched && profileUser) {
+        setMatchedProfile({
+          id: profileUser.id,
+          name: profileUser.name,
+          avatar: profileUser.avatar
+        });
+        setShowMatchAnimation(true);
+        
+        // Also invalidate matches when a new match is created
+        queryClient.invalidateQueries({ queryKey: ['userMatches'] });
+        queryClient.invalidateQueries({ queryKey: ['likedByProfiles'] });
+      }
+    }
+  });
+  
+  const handleLike = () => {
+    if (profileId && !isCurrentUser) {
+      interactionMutation.mutate({ profileId, type: 'like' });
+    }
+  };
+  
+  const handleDislike = () => {
+    if (profileId && !isCurrentUser) {
+      interactionMutation.mutate({ profileId, type: 'dislike' });
+    }
+  };
+  
+  const handleSuperLike = () => {
+    if (profileId && !isCurrentUser) {
+      interactionMutation.mutate({ profileId, type: 'superlike' });
+    }
+  };
+  
+  // Close match animation
+  const handleCloseMatchAnimation = () => {
+    setShowMatchAnimation(false);
+    setMatchedProfile(null);
+  };
   
   const { data: userPosts = [], isLoading: postsLoading } = useQuery({
     queryKey: ['userPosts', profileId],
@@ -419,6 +491,44 @@ const Profile = () => {
         ) : null}
       </div>
       
+      {/* Floating action buttons for non-current users */}
+      {!isCurrentUser && (
+        <div className="fixed bottom-24 right-4 flex flex-col gap-3 z-10">
+          <button 
+            onClick={handleDislike}
+            className={cn(
+              "w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center",
+              "transform transition-transform hover:scale-105 border-2 border-red-500"
+            )}
+            aria-label="Dislike profile"
+          >
+            <X className="w-6 h-6 text-red-500" />
+          </button>
+          
+          <button 
+            onClick={handleSuperLike}
+            className={cn(
+              "w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center",
+              "transform transition-transform hover:scale-105 border-2 border-orange-500"
+            )}
+            aria-label="Super like profile"
+          >
+            <Star className="w-6 h-6 text-orange-500" />
+          </button>
+          
+          <button 
+            onClick={handleLike}
+            className={cn(
+              "w-14 h-14 rounded-full bg-white shadow-lg flex items-center justify-center",
+              "transform transition-transform hover:scale-105 border-2 border-purple-500"
+            )}
+            aria-label="Like profile"
+          >
+            <Heart className="w-6 h-6 text-purple-500" />
+          </button>
+        </div>
+      )}
+      
       {showCreatePostModal && (
         <CreatePostModal 
           onClose={() => setShowCreatePostModal(false)}
@@ -428,6 +538,15 @@ const Profile = () => {
               queryClient.invalidateQueries({ queryKey: ['userPosts', profileUser.id] });
             }
           }}
+        />
+      )}
+
+      {/* Match Animation Dialog */}
+      {matchedProfile && (
+        <MatchAnimation 
+          isOpen={showMatchAnimation}
+          onClose={handleCloseMatchAnimation}
+          matchedProfile={matchedProfile}
         />
       )}
     </div>

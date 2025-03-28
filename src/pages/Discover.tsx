@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createInteraction, getUserInteractions } from '@/utils/matchUtils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X, Heart, Star, MapPin, Check } from 'lucide-react';
+import { X, Heart, Star, MapPin, Check, Filter, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import MatchAnimation from '@/components/match/MatchAnimation';
 
@@ -22,7 +22,6 @@ interface Profile {
   occupation?: string;
   religion?: string;
   height?: string;
-  rating?: number;
   verified: boolean;
 }
 
@@ -75,7 +74,7 @@ const Discover = () => {
         query = query.neq('id', user.id); // At least exclude the current user
       }
       
-      query = query.limit(10);
+      query = query.limit(20);
       
       const { data, error } = await query;
         
@@ -95,8 +94,7 @@ const Discover = () => {
           return {
             ...profile,
             distance: `${Math.floor(Math.random() * 10) + 1} kms away`,
-            photos: photos?.map(p => p.url) || [],
-            rating: Math.floor(Math.random() * 2) + 4
+            photos: photos?.map(p => p.url) || []
           };
         })
       );
@@ -194,7 +192,6 @@ const Discover = () => {
       occupation: "Interior Designer",
       religion: "Christian",
       height: "5'10\"",
-      rating: 5,
       verified: true
     },
     {
@@ -209,7 +206,6 @@ const Discover = () => {
       occupation: "Entrepreneur",
       religion: "Hindu",
       height: "6'1\"",
-      rating: 4,
       verified: true
     },
     {
@@ -224,7 +220,6 @@ const Discover = () => {
       occupation: "Data Analyst",
       religion: "Hindu",
       height: "5'9\"",
-      rating: 4,
       verified: true
     },
     {
@@ -239,36 +234,42 @@ const Discover = () => {
       occupation: "Web Developer",
       religion: "Hindu",
       height: "5'8\"",
-      rating: 5,
       verified: false
     }
   ];
   
   return (
     <div className="min-h-screen py-24 px-4 md:px-6">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6 text-center">Discover</h1>
-        
-        <div className="space-y-4">
-          {displayProfiles.map((profile) => (
-            <ProfileCard 
-              key={profile.id}
-              profile={profile}
-              onLike={() => handleLike(profile.id)}
-              onDislike={() => handleDislike(profile.id)}
-              onSuperLike={() => handleSuperLike(profile.id)}
-              onViewProfile={() => handleViewProfile(profile.id)}
-            />
-          ))}
+      <div className="max-w-4xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Discover</h1>
+          
+          <Button variant="outline" size="sm" className="flex items-center gap-1">
+            <Filter className="h-4 w-4" />
+            Filters
+          </Button>
         </div>
         
-        {displayProfiles.length === 0 && (
+        {displayProfiles.length === 0 ? (
           <div className="p-8 text-center bg-card rounded-xl shadow">
             <div className="text-6xl mb-4">✨</div>
             <h3 className="text-xl font-semibold mb-2">You've seen all profiles</h3>
             <p className="text-sm text-foreground/70 mb-6">
               Come back later for more matches
             </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {displayProfiles.map((profile) => (
+              <ProfileCard 
+                key={profile.id}
+                profile={profile}
+                onLike={() => handleLike(profile.id)}
+                onDislike={() => handleDislike(profile.id)}
+                onSuperLike={() => handleSuperLike(profile.id)}
+                onViewProfile={() => handleViewProfile(profile.id)}
+              />
+            ))}
           </div>
         )}
         
@@ -301,115 +302,100 @@ interface ProfileCardProps {
 
 const ProfileCard = ({ profile, onLike, onDislike, onSuperLike, onViewProfile }: ProfileCardProps) => {
   return (
-    <Card className="overflow-hidden border-black border">
-      <div className="flex flex-col sm:flex-row">
-        <div className="relative w-full sm:w-1/3">
-          <img 
-            src={profile.photos[0] || 'https://via.placeholder.com/150'} 
-            alt={profile.name}
-            className="w-full h-48 sm:h-full object-cover"
-          />
+    <Card className="overflow-hidden border border-black/10 hover:shadow-md transition-shadow">
+      <div className="relative">
+        {/* Profile Image */}
+        <div 
+          className="w-full h-[280px] bg-black cursor-pointer"
+          onClick={onViewProfile}
+        >
+          {profile.photos && profile.photos.length > 0 ? (
+            <img 
+              src={profile.photos[0]} 
+              alt={profile.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+              <span className="text-gray-400">No photo</span>
+            </div>
+          )}
         </div>
         
-        <CardContent className="p-4 flex-1 bg-black text-white">
-          <div className="flex justify-between items-start mb-1">
-            <div className="flex items-center gap-1">
-              <h3 className="text-xl font-semibold">{profile.name}</h3>
-              {profile.verified && (
-                <Check className="h-4 w-4 text-vice-purple rounded-full bg-white p-0.5" />
-              )}
-            </div>
-            <div className="flex items-center gap-1">
-              <span>{profile.age}</span>
-              <span className="text-gray-400">•</span>
-              <span className="text-sm">{profile.distance}</span>
+        {/* Info overlay */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white">
+          <div className="flex items-baseline justify-between">
+            <h3 className="text-xl font-bold flex items-center">
+              {profile.name} {profile.verified && <Check className="h-4 w-4 ml-1 bg-white text-blue-500 rounded-full p-0.5" />}
+            </h3>
+            <div className="flex items-center space-x-1">
+              <span className="text-lg font-medium">{profile.age}</span>
+              <span className="opacity-70">•</span>
+              <span className="text-sm opacity-70">{profile.distance}</span>
             </div>
           </div>
           
-          <div className="flex items-center gap-1 mb-2">
-            <MapPin className="h-3 w-3 text-red-500" />
-            <span className="text-sm">{profile.location}</span>
+          <div className="flex items-center mt-1 text-sm">
+            <MapPin className="h-3 w-3 mr-1 text-red-400" />
+            <span>{profile.location}</span>
           </div>
           
-          <div className="mb-3">
-            <span className="text-sm">Rating </span>
-            <span className="text-yellow-400">{'★'.repeat(profile.rating || 0)}</span>
-          </div>
-          
-          <div className="flex flex-wrap gap-2 mb-3">
-            {profile.height && (
-              <span className="px-2 py-1 bg-white/10 rounded-full text-xs">
-                {profile.height}
-              </span>
-            )}
-            
+          <div className="flex flex-wrap gap-2 mt-2">
             {profile.religion && (
-              <span className="px-2 py-1 bg-white/10 rounded-full text-xs">
+              <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">
                 {profile.religion}
               </span>
             )}
-            
+            {profile.height && (
+              <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">
+                {profile.height}
+              </span>
+            )}
             {profile.occupation && (
-              <span className="px-2 py-1 bg-white/10 rounded-full text-xs">
+              <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs">
                 {profile.occupation}
               </span>
             )}
           </div>
+        </div>
+      </div>
+      
+      {/* Action buttons */}
+      <div className="flex justify-between items-center p-3 bg-white dark:bg-black border-t border-gray-200 dark:border-gray-800">
+        <Button 
+          size="sm" 
+          variant="ghost" 
+          onClick={onViewProfile}
+          className="text-foreground flex-1"
+        >
+          View Profile
+        </Button>
+        
+        <div className="flex gap-2">
+          <button 
+            onClick={onDislike}
+            className="w-10 h-10 rounded-full bg-white dark:bg-gray-900 shadow flex items-center justify-center border border-red-500 hover:bg-red-50 dark:hover:bg-gray-800 transition-colors"
+            aria-label="Dislike"
+          >
+            <X className="h-5 w-5 text-red-500" />
+          </button>
           
-          <div className="flex justify-between mt-4">
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-full bg-white/10 hover:bg-white/20 border-none text-white"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onViewProfile();
-                }}
-              >
-                View Profile
-              </Button>
-            </div>
-            
-            <div className="flex gap-3">
-              <Button
-                size="icon"
-                variant="outline"
-                className="rounded-full bg-white/5 hover:bg-white/15 border-none w-10 h-10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDislike();
-                }}
-              >
-                <X className="h-5 w-5 text-red-500" />
-              </Button>
-              
-              <Button
-                size="icon"
-                variant="outline"
-                className="rounded-full bg-white/5 hover:bg-white/15 border-none w-10 h-10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSuperLike();
-                }}
-              >
-                <Star className="h-5 w-5 text-orange-500" />
-              </Button>
-              
-              <Button
-                size="icon"
-                variant="outline"
-                className="rounded-full bg-white/5 hover:bg-white/15 border-none w-10 h-10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onLike();
-                }}
-              >
-                <Heart className="h-5 w-5 text-purple-500" />
-              </Button>
-            </div>
-          </div>
-        </CardContent>
+          <button 
+            onClick={onSuperLike}
+            className="w-10 h-10 rounded-full bg-white dark:bg-gray-900 shadow flex items-center justify-center border border-orange-500 hover:bg-orange-50 dark:hover:bg-gray-800 transition-colors"
+            aria-label="Super Like"
+          >
+            <Star className="h-5 w-5 text-orange-500" />
+          </button>
+          
+          <button 
+            onClick={onLike}
+            className="w-10 h-10 rounded-full bg-white dark:bg-gray-900 shadow flex items-center justify-center border border-purple-500 hover:bg-purple-50 dark:hover:bg-gray-800 transition-colors"
+            aria-label="Like"
+          >
+            <Heart className="h-5 w-5 text-purple-500" />
+          </button>
+        </div>
       </div>
     </Card>
   );

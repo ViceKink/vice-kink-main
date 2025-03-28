@@ -189,10 +189,25 @@ export const getProfilesWhoLikedMe = async (userId: string) => {
     // Only include profiles that don't already have a match
     const profilesWhoLikedMe = filteredLikers
       .filter(interaction => !interaction.alreadyMatched)
-      .map(interaction => ({
-        ...interaction.profiles,
-        interaction_type: interaction.interaction_type
-      }));
+      .map(interaction => {
+        // Fix: Use proper type handling to avoid spread error
+        if (interaction.profiles) {
+          return {
+            id: interaction.profiles.id,
+            name: interaction.profiles.name,
+            age: interaction.profiles.age,
+            location: interaction.profiles.location,
+            occupation: interaction.profiles.occupation,
+            religion: interaction.profiles.religion,
+            height: interaction.profiles.height,
+            verified: interaction.profiles.verified,
+            avatar: interaction.profiles.avatar,
+            interaction_type: interaction.interaction_type
+          };
+        }
+        return null;
+      })
+      .filter(profile => profile !== null); // Filter out any null values
     
     return profilesWhoLikedMe;
   } catch (error) {
