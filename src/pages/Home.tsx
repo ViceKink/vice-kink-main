@@ -4,21 +4,25 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { PostCard } from '@/components/post/PostCard';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { PlusCircle, Search } from 'lucide-react';
 import { toast } from 'sonner';
+import CreatePostModal from '@/components/post/CreatePostModal';
 
 const Home = () => {
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
-  const { data: posts = [], isLoading } = useQuery({
-    queryKey: ['allPosts'],
+  const { data: posts = [], isLoading, refetch } = useQuery({
+    queryKey: ['allPosts', searchQuery],
     queryFn: async () => {
       // First fetch the posts
-      const { data: postsData, error: postsError } = await supabase
+      let postsQuery = supabase
         .from('posts')
         .select(`
           id,
           user_id,
+          title,
           content,
           created_at,
           likes_count,
@@ -27,6 +31,13 @@ const Home = () => {
           community_id
         `)
         .order('created_at', { ascending: false });
+      
+      // Apply search filter if it exists
+      if (searchQuery) {
+        postsQuery = postsQuery.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
+      }
+      
+      const { data: postsData, error: postsError } = await postsQuery;
       
       if (postsError) {
         console.error('Error fetching posts:', postsError);
@@ -83,6 +94,7 @@ const Home = () => {
         return {
           id: post.id,
           user_id: post.user_id,
+          title: post.title,
           content: post.content,
           images: post.media_url ? [post.media_url] : undefined,
           created_at: post.created_at,
@@ -102,8 +114,12 @@ const Home = () => {
   });
   
   const handleCreatePost = () => {
-    toast.info('Post creation coming soon!');
-    // Future implementation: setShowCreatePostModal(true);
+    setShowCreatePostModal(true);
+  };
+  
+  const handlePostCreated = () => {
+    setShowCreatePostModal(false);
+    refetch();
   };
   
   if (isLoading) {
@@ -132,6 +148,18 @@ const Home = () => {
           </Button>
         </div>
         
+        <div className="mb-6 relative">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search posts, communities, or users..."
+              className="pl-10 pr-4"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+        
         {posts.length === 0 ? (
           <div className="p-8 bg-white dark:bg-card rounded-2xl shadow-md text-center">
             <h3 className="text-xl font-bold mb-4">No Posts Yet</h3>
@@ -153,6 +181,13 @@ const Home = () => {
           </div>
         )}
       </div>
+      
+      {showCreatePostModal && (
+        <CreatePostModal 
+          onClose={() => setShowCreatePostModal(false)}
+          onPost={handlePostCreated}
+        />
+      )}
     </div>
   );
 };
