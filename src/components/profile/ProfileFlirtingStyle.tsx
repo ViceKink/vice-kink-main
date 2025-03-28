@@ -19,6 +19,16 @@ interface ProfileFlirtingStyleProps {
 const ProfileFlirtingStyle = ({ flirtingStyle, currentRow }: ProfileFlirtingStyleProps) => {
   const isMobile = useIsMobile();
   
+  // Convert numeric values to descriptive text
+  const getIntensityDescription = (value: number): string => {
+    if (value >= 90) return "extremely";
+    if (value >= 75) return "very";
+    if (value >= 60) return "primarily";
+    if (value >= 40) return "moderately";
+    if (value >= 20) return "somewhat";
+    return "slightly";
+  };
+  
   // Create a human-readable description of flirting style
   const createFlirtingStyleDescription = (style: string | FlirtingStyleObject): string => {
     try {
@@ -47,14 +57,14 @@ const ProfileFlirtingStyle = ({ flirtingStyle, currentRow }: ProfileFlirtingStyl
       const entries = Object.entries(styleObj) as Array<[string, number]>;
       entries.sort((a, b) => b[1] - a[1]);
       
-      const topStyles = entries.slice(0, 2).filter(([_, value]) => value > 60);
+      const topStyles = entries.slice(0, 2).filter(([_, value]) => value > 20);
       
       if (topStyles.length === 0) {
         return "balanced across all styles";
       } else if (topStyles.length === 1) {
-        return `primarily ${topStyles[0][0]}`;
+        return `${getIntensityDescription(topStyles[0][1])} ${topStyles[0][0]}`;
       } else {
-        return `a mix of ${topStyles[0][0]} and ${topStyles[1][0]}`;
+        return `${getIntensityDescription(topStyles[0][1])} ${topStyles[0][0]} with a ${getIntensityDescription(topStyles[1][1])} ${topStyles[1][0]} touch`;
       }
     } catch (e) {
       // If any error occurs, return a default message
@@ -75,7 +85,7 @@ const ProfileFlirtingStyle = ({ flirtingStyle, currentRow }: ProfileFlirtingStyl
       className="bg-white dark:bg-card p-4"
     >
       <div className="flex items-center h-full">
-        <p className="text-sm italic">
+        <p className="text-sm break-words whitespace-normal">
           <span className="font-medium mr-2">My idea of flirting is:</span>
           {styleDescription}
         </p>

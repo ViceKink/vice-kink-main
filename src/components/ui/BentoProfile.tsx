@@ -163,9 +163,11 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
         {hasFlirtingStyle && (
           <div className="bg-white dark:bg-card p-4 rounded-2xl col-span-12 mt-[0.3125rem]">
             <div className="flex flex-col h-full justify-center">
-              <p className="text-base">
+              <p className="text-base whitespace-normal break-words">
                 <span className="font-medium">My idea of flirting is: </span>
-                {typeof profile.flirtingStyle === 'string' ? profile.flirtingStyle : 'to be playful and fun'}
+                {typeof profile.flirtingStyle === 'string' 
+                  ? profile.flirtingStyle 
+                  : 'to be playful and fun'}
               </p>
             </div>
           </div>
