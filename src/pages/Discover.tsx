@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/auth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { checkIfMatched, createMatch } from '@/utils/matchUtils';
 
 interface Profile {
   id: string;
@@ -125,6 +126,18 @@ const Discover = () => {
         });
         
       if (error) throw error;
+      
+      // Check if this is a match when the user likes another profile
+      if (type === 'like' || type === 'superlike') {
+        const isMatched = await checkIfMatched(user.id, profileId);
+        
+        if (isMatched) {
+          await createMatch(user.id, profileId);
+          
+          // Invalidate matches query to update the UI
+          queryClient.invalidateQueries({ queryKey: ['userMatches'] });
+        }
+      }
       
       return { profileId, type };
     },
