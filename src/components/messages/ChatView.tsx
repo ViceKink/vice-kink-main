@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,7 +46,6 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
       const matchData = data.find(m => m.match_id === matchId);
       
       if (matchData) {
-        // Ensure we're working with an object that has name and avatar properties
         const otherUserData = matchData.other_user as { 
           id: string; 
           name: string; 
@@ -73,7 +71,6 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
     queryFn: async () => {
       if (!matchId || !user?.id || !otherUser?.id) return [];
       
-      // Mark messages as read
       await supabase.rpc('mark_messages_as_read', {
         user_id: user.id,
         other_user_id: otherUser.id
@@ -92,7 +89,7 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
       return data as Message[];
     },
     enabled: !!matchId && !!user?.id && !!otherUser?.id,
-    refetchInterval: 3000 // Poll for new messages every 3 seconds
+    refetchInterval: 3000
   });
   
   const sendMessageMutation = useMutation({
@@ -115,7 +112,6 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
       return data;
     },
     onSuccess: () => {
-      // Clear input and refetch messages
       setInputValue('');
       queryClient.invalidateQueries({ queryKey: ['messages', matchId] });
     }
@@ -135,7 +131,6 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
     }
   };
   
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -153,7 +148,6 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
   
   return (
     <div className="h-full flex flex-col rounded-lg border bg-card">
-      {/* Chat header */}
       <div className="p-4 border-b flex items-center">
         {otherUser ? (
           <>
@@ -173,7 +167,6 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
         )}
       </div>
       
-      {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messagesLoading ? (
           <div className="flex justify-center items-center h-full">
@@ -216,7 +209,6 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
         <div ref={messagesEndRef} />
       </div>
       
-      {/* Message input */}
       <div className="p-4 border-t">
         <div className="flex items-center">
           <textarea
