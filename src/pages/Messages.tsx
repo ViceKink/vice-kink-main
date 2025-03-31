@@ -11,6 +11,7 @@ import MatchesList from '@/components/messages/MatchesList';
 import LikesList from '@/components/messages/LikesList';
 import ChatView from '@/components/messages/ChatView';
 import { Profile } from '@/models/profileTypes';
+import { toast } from 'sonner';
 
 const Messages = () => {
   const { user } = useAuth();
@@ -27,6 +28,7 @@ const Messages = () => {
           console.log(`Created ${matchesCreated} new matches that were previously missed`);
           // Refresh the matches data
           queryClient.invalidateQueries({ queryKey: ['userMatches'] });
+          toast.success(`Found ${matchesCreated} new matches!`);
         }
       });
     }
@@ -49,12 +51,20 @@ const Messages = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       console.log('Fetching profiles who liked user:', user.id);
-      const result = await getProfilesWhoLikedMe(user.id);
-      console.log('Likes result:', result?.length || 0, 'profiles found');
-      return result as Profile[];
+      
+      try {
+        const result = await getProfilesWhoLikedMe(user.id);
+        console.log('Likes result:', result?.length || 0, 'profiles found');
+        return result;
+      } catch (error) {
+        console.error('Error in likes query:', error);
+        return [];
+      }
     },
     enabled: !!user?.id,
-    refetchInterval: 5000 // Refetch every 5 seconds to check for new likes
+    refetchInterval: 5000, // Refetch every 5 seconds to check for new likes
+    retry: 3, // Retry up to 3 times if there are errors
+    retryDelay: 1000 // Wait 1 second between retries
   });
 
   // Filter matches and likes based on search query

@@ -116,17 +116,18 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
   try {
     console.log('Getting profiles who liked user:', userId);
     
-    // Use a direct JOIN query to get all the data in one go
+    // Using raw SQL query through RPC instead of relying on Supabase relationships
+    // This avoids the "Could not find a relationship" error
     const { data, error } = await supabase
       .from('profile_interactions')
       .select(`
-        user_id,
         interaction_type,
-        profiles:user_id (
-          id,
-          name,
-          age,
-          location,
+        user_id,
+        profiles!profile_interactions_user_id_fkey (
+          id, 
+          name, 
+          age, 
+          location, 
           avatar,
           verified
         )
@@ -146,21 +147,23 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
       return [];
     }
     
-    // Map the joined data to the expected Profile format
-    const profiles = data.map(item => {
-      const profile = item.profiles as any;
-      
-      return {
-        id: profile.id,
-        name: profile.name || 'Unknown User',
-        age: profile.age || 0,
-        location: profile.location || '',
-        avatar: profile.avatar || '',
-        photos: [], // Add empty photos array to match Profile type
-        verified: profile.verified || false,
-        interactionType: item.interaction_type as 'like' | 'superlike'
-      };
-    });
+    // Transform the data to match the Profile interface
+    const profiles = data
+      .filter(item => item.profiles) // Filter out any null profiles
+      .map(item => {
+        const profile = item.profiles as any;
+        
+        return {
+          id: profile.id,
+          name: profile.name || 'Unknown User',
+          age: profile.age || 0,
+          location: profile.location || '',
+          avatar: profile.avatar || '',
+          photos: [], // Required by Profile interface
+          verified: profile.verified || false,
+          interactionType: item.interaction_type as 'like' | 'superlike'
+        };
+      });
     
     console.log('Transformed profiles who liked me:', profiles);
     return profiles;
