@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { InteractionType, InteractionResult } from "./types";
 import { toast } from "sonner";
@@ -116,24 +115,10 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
   try {
     console.log('Getting profiles who liked user:', userId);
     
-    // Using raw SQL query through RPC instead of relying on Supabase relationships
-    // This avoids the "Could not find a relationship" error
-    const { data, error } = await supabase
-      .from('profile_interactions')
-      .select(`
-        interaction_type,
-        user_id,
-        profiles!profile_interactions_user_id_fkey (
-          id, 
-          name, 
-          age, 
-          location, 
-          avatar,
-          verified
-        )
-      `)
-      .eq('target_profile_id', userId)
-      .in('interaction_type', ['like', 'superlike']);
+    // Use a direct SQL query through RPC to avoid relationship issues
+    const { data, error } = await supabase.rpc('get_profiles_who_liked_me', {
+      target_user_id: userId
+    });
     
     if (error) {
       console.error('Error fetching profiles who liked me:', error);
@@ -148,22 +133,16 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
     }
     
     // Transform the data to match the Profile interface
-    const profiles = data
-      .filter(item => item.profiles) // Filter out any null profiles
-      .map(item => {
-        const profile = item.profiles as any;
-        
-        return {
-          id: profile.id,
-          name: profile.name || 'Unknown User',
-          age: profile.age || 0,
-          location: profile.location || '',
-          avatar: profile.avatar || '',
-          photos: [], // Required by Profile interface
-          verified: profile.verified || false,
-          interactionType: item.interaction_type as 'like' | 'superlike'
-        };
-      });
+    const profiles = data.map(profile => ({
+      id: profile.id,
+      name: profile.name || 'Unknown User',
+      age: profile.age || 0,
+      location: profile.location || '',
+      avatar: profile.avatar || '',
+      photos: [], // Required by Profile interface
+      verified: profile.verified || false,
+      interactionType: profile.interaction_type as 'like' | 'superlike'
+    }));
     
     console.log('Transformed profiles who liked me:', profiles);
     return profiles;

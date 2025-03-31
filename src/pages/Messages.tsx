@@ -55,9 +55,11 @@ const Messages = () => {
       try {
         const result = await getProfilesWhoLikedMe(user.id);
         console.log('Likes result:', result?.length || 0, 'profiles found');
-        return result;
+        return result || [];
       } catch (error) {
         console.error('Error in likes query:', error);
+        // Create a fallback UI message for debugging
+        toast.error('Failed to fetch likes: Database function may need to be created');
         return [];
       }
     },
@@ -66,6 +68,11 @@ const Messages = () => {
     retry: 3, // Retry up to 3 times if there are errors
     retryDelay: 1000 // Wait 1 second between retries
   });
+
+  // Add debug logging to verify data
+  useEffect(() => {
+    console.log('Likes data state:', likedByProfiles);
+  }, [likedByProfiles]);
 
   // Filter matches and likes based on search query
   const filteredMatches = searchQuery 
