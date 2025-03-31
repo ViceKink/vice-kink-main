@@ -37,40 +37,44 @@ const App = () => {
             <TooltipProvider>
               <Toaster />
               <Sonner />
-              <Navbar />
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/discover" element={
-                  <ProtectedRoute>
-                    <Discover />
-                  </ProtectedRoute>
-                } />
-                <Route path="/profile" element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                } />
-                <Route path="/profile/:id" element={<Profile />} />
-                <Route path="/edit-profile" element={
-                  <ProtectedRoute>
-                    <EditProfile />
-                  </ProtectedRoute>
-                } />
-                <Route path="/messages" element={
-                  <ProtectedRoute>
-                    <Messages />
-                  </ProtectedRoute>
-                } />
-                <Route path="/settings" element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                } />
-                <Route path="/community/:id" element={<Community />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <div className="flex flex-col min-h-screen">
+                <Navbar />
+                <main className="flex-1">
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/discover" element={
+                      <ProtectedRoute>
+                        <Discover />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/profile" element={
+                      <ProtectedRoute>
+                        <Profile />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/profile/:id" element={<Profile />} />
+                    <Route path="/edit-profile" element={
+                      <ProtectedRoute>
+                        <EditProfile />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/messages" element={
+                      <ProtectedRoute>
+                        <Messages />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/settings" element={
+                      <ProtectedRoute>
+                        <Settings />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/community/:id" element={<Community />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </main>
+              </div>
             </TooltipProvider>
           </AuthProvider>
         </QueryClientProvider>

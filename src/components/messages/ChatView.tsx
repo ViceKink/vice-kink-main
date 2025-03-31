@@ -59,11 +59,12 @@ const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
 
   // Set other user information when match data changes
   useEffect(() => {
-    if (matchData && matchData.other_user) {
+    if (matchData && matchData.other_user_id) {
+      const otherUserData = matchData.other_user || {};
       setOtherUser({
         id: matchData.other_user_id,
-        name: matchData.other_user.name || 'Unknown User',
-        avatar: matchData.other_user.avatar || ''
+        name: typeof otherUserData === 'object' ? otherUserData.name || 'Unknown User' : 'Unknown User',
+        avatar: typeof otherUserData === 'object' ? otherUserData.avatar || '' : ''
       });
     }
   }, [matchData]);
