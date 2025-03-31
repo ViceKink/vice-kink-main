@@ -1,23 +1,22 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Send } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Textarea } from '@/components/ui/textarea';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Spinner } from '@/components/ui/spinner';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { formatDistanceToNow } from 'date-fns';
 
-interface Message {
+type Message = {
   id: string;
   content: string;
+  created_at: string;
   sender_id: string;
   receiver_id: string;
-  created_at: string;
   read: boolean;
-}
+};
 
 interface ChatViewProps {
   matchId: string | null;
@@ -25,218 +24,219 @@ interface ChatViewProps {
 
 const ChatView: React.FC<ChatViewProps> = ({ matchId }) => {
   const { user } = useAuth();
-  const [messageText, setMessageText] = useState('');
-  const queryClient = useQueryClient();
+  const [inputValue, setInputValue] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [otherUser, setOtherUser] = useState<{ id: string; name: string; avatar?: string } | null>(null);
-
-  // Query to fetch match details
-  const { data: matchData, isLoading: matchLoading } = useQuery({
+  const queryClient = useQueryClient();
+  
+  const { data: match } = useQuery({
     queryKey: ['match', matchId],
     queryFn: async () => {
       if (!matchId || !user?.id) return null;
       
-      // Fetch match using RPC function for better performance
       const { data, error } = await supabase
-        .rpc('get_user_matches', { user_id: user.id });
-      
+        .rpc('get_user_matches', {
+          user_id: user.id
+        });
+        
       if (error) {
         console.error('Error fetching match:', error);
         return null;
       }
       
-      // Find the specific match we're looking for
-      const specificMatch = data?.find(match => match.match_id === matchId);
-      if (!specificMatch) {
-        console.log('Match not found:', matchId);
-        return null;
+      const matchData = data.find(m => m.match_id === matchId);
+      
+      if (matchData) {
+        // Ensure we're working with an object that has name and avatar properties
+        const otherUserData = matchData.other_user as { 
+          id: string; 
+          name: string; 
+          avatar?: string 
+        };
+        
+        setOtherUser({
+          id: matchData.other_user_id,
+          name: otherUserData.name || 'Unknown User',
+          avatar: otherUserData.avatar || undefined
+        });
+        
+        return matchData;
       }
       
-      console.log('Found match:', specificMatch);
-      return specificMatch;
+      return null;
     },
     enabled: !!matchId && !!user?.id
   });
-
-  // Set other user information when match data changes
-  useEffect(() => {
-    if (matchData && matchData.other_user_id) {
-      const otherUserData = matchData.other_user || {};
-      setOtherUser({
-        id: matchData.other_user_id,
-        name: typeof otherUserData === 'object' ? otherUserData.name || 'Unknown User' : 'Unknown User',
-        avatar: typeof otherUserData === 'object' ? otherUserData.avatar || '' : ''
-      });
-    }
-  }, [matchData]);
-
-  // Query to fetch conversation messages
-  const { 
-    data: messages = [], 
-    isLoading: messagesLoading,
-    refetch: refetchMessages
-  } = useQuery({
-    queryKey: ['conversation', otherUser?.id],
+  
+  const { data: messages = [], isLoading: messagesLoading } = useQuery({
+    queryKey: ['messages', matchId],
     queryFn: async () => {
-      if (!user?.id || !otherUser?.id) return [];
+      if (!matchId || !user?.id || !otherUser?.id) return [];
       
-      // Mark messages as read when loading conversation
+      // Mark messages as read
       await supabase.rpc('mark_messages_as_read', {
         user_id: user.id,
         other_user_id: otherUser.id
       });
       
-      const { data, error } = await supabase
-        .rpc('get_conversation', {
-          user1: user.id,
-          user2: otherUser.id
-        });
+      const { data, error } = await supabase.rpc('get_conversation', {
+        user1: user.id,
+        user2: otherUser.id
+      });
       
       if (error) {
-        console.error('Error fetching conversation:', error);
+        console.error('Error fetching messages:', error);
         return [];
       }
       
-      return data || [];
+      return data as Message[];
     },
-    enabled: !!user?.id && !!otherUser?.id,
-    refetchInterval: 3000 // Refresh every 3 seconds
+    enabled: !!matchId && !!user?.id && !!otherUser?.id,
+    refetchInterval: 3000 // Poll for new messages every 3 seconds
   });
-
-  // Mutation to send a new message
+  
   const sendMessageMutation = useMutation({
-    mutationFn: async (message: string) => {
-      if (!user?.id || !otherUser?.id) throw new Error('Missing user IDs');
+    mutationFn: async (content: string) => {
+      if (!user?.id || !otherUser?.id) {
+        throw new Error('Missing user information');
+      }
       
-      const { data, error } = await supabase
-        .rpc('send_message', {
-          sender: user.id,
-          receiver: otherUser.id,
-          message_content: message
-        });
+      const { data, error } = await supabase.rpc('send_message', {
+        sender: user.id,
+        receiver: otherUser.id,
+        message_content: content
+      });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
+      
       return data;
     },
     onSuccess: () => {
-      setMessageText('');
-      refetchMessages();
-      
-      // Also update the matches list to show the new message
-      queryClient.invalidateQueries({ queryKey: ['userMatches'] });
-    },
-    onError: (error) => {
-      console.error('Error sending message:', error);
-      toast.error('Failed to send message');
+      // Clear input and refetch messages
+      setInputValue('');
+      queryClient.invalidateQueries({ queryKey: ['messages', matchId] });
     }
   });
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!messageText.trim()) return;
-    
-    sendMessageMutation.mutate(messageText);
+  
+  const handleSendMessage = () => {
+    const trimmedMessage = inputValue.trim();
+    if (trimmedMessage && !sendMessageMutation.isPending) {
+      sendMessageMutation.mutate(trimmedMessage);
+    }
   };
-
-  // If no match is selected, show a placeholder
+  
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+  
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+  
   if (!matchId) {
     return (
-      <Card className="h-[70vh] flex flex-col items-center justify-center text-center p-6">
-        <h3 className="text-lg font-medium mb-2">Select a conversation</h3>
-        <p className="text-sm text-muted-foreground">
-          Choose a match to start chatting
+      <div className="h-full flex flex-col items-center justify-center bg-secondary/30 rounded-lg p-8 text-center">
+        <h3 className="text-xl font-semibold mb-2">Select a conversation</h3>
+        <p className="text-muted-foreground">
+          Choose a match from the list to start chatting
         </p>
-      </Card>
+      </div>
     );
   }
-
-  // Loading state
-  if (matchLoading) {
-    return (
-      <Card className="h-[70vh] flex flex-col items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        <p className="mt-4 text-sm text-muted-foreground">Loading conversation...</p>
-      </Card>
-    );
-  }
-
-  // Error state - match not found
-  if (!matchData) {
-    return (
-      <Card className="h-[70vh] flex flex-col items-center justify-center text-center p-6">
-        <h3 className="text-lg font-medium mb-2">Conversation not found</h3>
-        <p className="text-sm text-muted-foreground">
-          This match may no longer exist
-        </p>
-      </Card>
-    );
-  }
-
+  
   return (
-    <Card className="h-[70vh] flex flex-col">
+    <div className="h-full flex flex-col rounded-lg border bg-card">
       {/* Chat header */}
       <div className="p-4 border-b flex items-center">
-        <Avatar className="h-10 w-10 mr-3">
-          <AvatarImage src={otherUser?.avatar} />
-          <AvatarFallback>{otherUser?.name?.charAt(0) || '?'}</AvatarFallback>
-        </Avatar>
-        <div>
-          <h3 className="font-medium">{otherUser?.name}</h3>
-        </div>
+        {otherUser ? (
+          <>
+            <Avatar className="h-10 w-10 mr-3">
+              <AvatarImage src={otherUser.avatar} />
+              <AvatarFallback>{otherUser.name?.charAt(0) || '?'}</AvatarFallback>
+            </Avatar>
+            <div>
+              <h3 className="font-medium">{otherUser.name}</h3>
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center animate-pulse">
+            <div className="h-10 w-10 rounded-full bg-muted mr-3" />
+            <div className="h-5 w-32 bg-muted rounded" />
+          </div>
+        )}
       </div>
       
-      {/* Messages container */}
-      <CardContent className="flex-1 overflow-y-auto p-4 space-y-4 flex flex-col">
+      {/* Messages area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messagesLoading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+          <div className="flex justify-center items-center h-full">
+            <Spinner />
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center text-center">
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">No messages yet</p>
-              <p className="text-xs text-muted-foreground">Send a message to start the conversation</p>
-            </div>
+          <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+            <p className="mb-2">No messages yet</p>
+            <p className="text-sm">Say hello to start the conversation!</p>
           </div>
         ) : (
-          messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                  message.sender_id === user?.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary'
-                }`}
+          messages.map((message) => {
+            const isCurrentUser = message.sender_id === user?.id;
+            
+            return (
+              <div 
+                key={message.id} 
+                className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
               >
-                <p className="text-sm">{message.content}</p>
-                <p className="text-xs opacity-70 mt-1">
-                  {new Date(message.created_at).toLocaleTimeString([], { 
-                    hour: '2-digit', 
-                    minute: '2-digit'
-                  })}
-                </p>
+                <div 
+                  className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                    isCurrentUser 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-secondary text-secondary-foreground'
+                  }`}
+                >
+                  <div className="break-words">{message.content}</div>
+                  <div 
+                    className={`text-xs mt-1 ${
+                      isCurrentUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                    }`}
+                  >
+                    {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
-      </CardContent>
+        <div ref={messagesEndRef} />
+      </div>
       
       {/* Message input */}
-      <form onSubmit={handleSendMessage} className="p-4 border-t flex gap-2">
-        <Textarea
-          placeholder="Type a message..."
-          value={messageText}
-          onChange={(e) => setMessageText(e.target.value)}
-          className="resize-none"
-          rows={1}
-        />
-        <Button type="submit" size="icon" disabled={sendMessageMutation.isPending}>
-          <Send className="h-4 w-4" />
-        </Button>
-      </form>
-    </Card>
+      <div className="p-4 border-t">
+        <div className="flex items-center">
+          <textarea
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a message..."
+            className="flex-1 bg-background border rounded-l-md p-2 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+            rows={1}
+          />
+          <Button 
+            onClick={handleSendMessage}
+            disabled={!inputValue.trim() || sendMessageMutation.isPending}
+            className="rounded-l-none"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
 

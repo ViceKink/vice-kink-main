@@ -67,7 +67,7 @@ const Messages = () => {
     : likedByProfiles;
 
   return (
-    <div className="container py-10">
+    <div className="container py-10 mt-20">
       <Tabs defaultValue="matches" className="w-full">
         <div className="mb-6 mt-5">
           <TabsList className="w-full max-w-xs mx-0">

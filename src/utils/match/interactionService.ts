@@ -116,44 +116,39 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
   try {
     console.log('Getting profiles who liked user:', userId);
     
-    // First get the profile interactions showing likes to this user
-    const { data: interactions, error: interactionsError } = await supabase
+    // Use a direct JOIN query to get all the data in one go
+    const { data, error } = await supabase
       .from('profile_interactions')
-      .select('user_id, interaction_type')
+      .select(`
+        user_id,
+        interaction_type,
+        profiles:user_id (
+          id,
+          name,
+          age,
+          location,
+          avatar,
+          verified
+        )
+      `)
       .eq('target_profile_id', userId)
       .in('interaction_type', ['like', 'superlike']);
     
-    if (interactionsError) {
-      console.error('Error fetching interactions:', interactionsError);
-      throw interactionsError;
+    if (error) {
+      console.error('Error fetching profiles who liked me:', error);
+      throw error;
     }
     
-    console.log('Found interactions:', interactions?.length || 0);
+    console.log('Raw profiles who liked data:', data);
     
-    if (!interactions || interactions.length === 0) {
+    if (!data || data.length === 0) {
+      console.log('No profiles found who liked user:', userId);
       return [];
     }
     
-    // Get the user IDs of users who liked this profile
-    const userIds = interactions.map(interaction => interaction.user_id);
-    
-    // Now fetch the actual profile data for these users
-    const { data: profilesData, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, name, age, location, avatar, verified')
-      .in('id', userIds);
-    
-    if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
-      throw profilesError;
-    }
-    
-    console.log('Fetched profiles data:', profilesData);
-    
-    // Map the profile data to the expected Profile format
-    const profiles = profilesData.map(profile => {
-      // Find the interaction to get the interaction type
-      const interaction = interactions.find(i => i.user_id === profile.id);
+    // Map the joined data to the expected Profile format
+    const profiles = data.map(item => {
+      const profile = item.profiles as any;
       
       return {
         id: profile.id,
@@ -163,7 +158,7 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
         avatar: profile.avatar || '',
         photos: [], // Add empty photos array to match Profile type
         verified: profile.verified || false,
-        interactionType: interaction?.interaction_type as 'like' | 'superlike'
+        interactionType: item.interaction_type as 'like' | 'superlike'
       };
     });
     
