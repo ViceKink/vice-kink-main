@@ -116,8 +116,8 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
   try {
     console.log('Getting profiles who liked user:', userId);
     
-    // Define the return type properly
-    interface ProfileWhoLikedMe {
+    // Define the type for the database function return
+    type ProfileWhoLikedMeResponse = {
       id: string;
       name: string;
       age: number;
@@ -126,14 +126,11 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
       verified: boolean;
       interaction_type: string;
       is_matched: boolean;
-    }
+    };
     
-    // Use the properly typed RPC call with two type parameters
+    // Use the correct typing for RPC call
     const { data, error } = await supabase
-      .rpc<ProfileWhoLikedMe, { target_user_id: string }>(
-        'get_profiles_who_liked_me',
-        { target_user_id: userId }
-      );
+      .rpc('get_profiles_who_liked_me', { target_user_id: userId });
     
     if (error) {
       console.error('Error fetching profiles who liked me:', error);
@@ -150,6 +147,7 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
     
     // Filter out profiles that are already matched
     const unmatchedProfiles = data.filter(profile => !profile.is_matched);
+    console.log('Unmatched profiles count:', unmatchedProfiles.length, 'out of', data.length);
     
     // Transform the data to match the Profile interface
     const profiles = unmatchedProfiles.map(profile => ({

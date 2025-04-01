@@ -72,7 +72,8 @@ const Messages = () => {
   // Add debug logging to verify data
   useEffect(() => {
     console.log('Likes data state:', likedByProfiles);
-  }, [likedByProfiles]);
+    console.log('Matches data state:', matches);
+  }, [likedByProfiles, matches]);
 
   // Filter matches and likes based on search query
   const filteredMatches = searchQuery 
@@ -88,10 +89,24 @@ const Messages = () => {
       <Tabs defaultValue="matches" className="w-full">
         <div className="mb-6 mt-5">
           <TabsList className="w-full max-w-xs mx-0">
-            <TabsTrigger value="matches" onClick={() => setActiveTab('matches')}>
+            <TabsTrigger 
+              value="matches" 
+              onClick={() => {
+                setActiveTab('matches');
+                // Refetch matches when switching to matches tab
+                queryClient.invalidateQueries({ queryKey: ['userMatches'] });
+              }}
+            >
               Matches
             </TabsTrigger>
-            <TabsTrigger value="likes" onClick={() => setActiveTab('likes')}>
+            <TabsTrigger 
+              value="likes" 
+              onClick={() => {
+                setActiveTab('likes');
+                // Refetch likes when switching to likes tab
+                queryClient.invalidateQueries({ queryKey: ['likedByProfiles'] });
+              }}
+            >
               Likes
             </TabsTrigger>
           </TabsList>
