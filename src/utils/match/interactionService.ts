@@ -116,8 +116,8 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
   try {
     console.log('Getting profiles who liked user:', userId);
     
-    // Use a direct SQL query through RPC to avoid relationship issues
-    const { data, error } = await supabase.rpc<{
+    // Define the return type properly with a type parameter
+    type ProfileWhoLikedMe = {
       id: string;
       name: string;
       age: number;
@@ -125,9 +125,13 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
       avatar: string;
       verified: boolean;
       interaction_type: string;
-    }[]>('get_profiles_who_liked_me', {
-      target_user_id: userId
-    });
+    };
+    
+    // Use the defined type for the RPC call
+    const { data, error } = await supabase.rpc<ProfileWhoLikedMe[]>(
+      'get_profiles_who_liked_me',
+      { target_user_id: userId }
+    );
     
     if (error) {
       console.error('Error fetching profiles who liked me:', error);
@@ -136,7 +140,8 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
     
     console.log('Raw profiles who liked data:', data);
     
-    if (!data || data.length === 0) {
+    // Check if data exists and is an array
+    if (!data || !Array.isArray(data) || data.length === 0) {
       console.log('No profiles found who liked user:', userId);
       return [];
     }
