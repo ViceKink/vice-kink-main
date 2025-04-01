@@ -128,9 +128,9 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
       is_matched: boolean;
     }
     
-    // Use the properly typed RPC call
+    // Use the properly typed RPC call with two type parameters
     const { data, error } = await supabase
-      .rpc<ProfileWhoLikedMe>(
+      .rpc<ProfileWhoLikedMe, { target_user_id: string }>(
         'get_profiles_who_liked_me',
         { target_user_id: userId }
       );

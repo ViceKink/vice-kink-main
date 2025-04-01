@@ -10,6 +10,7 @@ import { useAuth } from '@/context/auth';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { createInteraction } from '@/utils/match';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Profile {
   id: string;
@@ -30,6 +31,7 @@ const LikesList: React.FC<LikesListProps> = ({ profiles, isLoading, onSelectLike
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isMobile = useIsMobile();
   
   const interactionMutation = useMutation({
     mutationFn: async ({ 
@@ -133,7 +135,8 @@ const LikesList: React.FC<LikesListProps> = ({ profiles, isLoading, onSelectLike
                     className="text-xs px-2 py-0 h-7"
                     onClick={() => handleLikeProfile(profile.id, 'like')}
                   >
-                    <Heart className="h-3 w-3 mr-1" /> Like Back
+                    <Heart className="h-3 w-3 mr-1" />
+                    {!isMobile && <span>Like Back</span>}
                   </Button>
                   <Button
                     size="sm"
@@ -141,7 +144,8 @@ const LikesList: React.FC<LikesListProps> = ({ profiles, isLoading, onSelectLike
                     className="text-xs px-2 py-0 h-7"
                     onClick={() => navigate(`/profile/${profile.id}`)}
                   >
-                    View Profile
+                    <User2 className="h-3 w-3 mr-1" />
+                    {!isMobile && <span>View Profile</span>}
                   </Button>
                   <Button
                     size="sm"
@@ -149,7 +153,8 @@ const LikesList: React.FC<LikesListProps> = ({ profiles, isLoading, onSelectLike
                     className="text-xs px-2 py-0 h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={() => handleRejectProfile(profile.id)}
                   >
-                    <X className="h-3 w-3 mr-1" /> Reject
+                    <X className="h-3 w-3 mr-1" />
+                    {!isMobile && <span>Reject</span>}
                   </Button>
                 </div>
               </div>
