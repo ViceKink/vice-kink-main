@@ -766,6 +766,7 @@ export type Database = {
           avatar: string
           verified: boolean
           interaction_type: string
+          is_matched: boolean
         }[]
       }
       get_user_matches: {

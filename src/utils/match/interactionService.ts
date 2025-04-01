@@ -109,6 +109,7 @@ export const getUserInteractions = async (userId: string) => {
 
 /**
  * Get profiles that have liked the current user but haven't matched yet
+ * and the current user hasn't interacted with them
  */
 export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> => {
   if (!userId) return [];
@@ -145,12 +146,11 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
       return [];
     }
     
-    // Filter out profiles that are already matched
-    const unmatchedProfiles = data.filter(profile => !profile.is_matched);
-    console.log('Unmatched profiles count:', unmatchedProfiles.length, 'out of', data.length);
+    // The SQL function now returns only unmatched profiles that the user hasn't interacted with
+    console.log('Profiles count who liked me and I haven\'t interacted with:', data.length);
     
     // Transform the data to match the Profile interface
-    const profiles = unmatchedProfiles.map(profile => ({
+    const profiles = data.map(profile => ({
       id: profile.id,
       name: profile.name || 'Unknown User',
       age: profile.age || 0,
@@ -161,7 +161,7 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
       interactionType: profile.interaction_type as 'like' | 'superlike'
     }));
     
-    console.log('Transformed profiles who liked me (unmatched only):', profiles);
+    console.log('Transformed profiles who liked me (filtered):', profiles);
     return profiles;
   } catch (error) {
     console.error('Error getting profiles who liked me:', error);
