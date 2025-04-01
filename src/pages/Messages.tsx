@@ -28,6 +28,7 @@ const Messages = () => {
           console.log(`Created ${matchesCreated} new matches that were previously missed`);
           // Refresh the matches data
           queryClient.invalidateQueries({ queryKey: ['userMatches'] });
+          queryClient.invalidateQueries({ queryKey: ['likedByProfiles'] });
           toast.success(`Found ${matchesCreated} new matches!`);
         }
       });
@@ -58,7 +59,6 @@ const Messages = () => {
         return result || [];
       } catch (error) {
         console.error('Error in likes query:', error);
-        // Create a fallback UI message for debugging
         toast.error('Failed to fetch likes: ' + (error instanceof Error ? error.message : String(error)));
         return [];
       }

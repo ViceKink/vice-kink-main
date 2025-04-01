@@ -108,7 +108,7 @@ export const getUserInteractions = async (userId: string) => {
 };
 
 /**
- * Get profiles that have liked the current user
+ * Get profiles that have liked the current user but haven't matched yet
  */
 export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> => {
   if (!userId) return [];
@@ -116,8 +116,8 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
   try {
     console.log('Getting profiles who liked user:', userId);
     
-    // Define the return type properly with a type parameter
-    type ProfileWhoLikedMe = {
+    // Define the return type properly
+    interface ProfileWhoLikedMe {
       id: string;
       name: string;
       age: number;
@@ -125,13 +125,15 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
       avatar: string;
       verified: boolean;
       interaction_type: string;
-    };
+      is_matched: boolean;
+    }
     
-    // Use the defined type for the RPC call
-    const { data, error } = await supabase.rpc<ProfileWhoLikedMe[]>(
-      'get_profiles_who_liked_me',
-      { target_user_id: userId }
-    );
+    // Use the properly typed RPC call
+    const { data, error } = await supabase
+      .rpc<ProfileWhoLikedMe>(
+        'get_profiles_who_liked_me',
+        { target_user_id: userId }
+      );
     
     if (error) {
       console.error('Error fetching profiles who liked me:', error);
@@ -146,8 +148,11 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
       return [];
     }
     
+    // Filter out profiles that are already matched
+    const unmatchedProfiles = data.filter(profile => !profile.is_matched);
+    
     // Transform the data to match the Profile interface
-    const profiles = data.map(profile => ({
+    const profiles = unmatchedProfiles.map(profile => ({
       id: profile.id,
       name: profile.name || 'Unknown User',
       age: profile.age || 0,
@@ -158,7 +163,7 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
       interactionType: profile.interaction_type as 'like' | 'superlike'
     }));
     
-    console.log('Transformed profiles who liked me:', profiles);
+    console.log('Transformed profiles who liked me (unmatched only):', profiles);
     return profiles;
   } catch (error) {
     console.error('Error getting profiles who liked me:', error);

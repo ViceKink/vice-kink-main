@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, User2 } from 'lucide-react';
+import { Heart, User2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
@@ -31,37 +31,45 @@ const LikesList: React.FC<LikesListProps> = ({ profiles, isLoading, onSelectLike
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
-  const likeProfileMutation = useMutation({
+  const interactionMutation = useMutation({
     mutationFn: async ({ 
       profileId, 
       interactionType 
     }: { 
       profileId: string, 
-      interactionType: 'like' | 'superlike' 
+      interactionType: 'like' | 'dislike' | 'superlike' 
     }) => {
       if (!user?.id) throw new Error('User not authenticated');
-      console.log('Liking profile', profileId, 'as', interactionType);
+      console.log('Creating interaction with profile', profileId, 'as', interactionType);
       const result = await createInteraction(user.id, profileId, interactionType);
-      console.log('Like result:', result);
+      console.log('Interaction result:', result);
       return result;
     },
-    onSuccess: (result) => {
-      if (result.matched) {
+    onSuccess: (result, variables) => {
+      if (variables.interactionType === 'dislike') {
+        toast.success("Profile rejected");
+      } else if (result.matched) {
         toast.success("It's a match! 🎉");
       } else {
         toast.success("Like sent!");
       }
+      
+      // Refresh queries to update UI
       queryClient.invalidateQueries({ queryKey: ['likedByProfiles'] });
       queryClient.invalidateQueries({ queryKey: ['userMatches'] });
     },
     onError: (error) => {
-      console.error('Error liking profile:', error);
-      toast.error('Failed to like profile');
+      console.error('Error with profile interaction:', error);
+      toast.error('Failed to process interaction');
     }
   });
 
   const handleLikeProfile = (profileId: string, interactionType: 'like' | 'superlike') => {
-    likeProfileMutation.mutate({ profileId, interactionType });
+    interactionMutation.mutate({ profileId, interactionType });
+  };
+  
+  const handleRejectProfile = (profileId: string) => {
+    interactionMutation.mutate({ profileId, interactionType: 'dislike' });
   };
 
   if (isLoading) {
@@ -134,6 +142,14 @@ const LikesList: React.FC<LikesListProps> = ({ profiles, isLoading, onSelectLike
                     onClick={() => navigate(`/profile/${profile.id}`)}
                   >
                     View Profile
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-xs px-2 py-0 h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => handleRejectProfile(profile.id)}
+                  >
+                    <X className="h-3 w-3 mr-1" /> Reject
                   </Button>
                 </div>
               </div>
