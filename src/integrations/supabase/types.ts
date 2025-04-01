@@ -754,6 +754,20 @@ export type Database = {
         }
         Returns: string
       }
+      get_profiles_who_liked_me: {
+        Args: {
+          target_user_id: string
+        }
+        Returns: {
+          id: string
+          name: string
+          age: number
+          location: string
+          avatar: string
+          verified: boolean
+          interaction_type: string
+        }[]
+      }
       get_user_matches: {
         Args: {
           user_id: string

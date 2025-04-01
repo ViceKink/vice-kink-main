@@ -59,7 +59,7 @@ const Messages = () => {
       } catch (error) {
         console.error('Error in likes query:', error);
         // Create a fallback UI message for debugging
-        toast.error('Failed to fetch likes: Database function may need to be created');
+        toast.error('Failed to fetch likes: ' + (error instanceof Error ? error.message : String(error)));
         return [];
       }
     },

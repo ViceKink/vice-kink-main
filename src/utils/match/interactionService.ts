@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { InteractionType, InteractionResult } from "./types";
 import { toast } from "sonner";
@@ -116,7 +117,15 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
     console.log('Getting profiles who liked user:', userId);
     
     // Use a direct SQL query through RPC to avoid relationship issues
-    const { data, error } = await supabase.rpc('get_profiles_who_liked_me', {
+    const { data, error } = await supabase.rpc<{
+      id: string;
+      name: string;
+      age: number;
+      location: string;
+      avatar: string;
+      verified: boolean;
+      interaction_type: string;
+    }[]>('get_profiles_who_liked_me', {
       target_user_id: userId
     });
     
