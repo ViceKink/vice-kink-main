@@ -117,24 +117,16 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
   try {
     console.log('Getting profiles who liked user:', userId);
     
-    // Define the type for the database function return
-    type ProfileWhoLikedMeResponse = {
-      id: string;
-      name: string;
-      age: number;
-      location: string;
-      avatar: string;
-      verified: boolean;
-      interaction_type: string;
-      is_matched: boolean;
-    };
+    // Explicitly log the RPC call for debugging
+    console.log('Calling RPC: get_profiles_who_liked_me with param:', userId);
     
-    // Use the correct typing for RPC call
+    // Use the database function call
     const { data, error } = await supabase
       .rpc('get_profiles_who_liked_me', { target_user_id: userId });
     
     if (error) {
       console.error('Error fetching profiles who liked me:', error);
+      toast.error('Failed to fetch likes: ' + error.message);
       throw error;
     }
     
