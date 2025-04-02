@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Heart, Rewind, Rocket, Zap, Eye, Star, Music } from 'lucide-react';
+import { Heart, Rewind, Rocket, Zap, Eye, Star, Music, Coins } from 'lucide-react';
 import { AdCoinFeature, FEATURE_COSTS } from '@/models/adCoinsTypes';
 
 interface FeatureItemProps {
@@ -28,8 +28,9 @@ const FeatureItem: React.FC<FeatureItemProps> = ({
           <p className="text-xs text-muted-foreground">{description}</p>
         </div>
       </div>
-      <div className="bg-slate-900 text-white px-3 py-1 rounded-md text-sm font-medium flex items-center gap-1">
-        {cost} <span className="text-xs">Coins</span>
+      <div className="flex items-center gap-1 text-sm font-medium">
+        <Coins className="h-4 w-4 text-yellow-500" />
+        <span>{cost}</span>
       </div>
     </div>
   );
