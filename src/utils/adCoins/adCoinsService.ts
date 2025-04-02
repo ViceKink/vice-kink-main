@@ -10,6 +10,7 @@ export const getUserAdCoins = async (userId: string): Promise<UserAdCoins | null
   if (!userId) return null;
   
   try {
+    // We need to use a proper query for user_adcoins table
     const { data, error } = await supabase
       .from('user_adcoins')
       .select('*')
@@ -39,6 +40,7 @@ export const addAdCoins = async (
   if (!userId) return null;
   
   try {
+    // Call the add_adcoins RPC function
     const { data, error } = await supabase
       .rpc('add_adcoins', {
         p_user_id: userId,
@@ -78,6 +80,7 @@ export const spendAdCoins = async (
   if (!userId) return null;
   
   try {
+    // Call the spend_adcoins RPC function
     const { data, error } = await supabase
       .rpc('spend_adcoins', {
         p_user_id: userId,
