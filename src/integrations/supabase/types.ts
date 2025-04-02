@@ -683,6 +683,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_adcoins: {
+        Row: {
+          balance: number
+          consecutive_ads_watched: number
+          created_at: string
+          id: string
+          last_ad_watched: string | null
+          total_earned: number
+          total_spent: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          consecutive_ads_watched?: number
+          created_at?: string
+          id?: string
+          last_ad_watched?: string | null
+          total_earned?: number
+          total_spent?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          consecutive_ads_watched?: number
+          created_at?: string
+          id?: string
+          last_ad_watched?: string | null
+          total_earned?: number
+          total_spent?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       vices: {
         Row: {
           description: string | null
@@ -706,6 +742,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_adcoins: {
+        Args: {
+          p_user_id: string
+          p_amount: number
+          p_reason?: string
+        }
+        Returns: Json
+      }
       count_unread_messages: {
         Args: {
           user_id: string
@@ -794,6 +838,14 @@ export type Database = {
           message_content: string
         }
         Returns: string
+      }
+      spend_adcoins: {
+        Args: {
+          p_user_id: string
+          p_amount: number
+          p_feature: string
+        }
+        Returns: Json
       }
     }
     Enums: {

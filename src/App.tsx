@@ -17,6 +17,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
 import Community from "./pages/Community";
+import AdCoins from "./pages/AdCoins";
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient({
@@ -67,6 +68,11 @@ const App = () => {
                     <Route path="/settings" element={
                       <ProtectedRoute>
                         <Settings />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/adcoins" element={
+                      <ProtectedRoute>
+                        <AdCoins />
                       </ProtectedRoute>
                     } />
                     <Route path="/community/:id" element={<Community />} />
