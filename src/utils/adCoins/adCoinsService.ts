@@ -55,13 +55,13 @@ export const addAdCoins = async (
     }
     
     // Show a success message with info about bonus if applicable
-    if (data.bonus > 0) {
-      toast.success(`Earned ${amount} AdCoins + ${data.bonus} bonus!`);
+    if (data && typeof data === 'object' && 'bonus' in data && (data.bonus as number) > 0) {
+      toast.success(`Earned ${amount} AdCoins + ${data.bonus as number} bonus!`);
     } else {
       toast.success(`Earned ${amount} AdCoins!`);
     }
     
-    return data as AdCoinsTransaction;
+    return data as unknown as AdCoinsTransaction;
   } catch (error) {
     console.error('Error adding AdCoins:', error);
     toast.error('Failed to add AdCoins');
@@ -94,13 +94,13 @@ export const spendAdCoins = async (
       return null;
     }
     
-    if (!data.success) {
-      toast.error(`Insufficient AdCoins! You need ${data.required} AdCoins.`);
-      return data as AdCoinsTransaction;
+    if (data && typeof data === 'object' && 'success' in data && !(data.success as boolean)) {
+      toast.error(`Insufficient AdCoins! You need ${data.required as number} AdCoins.`);
+      return data as unknown as AdCoinsTransaction;
     }
     
     toast.success(`Spent ${amount} AdCoins on ${feature}`);
-    return data as AdCoinsTransaction;
+    return data as unknown as AdCoinsTransaction;
   } catch (error) {
     console.error('Error spending AdCoins:', error);
     toast.error('Failed to spend AdCoins');
