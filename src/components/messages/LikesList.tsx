@@ -2,7 +2,7 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Heart, User2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -129,33 +129,30 @@ const LikesList: React.FC<LikesListProps> = ({ profiles, isLoading, onSelectLike
                   {profile.age && `${profile.age} • `}{profile.location}
                 </p>
                 <div className="flex gap-2">
-                  <Button
+                  <IconButton
                     size="sm"
                     variant="default"
-                    className="text-xs px-2 py-0 h-7"
+                    className="h-8 w-8"
+                    icon={<Heart className="h-4 w-4" />}
+                    label="Like Back"
                     onClick={() => handleLikeProfile(profile.id, 'like')}
-                  >
-                    <Heart className="h-3 w-3 mr-1" />
-                    {!isMobile && <span>Like Back</span>}
-                  </Button>
-                  <Button
+                  />
+                  <IconButton
                     size="sm"
                     variant="outline"
-                    className="text-xs px-2 py-0 h-7"
+                    className="h-8 w-8"
+                    icon={<User2 className="h-4 w-4" />}
+                    label="View Profile"
                     onClick={() => navigate(`/profile/${profile.id}`)}
-                  >
-                    <User2 className="h-3 w-3 mr-1" />
-                    {!isMobile && <span>View Profile</span>}
-                  </Button>
-                  <Button
+                  />
+                  <IconButton
                     size="sm"
                     variant="outline"
-                    className="text-xs px-2 py-0 h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    icon={<X className="h-4 w-4" />}
+                    label="Reject"
                     onClick={() => handleRejectProfile(profile.id)}
-                  >
-                    <X className="h-3 w-3 mr-1" />
-                    {!isMobile && <span>Reject</span>}
-                  </Button>
+                  />
                 </div>
               </div>
             </div>
