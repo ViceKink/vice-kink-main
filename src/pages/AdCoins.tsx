@@ -5,38 +5,9 @@ import { Coins } from 'lucide-react';
 import AdCoinsBalance from '@/components/adcoins/AdCoinsBalance';
 import EarnAdCoinsCard from '@/components/adcoins/EarnAdCoinsCard';
 import AdCoinFeaturesCard from '@/components/adcoins/AdCoinFeaturesCard';
-import { useNavigate } from 'react-router-dom';
-import { AdCoinFeature } from '@/models/adCoinsTypes';
 
 const AdCoinsPage: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  
-  const handleFeaturePurchased = (feature: AdCoinFeature, success: boolean) => {
-    if (success) {
-      // Handle different features
-      switch (feature) {
-        case 'view_like':
-          navigate('/messages?tab=likes');
-          break;
-        case 'extra_likes':
-          navigate('/discover');
-          break;
-        case 'profile_boost':
-          navigate('/profile');
-          break;
-        case 'super_like':
-          navigate('/discover');
-          break;
-        case 'match_with_artist':
-          navigate('/');
-          break;
-        default:
-          // Stay on page for other features
-          break;
-      }
-    }
-  };
   
   return (
     <div className="container py-10 mt-20">
@@ -55,7 +26,7 @@ const AdCoinsPage: React.FC = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <EarnAdCoinsCard />
-        <AdCoinFeaturesCard onFeaturePurchased={handleFeaturePurchased} />
+        <AdCoinFeaturesCard />
       </div>
       
       <div className="mt-8 p-6 bg-secondary rounded-lg">

@@ -1,9 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Heart, Rewind, Rocket, Zap, Eye, Star, Music } from 'lucide-react';
-import { useAdCoins } from '@/hooks/useAdCoins';
 import { AdCoinFeature, FEATURE_COSTS } from '@/models/adCoinsTypes';
 
 interface FeatureItemProps {
@@ -11,17 +9,13 @@ interface FeatureItemProps {
   description: string;
   cost: number;
   icon: React.ReactNode;
-  onPurchase: () => void;
-  disabled?: boolean;
 }
 
 const FeatureItem: React.FC<FeatureItemProps> = ({ 
   title, 
   description, 
   cost, 
-  icon, 
-  onPurchase,
-  disabled = false
+  icon
 }) => {
   return (
     <div className="flex justify-between items-center p-3 bg-secondary rounded-md">
@@ -34,15 +28,9 @@ const FeatureItem: React.FC<FeatureItemProps> = ({
           <p className="text-xs text-muted-foreground">{description}</p>
         </div>
       </div>
-      <Button 
-        onClick={onPurchase} 
-        disabled={disabled}
-        variant="default"
-        size="sm"
-        className="flex items-center gap-1"
-      >
+      <div className="bg-slate-900 text-white px-3 py-1 rounded-md text-sm font-medium flex items-center gap-1">
         {cost} <span className="text-xs">Coins</span>
-      </Button>
+      </div>
     </div>
   );
 };
@@ -51,16 +39,7 @@ interface AdCoinFeaturesCardProps {
   onFeaturePurchased?: (feature: AdCoinFeature, success: boolean) => void;
 }
 
-const AdCoinFeaturesCard: React.FC<AdCoinFeaturesCardProps> = ({ onFeaturePurchased }) => {
-  const { balance, isAdCoinsLoading, purchaseFeature } = useAdCoins();
-  
-  const handlePurchase = async (feature: AdCoinFeature) => {
-    const success = await purchaseFeature(feature);
-    if (onFeaturePurchased) {
-      onFeaturePurchased(feature, success);
-    }
-  };
-  
+const AdCoinFeaturesCard: React.FC<AdCoinFeaturesCardProps> = () => {
   return (
     <Card className="w-full">
       <CardHeader>
@@ -76,8 +55,6 @@ const AdCoinFeaturesCard: React.FC<AdCoinFeaturesCardProps> = ({ onFeaturePurcha
           description="See one person who liked your profile"
           cost={FEATURE_COSTS.view_like}
           icon={<Eye className="h-4 w-4 text-blue-500" />}
-          onPurchase={() => handlePurchase('view_like')}
-          disabled={isAdCoinsLoading || balance < FEATURE_COSTS.view_like}
         />
         
         <FeatureItem
@@ -85,8 +62,6 @@ const AdCoinFeaturesCard: React.FC<AdCoinFeaturesCardProps> = ({ onFeaturePurcha
           description="Get 5 extra likes when you run out"
           cost={FEATURE_COSTS.extra_likes}
           icon={<Heart className="h-4 w-4 text-red-500" />}
-          onPurchase={() => handlePurchase('extra_likes')}
-          disabled={isAdCoinsLoading || balance < FEATURE_COSTS.extra_likes}
         />
         
         <FeatureItem
@@ -94,8 +69,6 @@ const AdCoinFeaturesCard: React.FC<AdCoinFeaturesCardProps> = ({ onFeaturePurcha
           description="Undo your last swipe or action"
           cost={FEATURE_COSTS.rewind}
           icon={<Rewind className="h-4 w-4 text-green-500" />}
-          onPurchase={() => handlePurchase('rewind')}
-          disabled={isAdCoinsLoading || balance < FEATURE_COSTS.rewind}
         />
         
         <FeatureItem
@@ -103,8 +76,6 @@ const AdCoinFeaturesCard: React.FC<AdCoinFeaturesCardProps> = ({ onFeaturePurcha
           description="1-hour boost for your profile"
           cost={FEATURE_COSTS.profile_boost}
           icon={<Rocket className="h-4 w-4 text-purple-500" />}
-          onPurchase={() => handlePurchase('profile_boost')}
-          disabled={isAdCoinsLoading || balance < FEATURE_COSTS.profile_boost}
         />
         
         <FeatureItem
@@ -112,8 +83,6 @@ const AdCoinFeaturesCard: React.FC<AdCoinFeaturesCardProps> = ({ onFeaturePurcha
           description="1-hour boost for your post"
           cost={FEATURE_COSTS.post_boost}
           icon={<Zap className="h-4 w-4 text-yellow-500" />}
-          onPurchase={() => handlePurchase('post_boost')}
-          disabled={isAdCoinsLoading || balance < FEATURE_COSTS.post_boost}
         />
         
         <FeatureItem
@@ -121,8 +90,6 @@ const AdCoinFeaturesCard: React.FC<AdCoinFeaturesCardProps> = ({ onFeaturePurcha
           description="Send a super like to stand out"
           cost={FEATURE_COSTS.super_like}
           icon={<Star className="h-4 w-4 text-blue-500" />}
-          onPurchase={() => handlePurchase('super_like')}
-          disabled={isAdCoinsLoading || balance < FEATURE_COSTS.super_like}
         />
         
         <FeatureItem
@@ -130,8 +97,6 @@ const AdCoinFeaturesCard: React.FC<AdCoinFeaturesCardProps> = ({ onFeaturePurcha
           description="Match with an erotica artist"
           cost={FEATURE_COSTS.match_with_artist}
           icon={<Music className="h-4 w-4 text-pink-500" />}
-          onPurchase={() => handlePurchase('match_with_artist')}
-          disabled={isAdCoinsLoading || balance < FEATURE_COSTS.match_with_artist}
         />
       </CardContent>
     </Card>
