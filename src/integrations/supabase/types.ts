@@ -375,6 +375,7 @@ export type Database = {
           created_at: string | null
           id: string
           interaction_type: string
+          is_revealed: boolean
           target_profile_id: string
           user_id: string
         }
@@ -382,6 +383,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           interaction_type: string
+          is_revealed?: boolean
           target_profile_id: string
           user_id: string
         }
@@ -389,6 +391,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           interaction_type?: string
+          is_revealed?: boolean
           target_profile_id?: string
           user_id?: string
         }

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { IconButton } from '@/components/ui/icon-button';
@@ -14,7 +14,7 @@ import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAdCoins } from '@/hooks/useAdCoins';
 import { AdCoinFeature } from '@/models/adCoinsTypes';
-import { recordRevealedProfile } from '@/utils/adCoins/adCoinsService';
+import { revealProfileInteraction } from '@/utils/adCoins/adCoinsService';
 
 interface Profile {
   id: string;
@@ -37,24 +37,7 @@ const LikesList: React.FC<LikesListProps> = ({ profiles, isLoading, onSelectLike
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
-  const [revealedProfiles, setRevealedProfiles] = useState<Record<string, boolean>>({});
   const { balance, purchaseFeature, showRewardedAd, isAdReady } = useAdCoins();
-  
-  // Initialize revealed profiles from props
-  useEffect(() => {
-    const initialRevealed: Record<string, boolean> = {};
-    
-    profiles.forEach(profile => {
-      if (profile.isRevealed) {
-        initialRevealed[profile.id] = true;
-      }
-    });
-    
-    setRevealedProfiles(prev => ({
-      ...prev,
-      ...initialRevealed
-    }));
-  }, [profiles]);
   
   const interactionMutation = useMutation({
     mutationFn: async ({ 
@@ -100,17 +83,12 @@ const LikesList: React.FC<LikesListProps> = ({ profiles, isLoading, onSelectLike
   const revealProfileMutation = useMutation({
     mutationFn: async (profileId: string) => {
       if (!user?.id) throw new Error('User not authenticated');
-      return recordRevealedProfile(user.id, profileId);
+      return revealProfileInteraction(user.id, profileId);
     },
-    onSuccess: (_, profileId) => {
-      // Update local state to mark profile as revealed
-      setRevealedProfiles(prev => ({
-        ...prev,
-        [profileId]: true
-      }));
-      
+    onSuccess: () => {
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['revealedProfiles'] });
+      queryClient.invalidateQueries({ queryKey: ['likedByProfiles'] });
+      toast.success("Profile revealed!");
     }
   });
   
@@ -119,9 +97,8 @@ const LikesList: React.FC<LikesListProps> = ({ profiles, isLoading, onSelectLike
     const success = await purchaseFeature('view_like');
     
     if (success) {
-      // If successful, record this revealed profile in the database
+      // If successful, mark the profile interaction as revealed
       revealProfileMutation.mutate(profileId);
-      toast.success("Profile revealed!");
     }
   };
   
@@ -172,8 +149,7 @@ const LikesList: React.FC<LikesListProps> = ({ profiles, isLoading, onSelectLike
   return (
     <div className="space-y-2 overflow-y-auto max-h-[70vh]">
       {profiles.map((profile) => {
-        // Check if revealed from both local state and props
-        const isRevealed = revealedProfiles[profile.id] || profile.isRevealed || false;
+        const isRevealed = profile.isRevealed || false;
         
         return (
           <Card key={profile.id} className="hover:bg-accent/50 transition-colors">

@@ -7,7 +7,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/context/auth';
 import { getUserMatches, forceCheckForMatches } from '@/utils/match/matchingService';
 import { getProfilesWhoLikedMe } from '@/utils/match/interactionService';
-import { getRevealedProfiles } from '@/utils/adCoins/adCoinsService';
 import MatchesList from '@/components/messages/MatchesList';
 import LikesList from '@/components/messages/LikesList';
 import ChatView from '@/components/messages/ChatView';
@@ -37,16 +36,6 @@ const Messages = () => {
     }
   }, [user?.id, queryClient]);
 
-  // Fetch revealed profiles
-  const { data: revealedProfiles = [] } = useQuery({
-    queryKey: ['revealedProfiles'],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      return getRevealedProfiles(user.id);
-    },
-    enabled: !!user?.id
-  });
-
   const { data: matches = [], isLoading: matchesLoading } = useQuery({
     queryKey: ['userMatches'],
     queryFn: async () => {
@@ -68,16 +57,6 @@ const Messages = () => {
       try {
         const result = await getProfilesWhoLikedMe(user.id);
         console.log('Likes result:', result?.length || 0, 'profiles found');
-        
-        // Combine with revealed info
-        if (result && revealedProfiles.length > 0) {
-          const revealedIds = revealedProfiles.map(r => r.profile_id);
-          return result.map(profile => ({
-            ...profile,
-            isRevealed: revealedIds.includes(profile.id)
-          }));
-        }
-        
         return result || [];
       } catch (error) {
         console.error('Error in likes query:', error);
@@ -85,7 +64,7 @@ const Messages = () => {
         return [];
       }
     },
-    enabled: !!user?.id && !!revealedProfiles,
+    enabled: !!user?.id,
     refetchInterval: 5000, // Refetch every 5 seconds to check for new likes
     retry: 3, // Retry up to 3 times if there are errors
     retryDelay: 1000 // Wait 1 second between retries
@@ -95,8 +74,7 @@ const Messages = () => {
   useEffect(() => {
     console.log('Likes data state:', likedByProfiles);
     console.log('Matches data state:', matches);
-    console.log('Revealed profiles:', revealedProfiles);
-  }, [likedByProfiles, matches, revealedProfiles]);
+  }, [likedByProfiles, matches]);
 
   // Filter matches and likes based on search query
   const filteredMatches = searchQuery 
@@ -128,7 +106,6 @@ const Messages = () => {
                 setActiveTab('likes');
                 // Refetch likes when switching to likes tab
                 queryClient.invalidateQueries({ queryKey: ['likedByProfiles'] });
-                queryClient.invalidateQueries({ queryKey: ['revealedProfiles'] });
               }}
             >
               Likes

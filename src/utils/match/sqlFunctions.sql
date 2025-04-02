@@ -9,7 +9,8 @@ RETURNS TABLE (
   avatar TEXT,
   verified BOOLEAN,
   interaction_type TEXT,
-  is_matched BOOLEAN
+  is_matched BOOLEAN,
+  is_revealed BOOLEAN
 ) 
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -28,7 +29,8 @@ BEGIN
       SELECT 1 FROM matches m 
       WHERE (m.user_id_1 = p.id AND m.user_id_2 = target_user_id) OR 
             (m.user_id_1 = target_user_id AND m.user_id_2 = p.id)
-    ) AS is_matched
+    ) AS is_matched,
+    pi.is_revealed
   FROM 
     profile_interactions pi
     JOIN profiles p ON pi.user_id = p.id

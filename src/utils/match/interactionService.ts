@@ -153,7 +153,8 @@ export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> 
       avatar: profile.avatar || '',
       photos: [], // Required by Profile interface
       verified: profile.verified || false,
-      interactionType: profile.interaction_type as 'like' | 'superlike'
+      interactionType: profile.interaction_type as 'like' | 'superlike',
+      isRevealed: profile.is_revealed || false
     }));
     
     console.log('Transformed profiles who liked me:', profiles);

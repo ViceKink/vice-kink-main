@@ -114,53 +114,29 @@ export const spendAdCoins = async (
 };
 
 /**
- * Record a profile as revealed
+ * Mark a profile interaction as revealed
  */
-export const recordRevealedProfile = async (
+export const revealProfileInteraction = async (
   userId: string,
   profileId: string
 ): Promise<boolean> => {
   try {
+    // Update the profile_interactions record to set is_revealed = true
     const { error } = await supabase
-      .from('revealed_profiles')
-      .insert([{ user_id: userId, profile_id: profileId }])
-      .select()
-      .single();
+      .from('profile_interactions')
+      .update({ is_revealed: true })
+      .eq('user_id', profileId)  // The liker's ID
+      .eq('target_profile_id', userId);  // The current user's ID
       
     if (error) {
-      if (error.code === '23505') {  // Unique violation - already exists
-        return true; // Profile was already revealed
-      }
-      console.error('Error recording revealed profile:', error);
+      console.error('Error revealing profile interaction:', error);
       return false;
     }
     
     return true;
   } catch (error) {
-    console.error('Error recording revealed profile:', error);
+    console.error('Error revealing profile interaction:', error);
     return false;
-  }
-};
-
-/**
- * Get all profiles revealed by the user
- */
-export const getRevealedProfiles = async (userId: string): Promise<any[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('revealed_profiles')
-      .select('*')
-      .eq('user_id', userId);
-      
-    if (error) {
-      console.error('Error getting revealed profiles:', error);
-      return [];
-    }
-    
-    return data || [];
-  } catch (error) {
-    console.error('Error getting revealed profiles:', error);
-    return [];
   }
 };
 
@@ -173,10 +149,10 @@ export const isProfileRevealed = async (
 ): Promise<boolean> => {
   try {
     const { data, error } = await supabase
-      .from('revealed_profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('profile_id', profileId)
+      .from('profile_interactions')
+      .select('is_revealed')
+      .eq('user_id', profileId)  // The liker's ID
+      .eq('target_profile_id', userId)  // The current user's ID
       .maybeSingle();
       
     if (error) {
@@ -184,7 +160,7 @@ export const isProfileRevealed = async (
       return false;
     }
     
-    return !!data;
+    return data?.is_revealed || false;
   } catch (error) {
     console.error('Error checking if profile is revealed:', error);
     return false;
