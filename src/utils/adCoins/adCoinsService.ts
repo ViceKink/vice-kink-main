@@ -99,7 +99,12 @@ export const spendAdCoins = async (
       return data as unknown as AdCoinsTransaction;
     }
     
-    toast.success(`Spent ${amount} AdCoins on ${feature}`);
+    if (feature === 'view_like') {
+      // Don't show a toast for view_like as we'll handle that in the component
+    } else {
+      toast.success(`Spent ${amount} AdCoins on ${feature}`);
+    }
+    
     return data as unknown as AdCoinsTransaction;
   } catch (error) {
     console.error('Error spending AdCoins:', error);

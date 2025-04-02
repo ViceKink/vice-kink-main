@@ -12,6 +12,7 @@ import LikesList from '@/components/messages/LikesList';
 import ChatView from '@/components/messages/ChatView';
 import { Profile } from '@/models/profileTypes';
 import { toast } from 'sonner';
+import AdCoinsBalance from '@/components/adcoins/AdCoinsBalance';
 
 const Messages = () => {
   const { user } = useAuth();
@@ -87,7 +88,7 @@ const Messages = () => {
   return (
     <div className="container py-10 mt-20">
       <Tabs defaultValue="matches" className="w-full">
-        <div className="mb-6 mt-5">
+        <div className="mb-6 mt-5 flex justify-between items-center">
           <TabsList className="w-full max-w-xs mx-0">
             <TabsTrigger 
               value="matches" 
@@ -110,6 +111,10 @@ const Messages = () => {
               Likes
             </TabsTrigger>
           </TabsList>
+          
+          {activeTab === 'likes' && (
+            <AdCoinsBalance showEarnButton={true} />
+          )}
         </div>
         
         <Separator className="my-4" />
