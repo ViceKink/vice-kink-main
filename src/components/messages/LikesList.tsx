@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { IconButton } from '@/components/ui/icon-button';
@@ -8,12 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Heart, User2, X, Coins, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { createInteraction } from '@/utils/match';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAdCoins } from '@/hooks/useAdCoins';
 import { AdCoinFeature } from '@/models/adCoinsTypes';
+import { recordRevealedProfile } from '@/utils/adCoins/adCoinsService';
 
 interface Profile {
   id: string;
@@ -22,6 +23,7 @@ interface Profile {
   location?: string;
   avatar?: string;
   interactionType?: 'like' | 'superlike';
+  isRevealed?: boolean;
 }
 
 interface LikesListProps {
@@ -37,6 +39,22 @@ const LikesList: React.FC<LikesListProps> = ({ profiles, isLoading, onSelectLike
   const isMobile = useIsMobile();
   const [revealedProfiles, setRevealedProfiles] = useState<Record<string, boolean>>({});
   const { balance, purchaseFeature, showRewardedAd, isAdReady } = useAdCoins();
+  
+  // Initialize revealed profiles from props
+  useEffect(() => {
+    const initialRevealed: Record<string, boolean> = {};
+    
+    profiles.forEach(profile => {
+      if (profile.isRevealed) {
+        initialRevealed[profile.id] = true;
+      }
+    });
+    
+    setRevealedProfiles(prev => ({
+      ...prev,
+      ...initialRevealed
+    }));
+  }, [profiles]);
   
   const interactionMutation = useMutation({
     mutationFn: async ({ 
@@ -79,16 +97,30 @@ const LikesList: React.FC<LikesListProps> = ({ profiles, isLoading, onSelectLike
     interactionMutation.mutate({ profileId, interactionType: 'dislike' });
   };
   
+  const revealProfileMutation = useMutation({
+    mutationFn: async (profileId: string) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      return recordRevealedProfile(user.id, profileId);
+    },
+    onSuccess: (_, profileId) => {
+      // Update local state to mark profile as revealed
+      setRevealedProfiles(prev => ({
+        ...prev,
+        [profileId]: true
+      }));
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['revealedProfiles'] });
+    }
+  });
+  
   const handleRevealProfile = async (profileId: string) => {
     // Try to purchase the view_like feature
     const success = await purchaseFeature('view_like');
     
     if (success) {
-      // If successful, update the local state to mark this profile as revealed
-      setRevealedProfiles(prev => ({
-        ...prev,
-        [profileId]: true
-      }));
+      // If successful, record this revealed profile in the database
+      revealProfileMutation.mutate(profileId);
       toast.success("Profile revealed!");
     }
   };
@@ -140,7 +172,8 @@ const LikesList: React.FC<LikesListProps> = ({ profiles, isLoading, onSelectLike
   return (
     <div className="space-y-2 overflow-y-auto max-h-[70vh]">
       {profiles.map((profile) => {
-        const isRevealed = revealedProfiles[profile.id] || false;
+        // Check if revealed from both local state and props
+        const isRevealed = revealedProfiles[profile.id] || profile.isRevealed || false;
         
         return (
           <Card key={profile.id} className="hover:bg-accent/50 transition-colors">

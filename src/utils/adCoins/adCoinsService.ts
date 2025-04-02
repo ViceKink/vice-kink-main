@@ -112,3 +112,81 @@ export const spendAdCoins = async (
     return null;
   }
 };
+
+/**
+ * Record a profile as revealed
+ */
+export const recordRevealedProfile = async (
+  userId: string,
+  profileId: string
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('revealed_profiles')
+      .insert([{ user_id: userId, profile_id: profileId }])
+      .select()
+      .single();
+      
+    if (error) {
+      if (error.code === '23505') {  // Unique violation - already exists
+        return true; // Profile was already revealed
+      }
+      console.error('Error recording revealed profile:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error recording revealed profile:', error);
+    return false;
+  }
+};
+
+/**
+ * Get all profiles revealed by the user
+ */
+export const getRevealedProfiles = async (userId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('revealed_profiles')
+      .select('*')
+      .eq('user_id', userId);
+      
+    if (error) {
+      console.error('Error getting revealed profiles:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error getting revealed profiles:', error);
+    return [];
+  }
+};
+
+/**
+ * Check if a profile has been revealed by the user
+ */
+export const isProfileRevealed = async (
+  userId: string,
+  profileId: string
+): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('revealed_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('profile_id', profileId)
+      .maybeSingle();
+      
+    if (error) {
+      console.error('Error checking if profile is revealed:', error);
+      return false;
+    }
+    
+    return !!data;
+  } catch (error) {
+    console.error('Error checking if profile is revealed:', error);
+    return false;
+  }
+};
