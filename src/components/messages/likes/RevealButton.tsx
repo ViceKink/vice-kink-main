@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, Coins, PlayCircle } from 'lucide-react';
+import { Loader2, Eye, PlayCircle, Coins } from 'lucide-react';
 
 export interface RevealButtonProps {
   onReveal: () => void;
@@ -19,9 +19,9 @@ const RevealButton: React.FC<RevealButtonProps> = ({
   isAdReady
 }) => {
   return (
-    <div className="p-4 space-y-2 bg-muted/20">
+    <div className="p-4 space-y-2">
       <Button
-        className="w-full"
+        className="w-full bg-slate-800 hover:bg-slate-900"
         onClick={onReveal}
         disabled={!canUseCoins || isProcessing}
       >
@@ -32,8 +32,8 @@ const RevealButton: React.FC<RevealButtonProps> = ({
           </>
         ) : (
           <>
-            <Coins className="w-4 h-4 mr-2" />
-            Reveal with 1 Coin
+            <Eye className="w-4 h-4 mr-2" />
+            Reveal for <Coins className="h-4 w-4 mx-1 text-yellow-400" /> 1
           </>
         )}
       </Button>
