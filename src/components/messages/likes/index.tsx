@@ -1,239 +1,103 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useNavigate } from 'react-router-dom';
-import { useAdCoins } from '@/hooks/useAdCoins';
-import { useToast } from '@/hooks/use-toast';
-import { matchingService } from '@/utils/match';
+import React, { useEffect, useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { interactionService } from '@/utils/match/interactionService';
 import { useAuth } from '@/context/auth';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ProfileItem } from './ProfileItem';
+import { useAdCoins } from '@/hooks/useAdCoins';
+import { toast } from '@/components/ui/use-toast';
+import ProfileItem from './ProfileItem';
+import { AdCoinFeature } from '@/models/adCoinsTypes';
 
-// Type for the likes list
-export type LikeProfile = {
-  id: string;
-  name: string;
-  age: number;
-  location: string;
-  avatar: string;
-  verified: boolean;
-  interaction_type: string;
-  is_matched: boolean;
-  is_revealed: boolean;
-};
-
-interface LikesListProps {
-  likes: LikeProfile[] | null;
-  isLoading: boolean;
-  mutate: () => void;
+interface LikesProps {
+  userId: string;
+  onSelectLike: (profileId: string) => void;
+  balance: number;
+  isAdReady: boolean;
+  onWatchAd: () => Promise<void>;
 }
 
-export const LikesList: React.FC<LikesListProps> = ({ likes, isLoading, mutate }) => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [processingId, setProcessingId] = useState<string | null>(null);
+export const Likes = ({
+  userId,
+  onSelectLike,
+  balance,
+  isAdReady,
+  onWatchAd
+}: LikesProps) => {
+  const { adCoins, purchaseFeature } = useAdCoins();
+  const [processingIds, setProcessingIds] = useState<string[]>([]);
   
-  const { 
-    adCoins, 
-    deductCoins,
-    isAdReady,
-    showRewardedAd,
-    isAdLoading 
-  } = useAdCoins();
-
-  // Group likes by whether they've been revealed or not
-  const revealedLikes = likes?.filter(like => like.is_revealed) || [];
-  const hiddenLikes = likes?.filter(like => !like.is_revealed) || [];
+  // Query to get profiles who liked the current user
+  const { data: profiles, isLoading, refetch } = useQuery({
+    queryKey: ['likes', userId],
+    queryFn: () => interactionService.getLikesForUser(userId),
+    enabled: !!userId,
+  });
   
-  const handleLike = async (profileId: string) => {
-    if (!user) return;
-    
-    setProcessingId(profileId);
-    try {
-      await matchingService.createMatch(profileId);
-      toast({
-        title: "It's a match!",
-        description: "You have a new match!",
-      });
-      mutate();
-    } catch (error) {
-      console.error('Error creating match:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to like the profile. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setProcessingId(null);
-    }
-  };
-  
-  const handleReject = async (profileId: string) => {
-    if (!user) return;
-    
-    setProcessingId(profileId);
-    try {
-      await matchingService.rejectProfile(profileId);
-      toast({
-        description: 'Profile rejected',
-      });
-      mutate();
-    } catch (error) {
-      console.error('Error rejecting profile:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to reject the profile. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setProcessingId(null);
-    }
-  };
-  
-  const handleReveal = async (profileId: string) => {
-    if (!user || adCoins < 1) return;
-    
-    setProcessingId(profileId);
-    try {
-      await matchingService.revealProfile(profileId);
-      await deductCoins(1);
-      mutate();
-      toast({
-        title: 'Profile Revealed',
-        description: 'You have revealed a new profile!',
-      });
-    } catch (error) {
-      console.error('Error revealing profile:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to reveal the profile. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setProcessingId(null);
-    }
-  };
-  
-  const handleWatchAd = async (profileId: string) => {
-    if (!isAdReady || isAdLoading) return;
-    
-    setProcessingId(profileId);
-    try {
-      const rewarded = await showRewardedAd();
-      if (rewarded) {
-        await matchingService.revealProfile(profileId);
-        mutate();
-        toast({
-          title: 'Profile Revealed',
-          description: 'You have revealed a new profile!',
-        });
+  // Reveal profile mutation
+  const revealMutation = useMutation({
+    mutationFn: async ({ profileId, useCoins }: { profileId: string; useCoins: boolean }) => {
+      setProcessingIds(prev => [...prev, profileId]);
+      
+      // If using AdCoins, purchase the reveal feature
+      if (useCoins) {
+        await purchaseFeature(AdCoinFeature.REVEAL_PROFILE);
       }
-    } catch (error) {
-      console.error('Error watching ad or revealing profile:', error);
+      
+      // Reveal the profile
+      return await interactionService.revealProfile(userId, profileId);
+    },
+    onSuccess: () => {
+      refetch();
       toast({
-        title: 'Error',
-        description: 'Failed to watch ad or reveal the profile.',
-        variant: 'destructive',
+        title: "Profile revealed!",
+        description: "Now you can see who liked you",
       });
-    } finally {
-      setProcessingId(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error revealing profile",
+        description: String(error),
+        variant: "destructive",
+      });
+    },
+    onSettled: (_, __, variables) => {
+      setProcessingIds(prev => prev.filter(id => id !== variables.profileId));
     }
+  });
+  
+  // Handle revealing a profile
+  const handleRevealProfile = (profileId: string, useCoins = true) => {
+    revealMutation.mutate({ profileId, useCoins });
   };
-  
-  const handleViewProfile = (profileId: string) => {
-    navigate(`/profile/${profileId}`);
-  };
-  
-  if (isLoading) {
+
+  if (!profiles || profiles.length === 0) {
     return (
-      <Card className="h-full">
-        <CardContent className="p-4">
-          <div className="space-y-4">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="flex items-center gap-3 pb-3 border-b">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-3 w-32" />
-                </div>
-                <div className="flex gap-1">
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  if (!likes || likes.length === 0) {
-    return (
-      <Card className="h-full">
-        <CardContent className="p-4">
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">No one has liked you yet. Keep exploring!</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col items-center justify-center py-12 px-4 bg-muted/30 rounded-lg">
+        <p className="text-xl font-medium mb-2">No likes yet</p>
+        <p className="text-muted-foreground text-center">
+          When someone likes you, they'll appear here
+        </p>
+      </div>
     );
   }
 
   return (
-    <Card className="h-full">
-      <CardContent className="p-4 h-full">
-        <ScrollArea className="h-full pr-4">
-          {revealedLikes.length > 0 && (
-            <div className="space-y-4 mb-6">
-              <h3 className="text-sm font-medium text-muted-foreground">
-                Revealed Likes
-              </h3>
-              
-              <div className="space-y-3">
-                {revealedLikes.map(profile => (
-                  <ProfileItem
-                    key={profile.id}
-                    profile={profile}
-                    onLike={handleLike}
-                    onReject={handleReject}
-                    onViewProfile={handleViewProfile}
-                    isProcessing={processingId === profile.id}
-                    isRevealed={true}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {hiddenLikes.length > 0 && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-muted-foreground">
-                Hidden Likes {hiddenLikes.length > 0 && `(${hiddenLikes.length})`}
-              </h3>
-              
-              <div className="space-y-3">
-                {hiddenLikes.map(profile => (
-                  <ProfileItem
-                    key={profile.id}
-                    profile={profile}
-                    onReveal={() => handleReveal(profile.id)}
-                    onWatchAd={() => handleWatchAd(profile.id)}
-                    isProcessing={processingId === profile.id}
-                    isRevealed={false}
-                    adCoins={adCoins}
-                    isAdReady={isAdReady}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </ScrollArea>
-      </CardContent>
-    </Card>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-2">
+      {profiles.map(profile => (
+        <ProfileItem
+          key={profile.id}
+          profile={profile}
+          onSelectLike={onSelectLike}
+          onReveal={() => handleRevealProfile(profile.id)}
+          onWatchAd={() => {
+            handleRevealProfile(profile.id, false);
+            onWatchAd();
+          }}
+          isProcessing={processingIds.includes(profile.id)}
+          canUseCoins={balance >= 50}
+          isAdReady={isAdReady}
+        />
+      ))}
+    </div>
   );
 };
-
-export default LikesList;

@@ -1,179 +1,166 @@
 
 import React, { useState, useEffect } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from '@/components/ui/separator';
-import { Search } from 'lucide-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/context/auth';
-import { getUserMatches, forceCheckForMatches } from '@/utils/match/matchingService';
-import { getProfilesWhoLikedMe } from '@/utils/match/interactionService';
-import MatchesList from '@/components/messages/MatchesList';
-import LikesList from '@/components/messages/likes';
-import ChatView from '@/components/messages/ChatView';
-import { toast } from 'sonner';
-import AdCoinsBalance from '@/components/adcoins/AdCoinsBalance';
 import { useAdCoins } from '@/hooks/useAdCoins';
+import { interactionService } from '@/utils/match/interactionService';
+import LikesList from '@/components/messages/LikesList';
+import MatchesList from '@/components/messages/MatchesList';
+import ChatView from '@/components/messages/ChatView';
+import { Separator } from '@/components/ui/separator';
 
 const Messages = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('matches');
-  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const queryClient = useQueryClient();
-  const { balance, showRewardedAd, isAdReady } = useAdCoins();
-
-  // Run a force check for matches when the component loads
-  useEffect(() => {
-    if (user?.id) {
-      forceCheckForMatches(user.id).then((matchesCreated) => {
-        if (matchesCreated > 0) {
-          console.log(`Created ${matchesCreated} new matches that were previously missed`);
-          // Refresh the matches data
-          queryClient.invalidateQueries({ queryKey: ['userMatches'] });
-          queryClient.invalidateQueries({ queryKey: ['likedByProfiles'] });
-          toast.success(`Found ${matchesCreated} new matches!`);
-        }
-      });
-    }
-  }, [user?.id, queryClient]);
-
-  const { data: matches = [], isLoading: matchesLoading } = useQuery({
-    queryKey: ['userMatches'],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      console.log('Fetching matches for user:', user.id);
-      const result = await getUserMatches(user.id);
-      console.log('Matches result:', result);
-      return result;
-    },
-    enabled: !!user?.id
+  const userId = user?.id || '';
+  
+  // State for the currently selected conversation
+  const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
+  const [activeLikeId, setActiveLikeId] = useState<string | null>(null);
+  
+  // Get adCoins balance for profile reveal feature
+  const { 
+    adCoins, 
+    balance, 
+    isAdCoinsLoading,
+    isAdReady,
+    showRewardedAd 
+  } = useAdCoins();
+  
+  // Fetch likes (profiles who liked the current user)
+  const { 
+    data: likesData, 
+    isLoading: isLikesLoading,
+    refetch: refetchLikes
+  } = useQuery({
+    queryKey: ['likes', userId],
+    queryFn: () => interactionService.getLikesForUser(userId),
+    enabled: !!userId,
   });
-
-  const { data: likedByProfiles = [], isLoading: likesLoading } = useQuery({
-    queryKey: ['likedByProfiles'],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      console.log('Fetching profiles who liked user:', user.id);
-      
-      try {
-        const result = await getProfilesWhoLikedMe(user.id);
-        console.log('Likes result:', result?.length || 0, 'profiles found');
-        return result || [];
-      } catch (error) {
-        console.error('Error in likes query:', error);
-        toast.error('Failed to fetch likes: ' + (error instanceof Error ? error.message : String(error)));
-        return [];
-      }
-    },
-    enabled: !!user?.id,
-    refetchInterval: 5000, // Refetch every 5 seconds to check for new likes
-    retry: 3, // Retry up to 3 times if there are errors
-    retryDelay: 1000 // Wait 1 second between retries
+  
+  // Fetch matches
+  const { 
+    data: matchesData, 
+    isLoading: isMatchesLoading,
+    refetch: refetchMatches
+  } = useQuery({
+    queryKey: ['matches', userId],
+    queryFn: () => interactionService.getMatches(userId),
+    enabled: !!userId,
   });
-
-  // Add debug logging to verify data
-  useEffect(() => {
-    console.log('Likes data state:', likedByProfiles);
-    console.log('Matches data state:', matches);
-  }, [likedByProfiles, matches]);
-
-  // Filter matches and likes based on search query
-  const filteredMatches = searchQuery 
-    ? matches.filter((match) => match.other_user.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : matches;
-
-  const filteredLikes = searchQuery
-    ? likedByProfiles.filter((profile) => profile.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : likedByProfiles;
-    
-  // Handler for watching an ad
+  
+  // Handle Ad reward completion
   const handleWatchAd = async () => {
-    if (!isAdReady) {
-      toast.error("Ads aren't ready yet. Please try again later.");
-      return;
-    }
-    
-    const success = await showRewardedAd();
-    if (success) {
-      toast.success("Thanks for watching! AdCoins added to your balance.");
+    try {
+      await showRewardedAd();
+      refetchLikes();
+    } catch (error) {
+      console.error("Error watching ad:", error);
     }
   };
+  
+  // Handle selecting a match to chat with
+  const handleSelectMatch = (matchId: string) => {
+    setActiveMatchId(matchId);
+    setActiveLikeId(null);
+  };
+  
+  // Handle selecting a like to potentially match with
+  const handleSelectLike = (likeId: string) => {
+    setActiveLikeId(likeId);
+    setActiveMatchId(null);
+  };
+  
+  // Reset selections when tab changes
+  const handleTabChange = (value: string) => {
+    if (value === 'matches') {
+      setActiveLikeId(null);
+    } else if (value === 'likes') {
+      setActiveMatchId(null);
+    }
+  };
+  
+  // If a match is created from a like, refresh the matches list
+  useEffect(() => {
+    if (matchesData) {
+      // Check if we need to update the active match after creating a new match
+      const newMatch = matchesData.find(match => 
+        match.profile_id === activeLikeId
+      );
+      
+      if (newMatch) {
+        setActiveLikeId(null);
+        setActiveMatchId(newMatch.match_id);
+      }
+    }
+  }, [matchesData, activeLikeId]);
+  
+  // Count of likes and matches for tab labels
+  const likesCount = likesData?.length || 0;
+  const matchesCount = matchesData?.length || 0;
+  
+  // Find the current active match data
+  const activeMatch = activeMatchId 
+    ? matchesData?.find(match => match.match_id === activeMatchId)
+    : null;
 
   return (
-    <div className="container py-10 mt-20">
-      <Tabs defaultValue="matches" className="w-full">
-        <div className="mb-6 mt-5 flex justify-between items-center">
-          <TabsList className="w-full max-w-xs mx-0">
-            <TabsTrigger 
-              value="matches" 
-              onClick={() => {
-                setActiveTab('matches');
-                // Refetch matches when switching to matches tab
-                queryClient.invalidateQueries({ queryKey: ['userMatches'] });
-              }}
-            >
-              Matches
-            </TabsTrigger>
-            <TabsTrigger 
-              value="likes" 
-              onClick={() => {
-                setActiveTab('likes');
-                // Refetch likes when switching to likes tab
-                queryClient.invalidateQueries({ queryKey: ['likedByProfiles'] });
-              }}
-            >
-              Likes
-            </TabsTrigger>
-          </TabsList>
-          
-          {activeTab === 'likes' && (
-            <AdCoinsBalance showEarnButton={true} />
-          )}
-        </div>
+    <div className="container max-w-screen-xl mx-auto pt-20 pb-10 min-h-screen">
+      <h1 className="text-2xl font-bold mb-6">Messages</h1>
+      
+      <Tabs defaultValue="matches" className="w-full" onValueChange={handleTabChange}>
+        <TabsList className="mb-6">
+          <TabsTrigger value="matches">
+            Matches {matchesCount > 0 && `(${matchesCount})`}
+          </TabsTrigger>
+          <TabsTrigger value="likes">
+            Likes {likesCount > 0 && `(${likesCount})`}
+          </TabsTrigger>
+        </TabsList>
         
-        <Separator className="my-4" />
-        
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input 
-            type="search"
-            placeholder="Search"
-            className="w-full pl-10 py-2 rounded-md bg-secondary border-none focus-visible:ring-0"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="md:col-span-1">
-            <TabsContent value="matches" className="space-y-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-1">
+            <TabsContent value="matches" className="m-0">
               <MatchesList 
-                matches={filteredMatches} 
-                isLoading={matchesLoading}
-                onSelectMatch={(matchId) => {
-                  setSelectedMatchId(matchId);
-                }}
+                matches={matchesData || []}
+                isLoading={isMatchesLoading} 
+                activeMatchId={activeMatchId}
+                onSelectMatch={handleSelectMatch}
               />
             </TabsContent>
             
-            <TabsContent value="likes" className="space-y-2">
-              <LikesList 
-                profiles={filteredLikes} 
-                isLoading={likesLoading}
-                onSelectLike={(profileId) => {
-                  // For likes, we don't have a match yet
-                  setSelectedMatchId(null);
-                }}
+            <TabsContent value="likes" className="m-0">
+              <LikesList
+                isLoading={isLikesLoading}
+                onSelectLike={handleSelectLike}
                 balance={balance}
                 isAdReady={isAdReady}
                 onWatchAd={handleWatchAd}
-                userId={user?.id}
+                userId={userId}
               />
             </TabsContent>
           </div>
           
-          <div className="md:col-span-3">
-            <ChatView matchId={selectedMatchId} />
+          <div className="lg:col-span-2">
+            {activeMatchId && activeMatch && (
+              <ChatView 
+                matchId={activeMatchId}
+                partnerId={activeMatch.profile_id}
+                partnerName={activeMatch.name}
+                partnerAvatar={activeMatch.avatar_url}
+              />
+            )}
+            
+            {!activeMatchId && !activeLikeId && (
+              <div className="h-full flex items-center justify-center bg-muted/30 rounded-lg p-8">
+                <div className="text-center">
+                  <h3 className="text-xl font-medium mb-2">Select a conversation</h3>
+                  <p className="text-muted-foreground">
+                    Choose a match to start chatting or reveal who liked you
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </Tabs>

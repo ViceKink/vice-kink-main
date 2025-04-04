@@ -1,5 +1,8 @@
 
-// This file is now a barrel file that re-exports from the modular structure
-// This maintains backward compatibility with existing imports
+import { interactionService } from '@/utils/match/interactionService';
 
-export * from './match';
+// Re-export the functions from interactionService
+export const likeProfile = interactionService.likeProfile;
+export const superlikeProfile = interactionService.superlikeProfile;
+export const rejectProfile = interactionService.rejectProfile;
+export const revealProfile = interactionService.revealProfile;
