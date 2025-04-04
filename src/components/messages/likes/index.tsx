@@ -12,10 +12,11 @@ interface LikesProps {
   likes: ProfileWithInteraction[];
 }
 
-export const Likes: React.FC<LikesProps> = ({ likes }) => {
+export const Likes: React.FC<LikesProps> = ({ likes: initialLikes }) => {
   const { purchaseFeature, showRewardedAd } = useAdCoins();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [likes, setLikes] = useState<ProfileWithInteraction[]>(initialLikes);
   const queryClient = useQueryClient();
   
   // Function to handle revealing a profile
@@ -31,6 +32,15 @@ export const Likes: React.FC<LikesProps> = ({ likes }) => {
         try {
           // Update the profile interaction in database
           await interactionService.revealProfile(profileId);
+          
+          // Update local state to immediately show revealed profile
+          setLikes(currentLikes => 
+            currentLikes.map(profile => 
+              profile.id === profileId 
+                ? { ...profile, is_revealed: true } 
+                : profile
+            )
+          );
           
           // Invalidate queries to reflect changes
           queryClient.invalidateQueries({ queryKey: ['likes'] });
@@ -62,6 +72,15 @@ export const Likes: React.FC<LikesProps> = ({ likes }) => {
           // Update the profile interaction in database
           await interactionService.revealProfile(profileId);
           
+          // Update local state to immediately show revealed profile
+          setLikes(currentLikes => 
+            currentLikes.map(profile => 
+              profile.id === profileId 
+                ? { ...profile, is_revealed: true } 
+                : profile
+            )
+          );
+          
           // Invalidate queries to reflect changes
           queryClient.invalidateQueries({ queryKey: ['likes'] });
           
@@ -83,6 +102,11 @@ export const Likes: React.FC<LikesProps> = ({ likes }) => {
   const handleSelectLike = (profileId: string) => {
     setSelectedProfileId(profileId);
   };
+
+  // Update local state when props change
+  React.useEffect(() => {
+    setLikes(initialLikes);
+  }, [initialLikes]);
 
   return (
     <div className="space-y-4">

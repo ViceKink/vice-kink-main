@@ -40,9 +40,14 @@ const Messages = () => {
     queryKey: ['likes'],
     queryFn: async () => {
       if (!user?.id) return [];
-      return await interactionService.getLikesForUser(user.id);
+      // Make sure we get fresh data each time to reflect revealed status
+      const likesData = await interactionService.getLikesForUser(user.id);
+      console.log("Fetched likes data:", likesData);
+      return likesData;
     },
     enabled: !!user?.id,
+    // Refresh data every time the tab is focused to ensure latest revealed status
+    refetchOnWindowFocus: true,
   });
 
   const handleBackFromChat = () => {

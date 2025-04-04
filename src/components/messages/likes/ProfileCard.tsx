@@ -33,11 +33,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onSelectLike }) => {
           </div>
         </div>
         
-        {profile.type === 'superlike' && (
+        {profile.interaction_type === 'superlike' && (
           <Badge className="bg-red-500 hover:bg-red-600">Super Like</Badge>
         )}
         
-        {profile.type === 'like' && profile.is_revealed && (
+        {profile.interaction_type === 'like' && profile.is_revealed && (
           <Badge className="bg-blue-500 hover:bg-blue-600">Like</Badge>
         )}
       </div>

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 async function getLikesForUser(userId: string) {
@@ -168,7 +167,7 @@ async function rejectProfile(currentUserId: string, rejectedProfileId: string) {
 // Function to reveal a profile that has liked the current user
 async function revealProfile(profileId: string) {
   try {
-    // Fixed: Getting the user session correctly
+    // Get the user session correctly
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
     
@@ -190,6 +189,9 @@ async function revealProfile(profileId: string) {
       console.error('Error in revealProfile:', error);
       throw error;
     }
+    
+    // Log the response to help debug
+    console.log('Profile reveal response:', data);
     
     return data;
   } catch (error) {
