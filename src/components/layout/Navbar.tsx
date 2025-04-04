@@ -34,14 +34,14 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import AdCoinsBalance from '@/components/adcoins/AdCoinsBalance';
 
 const Navbar = () => {
-  const { user, logout } = useAuth(); // Changed signOut to logout to match the Auth context
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   const handleSignOut = () => {
-    logout(); // Changed from signOut to logout
+    logout();
     navigate('/');
   };
   
@@ -73,9 +73,9 @@ const Navbar = () => {
     <header className="fixed top-0 left-0 right-0 z-50 bg-background border-b h-16 flex items-center">
       <div className="container flex items-center justify-between h-full">
         <div className="flex items-center">
-          <Link to="/" className="flex items-center space-x-2">
-            <Logo className="h-8" />
-            <span className="font-bold text-lg">Flirtify</span>
+          <Link to="/" className="flex items-center">
+            <Logo />
+            <span className="sr-only">Vice Kink</span>
           </Link>
         </div>
         

@@ -1,166 +1,193 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { InteractionType, InteractionResult } from "./types";
-import { toast } from "sonner";
-import { createMatch, checkIfMatched } from "./matchingService";
-import { Profile } from "@/models/profileTypes";
+import { supabase } from '@/integrations/supabase/client';
+import { ProfileWithInteraction } from '@/utils/match/types';
 
-/**
- * Create an interaction with a profile (like, dislike, superlike)
- */
-export const createInteraction = async (
-  userId: string,
-  targetProfileId: string,
-  interactionType: InteractionType
-): Promise<InteractionResult> => {
-  if (!userId || !targetProfileId) {
-    return { success: false, matched: false };
-  }
-  
+async function getLikesForUser(userId: string): Promise<ProfileWithInteraction[]> {
+  // Get profiles that have liked the current user but aren't matched yet
   try {
-    console.log('Creating interaction:', userId, '->', targetProfileId, ':', interactionType);
-    
-    // First, check if the interaction already exists to avoid duplicates
-    const { data: existingInteraction, error: checkError } = await supabase
-      .from('profile_interactions')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('target_profile_id', targetProfileId)
-      .maybeSingle();
-      
-    if (checkError) {
-      console.error('Error checking for existing interaction:', checkError);
-    }
-    
-    if (existingInteraction) {
-      console.log('Existing interaction found:', existingInteraction);
-      // If interaction already exists, update it
-      const { error: updateError } = await supabase
-        .from('profile_interactions')
-        .update({ interaction_type: interactionType })
-        .eq('id', existingInteraction.id);
-        
-      if (updateError) {
-        console.error('Error updating interaction:', updateError);
-        throw updateError;
-      }
-    } else {
-      // Create new interaction
-      const { error: insertError } = await supabase
-        .from('profile_interactions')
-        .insert({
-          user_id: userId,
-          target_profile_id: targetProfileId,
-          interaction_type: interactionType
-        });
-        
-      if (insertError) {
-        console.error('Error creating interaction:', insertError);
-        throw insertError;
-      }
-    }
-    
-    // If it's a like or superlike, check if there's a match
-    if (interactionType === 'like' || interactionType === 'superlike') {
-      console.log('Checking for match after like/superlike');
-      const isMatched = await checkIfMatched(userId, targetProfileId);
-      
-      if (isMatched) {
-        console.log('Match found! Creating match in database');
-        // Create a match in the database
-        await createMatch(userId, targetProfileId);
-        return { success: true, matched: true };
-      }
-    }
-    
-    return { success: true, matched: false };
-  } catch (error) {
-    console.error('Error creating interaction:', error);
-    toast.error(`Failed to ${interactionType} profile`);
-    return { success: false, matched: false };
-  }
-};
-
-/**
- * Get all interactions for a user
- */
-export const getUserInteractions = async (userId: string) => {
-  if (!userId) return [];
-  
-  try {
-    console.log('Getting interactions for user:', userId);
     const { data, error } = await supabase
-      .from('profile_interactions')
-      .select('*')
-      .eq('user_id', userId);
-      
+      .rpc('get_profiles_that_liked_me', { user_id: userId });
+
     if (error) {
-      console.error('Error getting user interactions:', error);
-      throw error;
+      console.error('Error getting user likes:', error);
+      throw new Error(error.message);
     }
-    
-    console.log('Interactions fetched:', data?.length || 0, 'interactions found');
+
     return data || [];
   } catch (error) {
-    console.error('Error getting user interactions:', error);
-    return [];
+    console.error('Error in getLikesForUser:', error);
+    throw error;
   }
-};
+}
 
-/**
- * Get profiles that have liked the current user but haven't matched yet
- * and the current user hasn't disliked them
- */
-export const getProfilesWhoLikedMe = async (userId: string): Promise<Profile[]> => {
-  if (!userId) return [];
-  
-  try {
-    console.log('Getting profiles who liked user:', userId);
-    
-    // Explicitly log the RPC call for debugging
-    console.log('Calling RPC: get_profiles_who_liked_me with param:', userId);
-    
-    // Use the database function call
-    const { data, error } = await supabase
-      .rpc('get_profiles_who_liked_me', { target_user_id: userId });
-    
-    if (error) {
-      console.error('Error fetching profiles who liked me:', error);
-      toast.error('Failed to fetch likes: ' + error.message);
-      throw error;
-    }
-    
-    console.log('Raw profiles who liked data:', data);
-    
-    // Check if data exists and is an array
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      console.log('No profiles found who liked user:', userId);
-      return [];
-    }
-    
-    // The SQL function now returns profiles that:
-    // 1. Have liked the target user
-    // 2. Are not already matched with the target user
-    // 3. The target user hasn't disliked
-    console.log('Profiles who liked me and meet criteria:', data.length);
-    
-    // Transform the data to match the Profile interface
-    const profiles = data.map(profile => ({
-      id: profile.id,
-      name: profile.name || 'Unknown User',
-      age: profile.age || 0,
-      location: profile.location || '',
-      avatar: profile.avatar || '',
-      photos: [], // Required by Profile interface
-      verified: profile.verified || false,
-      interactionType: profile.interaction_type as 'like' | 'superlike',
-      isRevealed: profile.is_revealed || false
-    }));
-    
-    console.log('Transformed profiles who liked me:', profiles);
-    return profiles;
-  } catch (error) {
-    console.error('Error getting profiles who liked me:', error);
-    return [];
+// Function to create a match between two users
+async function createMatch(currentUserId: string, likedUserId: string) {
+  if (!currentUserId || !likedUserId) {
+    throw new Error('Both user IDs are required to create a match');
   }
+
+  try {
+    const { data, error } = await supabase
+      .rpc('create_match', {
+        user1_id: currentUserId,
+        user2_id: likedUserId,
+      });
+
+    if (error) throw error;
+    
+    return data;
+  } catch (error) {
+    console.error('Error in createMatch:', error);
+    throw error;
+  }
+}
+
+// Function to get all matches for the current user
+async function getMatches(userId: string) {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_user_matches', { user_id: userId });
+
+    if (error) throw error;
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error in getMatches:', error);
+    throw error;
+  }
+}
+
+// Function to like a profile
+async function likeProfile(currentUserId: string, likedProfileId: string) {
+  if (!currentUserId || !likedProfileId) {
+    throw new Error('Both user IDs are required');
+  }
+
+  try {
+    // First check if this would create a match
+    const { data: matchData, error: matchError } = await supabase
+      .rpc('check_for_potential_match', {
+        user1_id: currentUserId,
+        user2_id: likedProfileId,
+      });
+
+    if (matchError) throw matchError;
+
+    // Insert the like interaction
+    const { data, error } = await supabase
+      .from('profile_interactions')
+      .insert({
+        user_id: currentUserId,
+        target_user_id: likedProfileId,
+        interaction_type: 'like',
+      })
+      .select();
+
+    if (error) throw error;
+
+    return { 
+      interaction: data[0],
+      isMatch: matchData?.is_match || false
+    };
+  } catch (error) {
+    console.error('Error in likeProfile:', error);
+    throw error;
+  }
+}
+
+// Function to super like a profile
+async function superlikeProfile(currentUserId: string, likedProfileId: string) {
+  if (!currentUserId || !likedProfileId) {
+    throw new Error('Both user IDs are required');
+  }
+
+  try {
+    // First check if this would create a match
+    const { data: matchData, error: matchError } = await supabase
+      .rpc('check_for_potential_match', {
+        user1_id: currentUserId,
+        user2_id: likedProfileId,
+      });
+
+    if (matchError) throw matchError;
+
+    // Insert the superlike interaction
+    const { data, error } = await supabase
+      .from('profile_interactions')
+      .insert({
+        user_id: currentUserId,
+        target_user_id: likedProfileId,
+        interaction_type: 'superlike',
+      })
+      .select();
+
+    if (error) throw error;
+
+    return { 
+      interaction: data[0],
+      isMatch: matchData?.is_match || false
+    };
+  } catch (error) {
+    console.error('Error in superlikeProfile:', error);
+    throw error;
+  }
+}
+
+// Function to reject a profile
+async function rejectProfile(currentUserId: string, rejectedProfileId: string) {
+  if (!currentUserId || !rejectedProfileId) {
+    throw new Error('Both user IDs are required');
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('profile_interactions')
+      .insert({
+        user_id: currentUserId,
+        target_user_id: rejectedProfileId,
+        interaction_type: 'reject',
+      })
+      .select();
+
+    if (error) throw error;
+    
+    return data[0];
+  } catch (error) {
+    console.error('Error in rejectProfile:', error);
+    throw error;
+  }
+}
+
+// Function to reveal a profile that has liked the current user
+async function revealProfile(currentUserId: string, profileToRevealId: string) {
+  if (!currentUserId || !profileToRevealId) {
+    throw new Error('Both user IDs are required');
+  }
+
+  try {
+    // Update the interaction to mark it as revealed
+    const { data, error } = await supabase
+      .from('profile_interactions')
+      .update({ is_revealed: true })
+      .eq('user_id', profileToRevealId)
+      .eq('target_user_id', currentUserId)
+      .select();
+
+    if (error) throw error;
+    
+    return data[0];
+  } catch (error) {
+    console.error('Error in revealProfile:', error);
+    throw error;
+  }
+}
+
+export const interactionService = {
+  getLikesForUser,
+  createMatch,
+  getMatches,
+  likeProfile,
+  superlikeProfile,
+  rejectProfile,
+  revealProfile,
 };
