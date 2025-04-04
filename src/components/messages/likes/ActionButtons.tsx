@@ -1,11 +1,12 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Heart } from 'lucide-react';
+import { Heart, User, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { likeProfile } from '@/utils/matchUtils';
 import { useAuth } from '@/context/auth';
 import { useQueryClient } from '@tanstack/react-query';
+import { IconButton } from '@/components/ui/icon-button';
 
 export interface ActionButtonsProps {
   profileId: string;
@@ -28,33 +29,40 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
     try {
       await likeProfile(user.id, profileId);
       toast.success("Profile liked!");
-      queryClient.invalidateQueries({ queryKey: ['userMatches'] });
-      queryClient.invalidateQueries({ queryKey: ['userLikes'] });
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
+      queryClient.invalidateQueries({ queryKey: ['likes'] });
       onSelectLike();
     } catch (error) {
       console.error("Error liking profile:", error);
       toast.error("Failed to like profile");
     }
   };
+
+  const handleReject = () => {
+    // Implement rejection functionality if needed
+    toast.info("Profile rejected");
+    queryClient.invalidateQueries({ queryKey: ['likes'] });
+  };
   
   return (
-    <div className="p-4 flex gap-2">
-      <Button
-        variant="outline"
-        className="flex-1"
-        onClick={onSelectLike}
-      >
-        <MessageSquare className="w-4 h-4 mr-2" />
-        Message
-      </Button>
-      
-      <Button
-        className="flex-1"
+    <div className="p-4 flex gap-2 justify-center">
+      <IconButton
+        icon={<Heart className="h-5 w-5" />}
         onClick={handleLikeBack}
-      >
-        <Heart className="w-4 h-4 mr-2" />
-        Like Back
-      </Button>
+        className="bg-slate-900 hover:bg-slate-800"
+      />
+      
+      <IconButton
+        icon={<User className="h-5 w-5" />}
+        onClick={onSelectLike}
+        className="bg-slate-900 hover:bg-slate-800"
+      />
+      
+      <IconButton
+        icon={<X className="h-5 w-5" />}
+        onClick={handleReject}
+        className="bg-slate-900 hover:bg-slate-800"
+      />
     </div>
   );
 };

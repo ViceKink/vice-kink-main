@@ -31,13 +31,10 @@ const LikesList: React.FC<LikesListProps> = ({ likes, isLoading }) => {
     );
   }
 
-  // Ensure that likes data contains the is_revealed property
-  const likesWithRevealState = likes.map(like => ({
-    ...like,
-    is_revealed: like.is_revealed !== undefined ? like.is_revealed : false
-  }));
+  // Log the likes data to debug the revealed state
+  console.log("Likes data in LikesList:", likes);
 
-  return <Likes likes={likesWithRevealState} />;
+  return <Likes likes={likes} />;
 };
 
 export default LikesList;

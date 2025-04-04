@@ -42,12 +42,13 @@ const Messages = () => {
       if (!user?.id) return [];
       // Make sure we get fresh data each time to reflect revealed status
       const likesData = await interactionService.getLikesForUser(user.id);
-      console.log("Fetched likes data:", likesData);
+      console.log("Fetched likes data in Messages:", likesData);
       return likesData;
     },
     enabled: !!user?.id,
-    // Refresh data every time the tab is focused to ensure latest revealed status
     refetchOnWindowFocus: true,
+    refetchOnMount: true, // Ensure fresh data when returning to the component
+    staleTime: 0 // Consider data always stale to force refresh
   });
 
   const handleBackFromChat = () => {

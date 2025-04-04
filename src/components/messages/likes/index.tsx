@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ProfileItem from './ProfileItem';
 import { ProfileWithInteraction } from '@/models/profileTypes';
 import { useAdCoins } from '@/hooks/useAdCoins';
@@ -12,13 +12,19 @@ interface LikesProps {
   likes: ProfileWithInteraction[];
 }
 
-export const Likes: React.FC<LikesProps> = ({ likes: initialLikes }) => {
+export const Likes: React.FC<LikesProps> = ({ likes }) => {
   const { purchaseFeature, showRewardedAd } = useAdCoins();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
-  const [likes, setLikes] = useState<ProfileWithInteraction[]>(initialLikes);
+  const [localLikes, setLocalLikes] = useState<ProfileWithInteraction[]>(likes);
   const queryClient = useQueryClient();
   
+  // Update local state when props change
+  useEffect(() => {
+    console.log("Likes component received updated likes data:", likes);
+    setLocalLikes(likes);
+  }, [likes]);
+
   // Function to handle revealing a profile
   const handleRevealProfile = async (profileId: string) => {
     try {
@@ -34,7 +40,7 @@ export const Likes: React.FC<LikesProps> = ({ likes: initialLikes }) => {
           await interactionService.revealProfile(profileId);
           
           // Update local state to immediately show revealed profile
-          setLikes(currentLikes => 
+          setLocalLikes(currentLikes => 
             currentLikes.map(profile => 
               profile.id === profileId 
                 ? { ...profile, is_revealed: true } 
@@ -42,8 +48,8 @@ export const Likes: React.FC<LikesProps> = ({ likes: initialLikes }) => {
             )
           );
           
-          // Invalidate queries to reflect changes
-          queryClient.invalidateQueries({ queryKey: ['likes'] });
+          // Force refetch to ensure data consistency
+          await queryClient.invalidateQueries({ queryKey: ['likes'] });
           
           toast.success('Profile revealed successfully!');
         } catch (revealError) {
@@ -73,7 +79,7 @@ export const Likes: React.FC<LikesProps> = ({ likes: initialLikes }) => {
           await interactionService.revealProfile(profileId);
           
           // Update local state to immediately show revealed profile
-          setLikes(currentLikes => 
+          setLocalLikes(currentLikes => 
             currentLikes.map(profile => 
               profile.id === profileId 
                 ? { ...profile, is_revealed: true } 
@@ -81,8 +87,8 @@ export const Likes: React.FC<LikesProps> = ({ likes: initialLikes }) => {
             )
           );
           
-          // Invalidate queries to reflect changes
-          queryClient.invalidateQueries({ queryKey: ['likes'] });
+          // Force refetch to ensure data consistency
+          await queryClient.invalidateQueries({ queryKey: ['likes'] });
           
           toast.success('Profile revealed successfully!');
         } catch (revealError) {
@@ -100,17 +106,15 @@ export const Likes: React.FC<LikesProps> = ({ likes: initialLikes }) => {
   };
 
   const handleSelectLike = (profileId: string) => {
+    console.log("Selected profile:", profileId);
     setSelectedProfileId(profileId);
   };
 
-  // Update local state when props change
-  React.useEffect(() => {
-    setLikes(initialLikes);
-  }, [initialLikes]);
+  console.log("Rendering Likes component with localLikes:", localLikes);
 
   return (
     <div className="space-y-4">
-      {likes.map(profile => (
+      {localLikes.map(profile => (
         <ProfileItem
           key={profile.id}
           profile={profile}
