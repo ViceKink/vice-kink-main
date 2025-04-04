@@ -1,7 +1,7 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { MatchWithProfile } from "@/models/matchesTypes";
+import { DiscoverProfile } from "./types";
 
 /**
  * Checks if two users are matched (both have liked each other)
@@ -254,4 +254,41 @@ export const forceCheckForMatches = async (userId: string): Promise<number> => {
     console.error('Error in forceCheckForMatches:', error);
     return 0;
   }
+};
+
+/**
+ * Get compatible profiles for discover
+ */
+export const getCompatibleProfiles = async (userId: string, distance: number, sortOption: string): Promise<DiscoverProfile[]> => {
+  if (!userId) return [];
+  
+  try {
+    console.log('Getting compatible profiles for user:', userId, distance, sortOption);
+    
+    // Get profiles that meet the criteria
+    const { data, error } = await supabase
+      .rpc('get_compatible_profiles', {
+        user_id: userId,
+        max_distance: distance
+      });
+      
+    if (error) {
+      console.error('Error in getCompatibleProfiles RPC call:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error getting compatible profiles:', error);
+    return [];
+  }
+};
+
+// Export the matchingService object with all functions
+export const matchingService = {
+  checkIfMatched,
+  createMatch,
+  getUserMatches,
+  forceCheckForMatches,
+  getCompatibleProfiles
 };

@@ -6,7 +6,6 @@ import { useAuth } from '@/context/auth';
 import { useAdCoins } from '@/hooks/useAdCoins';
 import { toast } from '@/components/ui/use-toast';
 import ProfileItem from './ProfileItem';
-import { AdCoinFeature } from '@/models/adCoinsTypes';
 
 interface LikesProps {
   userId: string;
@@ -40,7 +39,7 @@ export const Likes = ({
       
       // If using AdCoins, purchase the reveal feature
       if (useCoins) {
-        await purchaseFeature(AdCoinFeature.REVEAL_PROFILE);
+        await purchaseFeature('REVEAL_PROFILE');
       }
       
       // Reveal the profile

@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/context/auth';
 import { useProfileInteractions } from '@/hooks/useProfileInteractions';
 import { matchingService } from '@/utils/match';
+import { Button } from '@/components/ui/button';
+import { SlidersHorizontal } from 'lucide-react';
 import MatchAnimation from '@/components/match/MatchAnimation';
 import DiscoverFilters from '@/components/discover/DiscoverFilters';
 import ProfilesGrid from '@/components/discover/ProfilesGrid';
@@ -137,12 +139,12 @@ const Discover = () => {
         <ProfilesGrid
           profiles={profiles}
           onLike={handleLike}
-          onSuperLike={handleSuperLike}
           onDislike={rejectProfile}
+          onSuperLike={handleSuperLike}
           onViewProfile={() => {}}
         />
       ) : (
-        <EmptyProfilesState onRefresh={refetch} />
+        <EmptyProfilesState onRefresh={() => refetch()} />
       )}
       
       {showMatchAnimation && matchedProfile && (

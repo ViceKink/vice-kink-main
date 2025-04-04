@@ -29,7 +29,7 @@ const ProfileItem: React.FC<ProfileItemProps> = ({
     <Card className="overflow-hidden">
       <ProfileCard 
         profile={profile}
-        onSelect={() => onSelectLike(profile.id)}
+        onSelectLike={() => onSelectLike(profile.id)}
       />
       
       {!profile.is_revealed ? (
@@ -43,7 +43,7 @@ const ProfileItem: React.FC<ProfileItemProps> = ({
       ) : (
         <ActionButtons
           profileId={profile.id}
-          onSelectProfile={() => onSelectLike(profile.id)}
+          onSelectLike={() => onSelectLike(profile.id)}
         />
       )}
     </Card>

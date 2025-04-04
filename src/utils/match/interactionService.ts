@@ -5,7 +5,7 @@ async function getLikesForUser(userId: string) {
   // Get profiles that have liked the current user but aren't matched yet
   try {
     const { data, error } = await supabase
-      .rpc('get_profiles_who_liked_me', { user_id: userId });
+      .rpc('get_profiles_who_liked_me', { target_user_id: userId });
 
     if (error) {
       console.error('Error getting user likes:', error);

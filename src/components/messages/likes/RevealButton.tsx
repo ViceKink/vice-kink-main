@@ -1,51 +1,56 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Coins, Eye } from 'lucide-react';
+import { Loader2, Coins, PlayCircle } from 'lucide-react';
 
-interface RevealButtonProps {
-  balance: number;
+export interface RevealButtonProps {
   onReveal: () => void;
   onWatchAd: () => void;
+  isProcessing: boolean;
+  canUseCoins: boolean;
   isAdReady: boolean;
 }
 
 const RevealButton: React.FC<RevealButtonProps> = ({
-  balance,
   onReveal,
   onWatchAd,
+  isProcessing,
+  canUseCoins,
   isAdReady
 }) => {
-  if (balance > 0) {
-    return (
-      <Button 
-        size="sm" 
-        variant="default"
+  return (
+    <div className="p-4 space-y-2 bg-muted/20">
+      <Button
         className="w-full"
         onClick={onReveal}
+        disabled={!canUseCoins || isProcessing}
       >
-        <Eye className="mr-1 h-4 w-4" />
-        Reveal for <Coins className="mx-1 h-4 w-4 text-yellow-500" />1
+        {isProcessing ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Revealing...
+          </>
+        ) : (
+          <>
+            <Coins className="w-4 h-4 mr-2" />
+            Reveal with 50 Coins
+          </>
+        )}
       </Button>
-    );
-  } else {
-    return (
-      <div className="space-y-2">
-        <p className="text-xs text-muted-foreground">
-          You've run out of AdCoins... Watch an Ad instead?
-        </p>
-        <Button 
-          size="sm" 
+      
+      {isAdReady && (
+        <Button
           variant="outline"
           className="w-full"
           onClick={onWatchAd}
-          disabled={!isAdReady}
+          disabled={isProcessing}
         >
-          Watch Ad to Earn <Coins className="ml-1 h-4 w-4 text-yellow-500" />
+          <PlayCircle className="w-4 h-4 mr-2" />
+          Watch Ad to Reveal
         </Button>
-      </div>
-    );
-  }
+      )}
+    </div>
+  );
 };
 
 export default RevealButton;
