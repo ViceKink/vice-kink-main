@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,7 +31,7 @@ const Home = () => {
           community_id,
           boosted_at
         `)
-        .order('boosted_at', { ascending: false, nullsLast: true })
+        .order('boosted_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
       
       if (postsError) {

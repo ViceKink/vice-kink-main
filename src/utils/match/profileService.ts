@@ -29,7 +29,7 @@ export const fetchDiscoverProfiles = async (userId: string, filters: any = {}): 
     
     // Order by boosted profiles first, then by created_at
     query = query
-      .order('boosted_at', { ascending: false, nullsLast: true })
+      .order('boosted_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false });
     
     // Add pagination
@@ -74,6 +74,9 @@ export const fetchDiscoverProfiles = async (userId: string, filters: any = {}): 
     return [];
   }
 };
+
+// Adding this alias to fix the import error
+export const fetchProfilesToDiscover = fetchDiscoverProfiles;
 
 /**
  * Fetch a single profile by ID
