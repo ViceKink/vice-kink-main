@@ -9,6 +9,7 @@ import ActionButtons from './ActionButtons';
 interface ProfileItemProps {
   profile: any;
   onSelectLike: (profileId: string) => void;
+  onViewProfile?: (profileId: string) => void;
   onReveal: () => void;
   onWatchAd: () => void;
   isProcessing: boolean;
@@ -19,6 +20,7 @@ interface ProfileItemProps {
 const ProfileItem: React.FC<ProfileItemProps> = ({
   profile,
   onSelectLike,
+  onViewProfile,
   onReveal,
   onWatchAd,
   isProcessing,
@@ -30,6 +32,7 @@ const ProfileItem: React.FC<ProfileItemProps> = ({
       <ProfileCard 
         profile={profile}
         onSelectLike={() => onSelectLike(profile.id)}
+        onViewProfile={onViewProfile ? () => onViewProfile(profile.id) : undefined}
       />
       
       {!profile.is_revealed ? (
@@ -44,6 +47,7 @@ const ProfileItem: React.FC<ProfileItemProps> = ({
         <ActionButtons
           profileId={profile.id}
           onSelectLike={() => onSelectLike(profile.id)}
+          onViewProfile={onViewProfile ? () => onViewProfile(profile.id) : undefined}
         />
       )}
     </Card>

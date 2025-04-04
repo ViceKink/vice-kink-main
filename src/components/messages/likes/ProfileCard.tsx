@@ -6,17 +6,24 @@ import { Badge } from '@/components/ui/badge';
 export interface ProfileCardProps {
   profile: any;
   onSelectLike: () => void;
+  onViewProfile?: () => void;
 }
 
-const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onSelectLike }) => {
+const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onSelectLike, onViewProfile }) => {
   const initials = profile.name ? profile.name.split(' ').map((n: string) => n[0]).join('') : '?';
   
-  console.log("ProfileCard rendering with profile:", profile);
+  const handleClick = () => {
+    if (profile.is_revealed && onViewProfile) {
+      onViewProfile();
+    } else {
+      onSelectLike();
+    }
+  };
   
   return (
     <div 
       className="relative cursor-pointer group bg-slate-50"
-      onClick={onSelectLike}
+      onClick={handleClick}
     >
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center">

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Heart, User, X, MessageSquare } from 'lucide-react';
+import { Heart, X, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { likeProfile } from '@/utils/matchUtils';
 import { useAuth } from '@/context/auth';
@@ -11,11 +11,13 @@ import { IconButton } from '@/components/ui/icon-button';
 export interface ActionButtonsProps {
   profileId: string;
   onSelectLike: () => void;
+  onViewProfile?: () => void;
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
   profileId,
-  onSelectLike
+  onSelectLike,
+  onViewProfile
 }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -44,9 +46,12 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
     queryClient.invalidateQueries({ queryKey: ['likes'] });
   };
 
-  const handleMessage = () => {
-    toast.info("Messaging this profile requires a mutual like first");
-    // You might want to show a different flow or a modal explaining this
+  const handleViewProfile = () => {
+    if (onViewProfile) {
+      onViewProfile();
+    } else {
+      toast.info("View profile functionality not implemented");
+    }
   };
   
   return (
@@ -54,19 +59,22 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       <IconButton
         icon={<Heart className="h-5 w-5" />}
         onClick={handleLikeBack}
-        className="bg-slate-900 hover:bg-slate-800"
+        className="bg-slate-900 hover:bg-slate-800 text-white"
+        aria-label="Like"
       />
       
       <IconButton
-        icon={<MessageSquare className="h-5 w-5" />}
-        onClick={handleMessage}
-        className="bg-slate-900 hover:bg-slate-800"
+        icon={<User className="h-5 w-5" />}
+        onClick={handleViewProfile}
+        className="bg-slate-900 hover:bg-slate-800 text-white"
+        aria-label="View Profile"
       />
       
       <IconButton
         icon={<X className="h-5 w-5" />}
         onClick={handleReject}
-        className="bg-slate-900 hover:bg-slate-800"
+        className="bg-slate-900 hover:bg-slate-800 text-white"
+        aria-label="Reject"
       />
     </div>
   );

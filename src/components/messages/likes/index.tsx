@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ProfileItem from './ProfileItem';
 import { ProfileWithInteraction } from '@/models/profileTypes';
 import { useAdCoins } from '@/hooks/useAdCoins';
@@ -13,6 +14,7 @@ interface LikesProps {
 }
 
 export const Likes: React.FC<LikesProps> = ({ likes }) => {
+  const navigate = useNavigate();
   const { purchaseFeature, showRewardedAd } = useAdCoins();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
@@ -110,6 +112,11 @@ export const Likes: React.FC<LikesProps> = ({ likes }) => {
     setSelectedProfileId(profileId);
   };
 
+  const handleViewProfile = (profileId: string) => {
+    console.log("Navigating to profile:", profileId);
+    navigate(`/profile/${profileId}`);
+  };
+
   console.log("Rendering Likes component with localLikes:", localLikes);
 
   return (
@@ -120,6 +127,7 @@ export const Likes: React.FC<LikesProps> = ({ likes }) => {
           profile={profile}
           onReveal={() => handleRevealProfile(profile.id)}
           onSelectLike={() => handleSelectLike(profile.id)}
+          onViewProfile={handleViewProfile}
           onWatchAd={() => handleWatchAd(profile.id)}
           isProcessing={isProcessing && selectedProfileId === profile.id}
           canUseCoins={true}
