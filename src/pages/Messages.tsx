@@ -8,11 +8,11 @@ import { useAuth } from '@/context/auth';
 import { getUserMatches, forceCheckForMatches } from '@/utils/match/matchingService';
 import { getProfilesWhoLikedMe } from '@/utils/match/interactionService';
 import MatchesList from '@/components/messages/MatchesList';
-import LikesList from '@/components/messages/LikesList';
+import LikesList from '@/components/messages/likes';
 import ChatView from '@/components/messages/ChatView';
-import { Profile } from '@/models/profileTypes';
 import { toast } from 'sonner';
 import AdCoinsBalance from '@/components/adcoins/AdCoinsBalance';
+import { useAdCoins } from '@/hooks/useAdCoins';
 
 const Messages = () => {
   const { user } = useAuth();
@@ -20,6 +20,7 @@ const Messages = () => {
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const queryClient = useQueryClient();
+  const { balance, showRewardedAd, isAdReady } = useAdCoins();
 
   // Run a force check for matches when the component loads
   useEffect(() => {
@@ -84,6 +85,19 @@ const Messages = () => {
   const filteredLikes = searchQuery
     ? likedByProfiles.filter((profile) => profile.name.toLowerCase().includes(searchQuery.toLowerCase()))
     : likedByProfiles;
+    
+  // Handler for watching an ad
+  const handleWatchAd = async () => {
+    if (!isAdReady) {
+      toast.error("Ads aren't ready yet. Please try again later.");
+      return;
+    }
+    
+    const success = await showRewardedAd();
+    if (success) {
+      toast.success("Thanks for watching! AdCoins added to your balance.");
+    }
+  };
 
   return (
     <div className="container py-10 mt-20">
@@ -150,6 +164,10 @@ const Messages = () => {
                   // For likes, we don't have a match yet
                   setSelectedMatchId(null);
                 }}
+                balance={balance}
+                isAdReady={isAdReady}
+                onWatchAd={handleWatchAd}
+                userId={user?.id}
               />
             </TabsContent>
           </div>
