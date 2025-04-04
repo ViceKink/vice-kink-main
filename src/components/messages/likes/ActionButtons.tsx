@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Heart, User, X } from 'lucide-react';
+import { Heart, User, X, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import { likeProfile } from '@/utils/matchUtils';
 import { useAuth } from '@/context/auth';
@@ -43,6 +43,11 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
     toast.info("Profile rejected");
     queryClient.invalidateQueries({ queryKey: ['likes'] });
   };
+
+  const handleMessage = () => {
+    toast.info("Messaging this profile requires a mutual like first");
+    // You might want to show a different flow or a modal explaining this
+  };
   
   return (
     <div className="p-4 flex gap-2 justify-center">
@@ -53,8 +58,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       />
       
       <IconButton
-        icon={<User className="h-5 w-5" />}
-        onClick={onSelectLike}
+        icon={<MessageSquare className="h-5 w-5" />}
+        onClick={handleMessage}
         className="bg-slate-900 hover:bg-slate-800"
       />
       

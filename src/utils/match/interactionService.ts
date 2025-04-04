@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 async function getLikesForUser(userId: string) {
@@ -11,6 +12,7 @@ async function getLikesForUser(userId: string) {
       throw new Error(error.message);
     }
 
+    console.log('Raw data from get_profiles_who_liked_me:', data);
     return data || [];
   } catch (error) {
     console.error('Error in getLikesForUser:', error);
@@ -177,6 +179,8 @@ async function revealProfile(profileId: string) {
     
     const userId = session.user.id;
 
+    console.log(`Revealing profile: ${profileId} for user: ${userId}`);
+
     // Update the interaction to mark it as revealed
     const { data, error } = await supabase
       .from('profile_interactions')
@@ -190,7 +194,6 @@ async function revealProfile(profileId: string) {
       throw error;
     }
     
-    // Log the response to help debug
     console.log('Profile reveal response:', data);
     
     return data;

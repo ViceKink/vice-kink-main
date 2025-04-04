@@ -16,10 +16,10 @@ export const Likes: React.FC<LikesProps> = ({ likes }) => {
   const { purchaseFeature, showRewardedAd } = useAdCoins();
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
-  const [localLikes, setLocalLikes] = useState<ProfileWithInteraction[]>(likes);
+  const [localLikes, setLocalLikes] = useState<ProfileWithInteraction[]>([]);
   const queryClient = useQueryClient();
   
-  // Update local state when props change
+  // Update local state whenever props change
   useEffect(() => {
     console.log("Likes component received updated likes data:", likes);
     setLocalLikes(likes);

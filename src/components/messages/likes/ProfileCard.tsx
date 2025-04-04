@@ -11,7 +11,6 @@ export interface ProfileCardProps {
 const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onSelectLike }) => {
   const initials = profile.name ? profile.name.split(' ').map((n: string) => n[0]).join('') : '?';
   
-  // For debugging
   console.log("ProfileCard rendering with profile:", profile);
   
   return (

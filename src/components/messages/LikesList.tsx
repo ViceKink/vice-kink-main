@@ -9,6 +9,9 @@ interface LikesListProps {
 }
 
 const LikesList: React.FC<LikesListProps> = ({ likes, isLoading }) => {
+  // For debugging
+  console.log("LikesList rendering with likes data:", likes);
+  
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -30,9 +33,6 @@ const LikesList: React.FC<LikesListProps> = ({ likes, isLoading }) => {
       </div>
     );
   }
-
-  // Log the likes data to debug the revealed state
-  console.log("Likes data in LikesList:", likes);
 
   return <Likes likes={likes} />;
 };

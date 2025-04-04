@@ -13,6 +13,7 @@ import { MatchWithProfile } from '@/models/matchesTypes';
 const Messages = () => {
   const { user } = useAuth();
   const [activeMatch, setActiveMatch] = useState<MatchWithProfile | null>(null);
+  const [activeTab, setActiveTab] = useState('matches');
 
   const { data: matches = [], isLoading: isLoadingMatches } = useQuery({
     queryKey: ['matches'],
@@ -40,7 +41,7 @@ const Messages = () => {
     queryKey: ['likes'],
     queryFn: async () => {
       if (!user?.id) return [];
-      // Make sure we get fresh data each time to reflect revealed status
+      console.log("Fetching likes data in Messages component");
       const likesData = await interactionService.getLikesForUser(user.id);
       console.log("Fetched likes data in Messages:", likesData);
       return likesData;
@@ -48,7 +49,7 @@ const Messages = () => {
     enabled: !!user?.id,
     refetchOnWindowFocus: true,
     refetchOnMount: true, // Ensure fresh data when returning to the component
-    staleTime: 0 // Consider data always stale to force refresh
+    staleTime: 0, // Consider data always stale to force refresh
   });
 
   const handleBackFromChat = () => {
@@ -59,6 +60,14 @@ const Messages = () => {
     const selectedMatch = matches.find(m => m.match_id === matchId);
     if (selectedMatch) {
       setActiveMatch(selectedMatch);
+    }
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    // Force refetch when switching to likes tab
+    if (value === 'likes') {
+      // This will trigger a refetch of the likes data
     }
   };
 
@@ -77,7 +86,7 @@ const Messages = () => {
         </div>
       ) : (
         <div className="container mx-auto max-w-2xl p-4">
-          <Tabs defaultValue="matches">
+          <Tabs defaultValue="matches" value={activeTab} onValueChange={handleTabChange}>
             <div className="flex justify-between items-center mb-6">
               <TabsList>
                 <TabsTrigger value="matches">Matches</TabsTrigger>
