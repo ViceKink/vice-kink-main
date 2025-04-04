@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
+// Update the props interface to match what we're using in Discover.tsx
 interface DiscoverFiltersProps {
   isOpen: boolean;
   onClose: () => void;

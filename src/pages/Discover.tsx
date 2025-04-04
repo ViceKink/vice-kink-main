@@ -9,7 +9,6 @@ import DiscoverFilters from '@/components/discover/DiscoverFilters';
 import ProfilesGrid from '@/components/discover/ProfilesGrid';
 import DiscoverLoading from '@/components/discover/DiscoverLoading';
 import EmptyProfilesState from '@/components/discover/EmptyProfilesState';
-import { ProfileSortOption } from '@/utils/match/types';
 
 // Distance options in kilometers
 const distanceOptions = [5, 10, 25, 50, 100];
@@ -20,9 +19,10 @@ const Discover = () => {
   
   // Filter state
   const [distance, setDistance] = useState<number>(25);
-  const [sortOption, setSortOption] = useState<ProfileSortOption>('most_recent');
+  const [sortOption, setSortOption] = useState<string>('most_recent');
   const [showMatchAnimation, setShowMatchAnimation] = useState(false);
   const [matchedProfile, setMatchedProfile] = useState<any>(null);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   
   // Get profile interactions methods (like, reject)
   const { 
@@ -79,8 +79,24 @@ const Discover = () => {
     setDistance(value);
   };
   
-  const handleSortChange = (value: ProfileSortOption) => {
+  const handleSortChange = (value: string) => {
     setSortOption(value);
+  };
+
+  const handleOpenFilters = () => {
+    setIsFiltersOpen(true);
+  };
+
+  const handleCloseFilters = () => {
+    setIsFiltersOpen(false);
+  };
+
+  const handleApplyFilters = (preferences: any) => {
+    // Update local filter state based on preferences
+    if (preferences.max_distance) {
+      setDistance(preferences.max_distance);
+    }
+    // Additional filter handling as needed
   };
   
   if (isLoading) {
@@ -92,14 +108,20 @@ const Discover = () => {
       <div className="flex flex-col md:flex-row justify-between items-start mb-8">
         <h1 className="text-3xl font-bold mb-4 md:mb-0">Discover</h1>
         
-        <DiscoverFilters
-          distance={distance}
-          distanceOptions={distanceOptions}
-          sortOption={sortOption}
-          onDistanceChange={handleDistanceChange}
-          onSortChange={handleSortChange}
-        />
+        <Button 
+          onClick={handleOpenFilters}
+          className="flex items-center gap-2"
+        >
+          <SlidersHorizontal size={18} />
+          Filters
+        </Button>
       </div>
+      
+      <DiscoverFilters
+        isOpen={isFiltersOpen}
+        onClose={handleCloseFilters}
+        onApplyFilters={handleApplyFilters}
+      />
       
       {isError ? (
         <div className="text-center py-10">
@@ -116,19 +138,18 @@ const Discover = () => {
           profiles={profiles}
           onLike={handleLike}
           onSuperLike={handleSuperLike}
-          onReject={rejectProfile}
-          isLiking={isLiking}
-          isSuperLiking={isSuperLiking}
-          isRejecting={isRejecting}
+          onDislike={rejectProfile}
+          onViewProfile={() => {}}
         />
       ) : (
-        <EmptyProfilesState onRefresh={() => refetch()} />
+        <EmptyProfilesState onRefresh={refetch} />
       )}
       
       {showMatchAnimation && matchedProfile && (
         <MatchAnimation
-          profile={matchedProfile}
+          isOpen={showMatchAnimation}
           onClose={() => setShowMatchAnimation(false)}
+          matchedProfile={matchedProfile}
         />
       )}
     </div>
