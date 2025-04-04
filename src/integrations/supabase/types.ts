@@ -287,6 +287,7 @@ export type Database = {
       }
       posts: {
         Row: {
+          boosted_at: string | null
           comments_count: number | null
           community_id: string | null
           content: string
@@ -301,6 +302,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          boosted_at?: string | null
           comments_count?: number | null
           community_id?: string | null
           content: string
@@ -315,6 +317,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          boosted_at?: string | null
           comments_count?: number | null
           community_id?: string | null
           content?: string
@@ -599,6 +602,7 @@ export type Database = {
           avatar: string | null
           bio: string | null
           birth_date: string | null
+          boosted_at: string | null
           created_at: string | null
           dating_intention: string | null
           drinking: string | null
@@ -629,6 +633,7 @@ export type Database = {
           avatar?: string | null
           bio?: string | null
           birth_date?: string | null
+          boosted_at?: string | null
           created_at?: string | null
           dating_intention?: string | null
           drinking?: string | null
@@ -659,6 +664,7 @@ export type Database = {
           avatar?: string | null
           bio?: string | null
           birth_date?: string | null
+          boosted_at?: string | null
           created_at?: string | null
           dating_intention?: string | null
           drinking?: string | null
@@ -750,6 +756,18 @@ export type Database = {
           p_user_id: string
           p_amount: number
           p_reason?: string
+        }
+        Returns: Json
+      }
+      boost_post: {
+        Args: {
+          p_post_id: string
+        }
+        Returns: Json
+      }
+      boost_profile: {
+        Args: {
+          p_user_id: string
         }
         Returns: Json
       }

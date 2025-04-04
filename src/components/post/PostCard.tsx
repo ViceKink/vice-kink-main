@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Heart, MessageSquare } from 'lucide-react';
+import { Heart, MessageSquare, Rocket } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { BoostButton } from '@/components/boost/BoostButton';
 
 interface Post {
   id: string;
@@ -53,7 +53,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   
-  // Fetch comments for this post
   useEffect(() => {
     const fetchComments = async () => {
       if (!post.id) return;
@@ -75,10 +74,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       }
       
       if (data && data.length > 0) {
-        // Get all unique user IDs
         const userIds = [...new Set(data.map(comment => comment.user_id))];
         
-        // Fetch user profiles in a single query
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('id, name, avatar')
@@ -89,7 +86,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           return;
         }
         
-        // Create a map of user IDs to profiles
         const profilesMap: Record<string, { name: string; avatar?: string }> = {};
         
         if (profilesData) {
@@ -101,7 +97,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           });
         }
         
-        // Map comments with user info
         const commentsWithUsers = data.map(comment => {
           const userProfile = profilesMap[comment.user_id] || { name: 'Anonymous' };
           
@@ -124,7 +119,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     fetchComments();
   }, [post.id]);
   
-  // Check if the user has already liked the post
   useEffect(() => {
     if (!user?.id) return;
     
@@ -142,13 +136,11 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     checkUserLike();
   }, [user?.id, post.id]);
   
-  // Create mutation for liking a post
   const likeMutation = useMutation({
     mutationFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
       
       if (liked) {
-        // Unlike post
         const { error } = await supabase
           .from('post_likes')
           .delete()
@@ -158,7 +150,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         if (error) throw error;
         return { action: 'unlike' };
       } else {
-        // Like post
         const { error } = await supabase
           .from('post_likes')
           .insert({
@@ -185,7 +176,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
     }
   });
   
-  // Create mutation for adding a comment
   const commentMutation = useMutation({
     mutationFn: async () => {
       if (!user?.id || !comment.trim()) throw new Error('User not authenticated or empty comment');
@@ -203,7 +193,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
       return data[0];
     },
     onSuccess: (newComment) => {
-      // Fetch the user profile for the comment
       const getProfile = async () => {
         const { data: profile, error } = await supabase
           .from('profiles')
@@ -216,7 +205,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           return;
         }
         
-        // Add the new comment to local state
         setLocalComments(prev => [...prev, {
           id: newComment.id,
           content: newComment.content,
@@ -381,6 +369,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
           {!isMobile && "Like"}
         </Button>
         
+        {user && post.user_id === user.id && (
+          <BoostButton
+            entityId={post.id}
+            entityType="post"
+            className="flex-1 flex items-center justify-center gap-2"
+          />
+        )}
+        
         <Button 
           variant="ghost"
           className="flex-1 flex items-center justify-center gap-2"
@@ -390,7 +386,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         </Button>
       </div>
       
-      {/* Display existing comments */}
       {localComments.length > 0 && (
         <div className="px-4 py-3 border-t border-border">
           <h4 className="text-sm font-medium mb-3">Comments</h4>

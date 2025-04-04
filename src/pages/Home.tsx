@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,7 +16,6 @@ const Home = () => {
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['allPosts'],
     queryFn: async () => {
-      // First fetch the posts
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
@@ -29,8 +27,10 @@ const Home = () => {
           likes_count,
           comments_count,
           media_url,
-          community_id
+          community_id,
+          boosted_at
         `)
+        .order('boosted_at', { ascending: false, nullsLast: true })
         .order('created_at', { ascending: false });
       
       if (postsError) {
@@ -38,10 +38,8 @@ const Home = () => {
         throw postsError;
       }
       
-      // Collect unique user IDs from posts
       const userIds = [...new Set(postsData.map(post => post.user_id))];
       
-      // Fetch all profiles in one query
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('id, name, avatar')
@@ -52,18 +50,15 @@ const Home = () => {
         throw profilesError;
       }
       
-      // Create a map of user IDs to profile data for quick lookup
       const profilesMap = profilesData.reduce((acc, profile) => {
         acc[profile.id] = profile;
         return acc;
       }, {});
       
-      // Get all community IDs
       const communityIds = postsData
         .filter(post => post.community_id)
         .map(post => post.community_id);
       
-      // Fetch community data if there are any community IDs
       let communitiesMap = {};
       
       if (communityIds.length > 0) {
@@ -80,7 +75,6 @@ const Home = () => {
         }
       }
       
-      // Merge the post data with profile information
       const postsWithProfiles = postsData.map(post => {
         const profile = profilesMap[post.user_id] || { name: 'Anonymous' };
         const community = post.community_id ? communitiesMap[post.community_id] : null;
@@ -96,6 +90,7 @@ const Home = () => {
           comments_count: post.comments_count || 0,
           community_id: post.community_id,
           community_name: community ? community.name : undefined,
+          boosted_at: post.boosted_at,
           user: {
             name: profile.name || 'Anonymous',
             avatar: profile.avatar

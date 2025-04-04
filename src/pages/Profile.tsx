@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { NavLink, useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Settings, RefreshCw, Pencil, Heart, X, Star } from 'lucide-react';
+import { ChevronLeft, Settings, RefreshCw, Pencil, Heart, X, Star, Rocket } from 'lucide-react';
 import BentoProfile from '@/components/ui/BentoProfile';
 import { useAuth } from '@/context/auth';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import CreatePostModal from '@/components/post/CreatePostModal';
 import { createInteraction } from '@/utils/matchUtils';
 import MatchAnimation from '@/components/match/MatchAnimation';
 import { cn } from '@/lib/utils';
+import { BoostButton } from '@/components/boost/BoostButton';
 
 const Profile = () => {
   const { id } = useParams();
@@ -415,13 +416,23 @@ const Profile = () => {
           )}
           
           {isCurrentUser && (
-            <NavLink
-              to="/edit-profile"
-              className="flex items-center text-foreground/70 hover:text-foreground transition-colors"
-            >
-              <Pencil className="w-5 h-5 mr-1" />
-              Edit Profile
-            </NavLink>
+            <div className="flex items-center gap-2">
+              {profileUser && (
+                <BoostButton 
+                  entityId={profileUser.id} 
+                  entityType="profile"
+                  className="flex items-center text-foreground/70 hover:text-foreground transition-colors"
+                />
+              )}
+              
+              <NavLink
+                to="/edit-profile"
+                className="flex items-center text-foreground/70 hover:text-foreground transition-colors"
+              >
+                <Pencil className="w-5 h-5 mr-1" />
+                Edit Profile
+              </NavLink>
+            </div>
           )}
         </div>
         

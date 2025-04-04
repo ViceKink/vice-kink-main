@@ -1,104 +1,76 @@
-
-import { supabase } from "@/integrations/supabase/client";
-import { DiscoverProfile } from "./types";
+import { supabase } from '@/integrations/supabase/client';
+import { Profile } from '@/models/profileTypes';
 
 /**
  * Fetch profiles for discover page with proper filtering
  */
-export const fetchProfilesToDiscover = async (userId: string, excludeIds: string[] = [], preferences: any = null) => {
-  if (!userId) return [];
+export const fetchDiscoverProfiles = async (userId: string, filters: any = {}): Promise<Profile[]> => {
+  console.log('Fetching discover profiles with filters:', filters);
   
   try {
-    const excludedIds = [...excludeIds, userId];
-    
+    // Build the query with basic filters
     let query = supabase
       .from('profiles')
-      .select(`
-        id,
-        name,
-        age,
-        location,
-        occupation,
-        religion,
-        height,
-        verified,
-        avatar,
-        bio,
-        quote
-      `);
-      
-    // Apply filters from preferences if any
-    if (preferences) {
-      if (preferences.preferred_gender && preferences.preferred_gender.length > 0) {
-        query = query.in('gender', preferences.preferred_gender);
-      }
-      
-      if (preferences.age_range && preferences.age_range.min && preferences.age_range.max) {
-        query = query.gte('age', preferences.age_range.min)
-                     .lte('age', preferences.age_range.max);
-      }
-      
-      // Apply other filters as needed
-    }
-      
-    if (excludedIds.length > 0) {
-      query = query.not('id', 'in', `(${excludedIds.join(',')})`);
-    } else {
-      query = query.neq('id', userId);
+      .select('*')
+      .neq('id', userId);
+    
+    // Add filter for gender if specified
+    if (filters.gender && filters.gender !== 'all') {
+      query = query.eq('gender', filters.gender);
     }
     
-    query = query.limit(20);
+    // Add filter for age range if specified
+    if (filters.ageMin) {
+      query = query.gte('age', filters.ageMin);
+    }
+    if (filters.ageMax) {
+      query = query.lte('age', filters.ageMax);
+    }
+    
+    // Order by boosted profiles first, then by created_at
+    query = query
+      .order('boosted_at', { ascending: false, nullsLast: true })
+      .order('created_at', { ascending: false });
+    
+    // Add pagination
+    if (filters.limit) {
+      query = query.limit(filters.limit);
+    }
     
     const { data, error } = await query;
-      
+    
     if (error) {
-      console.error('Error fetching profiles:', error);
+      console.error('Error fetching discover profiles:', error);
       return [];
     }
     
-    if (!data) return [];
+    // Exclude profiles the user has already interacted with
+    const { data: interactions } = await supabase
+      .from('profile_interactions')
+      .select('target_profile_id')
+      .eq('user_id', userId);
     
-    const profilesWithDetails = await Promise.all(
-      data.map(async (profile) => {
-        // Fetch passions separately
-        const { data: passionsData } = await supabase
-          .from('profile_passions')
-          .select('passion')
-          .eq('profile_id', profile.id);
-          
-        // Fetch vices
-        const { data: vicesData } = await supabase
-          .from('profile_vices')
-          .select('vices(name)')
-          .eq('profile_id', profile.id);
-          
-        // Fetch kinks
-        const { data: kinksData } = await supabase
-          .from('profile_kinks')
-          .select('kinks(name)')
-          .eq('profile_id', profile.id);
-        
-        // Fetch photos
-        const { data: photos } = await supabase
-          .from('profile_photos')
-          .select('url')
-          .eq('profile_id', profile.id)
-          .order('order_index', { ascending: true });
-          
-        return {
-          ...profile,
-          distance: `${Math.floor(Math.random() * 10) + 1} kms away`,
-          passions: passionsData?.map(p => p.passion) || [],
-          vices: vicesData?.map(v => v.vices.name) || [],
-          kinks: kinksData?.map(k => k.kinks.name) || [],
-          photos: photos?.map(p => p.url) || []
-        };
-      })
-    );
+    const interactedIds = interactions ? interactions.map(i => i.target_profile_id) : [];
     
-    return profilesWithDetails;
+    // Transform data to match Profile interface
+    const profiles = data
+      .filter(profile => !interactedIds.includes(profile.id))
+      .map(profile => ({
+        id: profile.id,
+        name: profile.name,
+        age: profile.age,
+        location: profile.location || 'Unknown',
+        photos: [profile.avatar].filter(Boolean),
+        occupation: profile.occupation,
+        religion: profile.religion,
+        height: profile.height,
+        verified: profile.verified || false,
+        avatar: profile.avatar
+      }));
+      
+    return profiles;
   } catch (error) {
-    console.error('Error in fetchProfilesToDiscover:', error);
+    console.error('Error in fetchDiscoverProfiles:', error);
     return [];
   }
 };
