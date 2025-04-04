@@ -1,6 +1,6 @@
 
 import { interactionService } from '@/utils/match/interactionService';
-import { getCompatibleProfiles } from '@/utils/match/matchingService';
+import { getCompatibleProfiles } from '@/utils/match';
 import { DiscoverProfile } from '@/utils/match/types';
 
 // Re-export the functions from interactionService
@@ -47,7 +47,6 @@ export const createInteraction = async (
 // Export matchingService
 export const matchingService = {
   getCompatibleProfiles: async (userId: string, maxDistance: number, sortOption: string): Promise<DiscoverProfile[]> => {
-    const profiles = await getCompatibleProfiles(userId, maxDistance, sortOption);
-    return profiles;
+    return await getCompatibleProfiles(userId, maxDistance, sortOption);
   }
 };

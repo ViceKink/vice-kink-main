@@ -3,6 +3,6 @@
 export * from './types';
 
 // Export services
-export { getCompatibleProfiles } from './matchingService';
+export { getCompatibleProfiles, matchingService } from './matchingService';
 export { interactionService } from './interactionService';
 export * from './profileService';

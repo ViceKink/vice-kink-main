@@ -1,10 +1,11 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { DiscoverProfile } from './types';
 import { fetchProfilesToDiscover } from './profileService';
 
 // Function to get compatible profiles for a user
 // This now uses fetchProfilesToDiscover instead of a stored procedure
-async function getCompatibleProfiles(
+export async function getCompatibleProfiles(
   userId: string, 
   maxDistance: number = 50,
   sortOption: string = 'distance'
@@ -23,8 +24,7 @@ async function getCompatibleProfiles(
   }
 }
 
-// Add additional functions for matching functionality here...
-
+// Export the matchingService object with all functions
 export const matchingService = {
   getCompatibleProfiles
 };

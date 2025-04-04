@@ -46,3 +46,10 @@ export interface MatchWithProfile {
 
 // Types for likes/matches feature
 export type AdCoinFeature = 'REVEAL_PROFILE' | 'BOOST_PROFILE' | 'SUPER_LIKE';
+
+// Profile interaction result
+export interface ProfileInteractionResult {
+  success: boolean;
+  matched: boolean;
+  interaction?: any;
+}

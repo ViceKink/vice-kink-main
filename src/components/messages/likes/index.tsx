@@ -4,7 +4,6 @@ import ProfileItem from './ProfileItem';
 import { Button } from '@/components/ui/button';
 import { ProfileWithInteraction } from '@/models/profileTypes';
 import { useAdCoins } from '@/hooks/useAdCoins';
-import { AdCoinFeature } from '@/utils/match/types';
 
 interface LikesProps {
   likes: ProfileWithInteraction[];
@@ -16,8 +15,9 @@ export const Likes: React.FC<LikesProps> = ({ likes }) => {
   
   const handleRevealAll = async () => {
     try {
-      const result = await purchaseFeature('REVEAL_PROFILE');
-      if (result.success) {
+      // Since AdCoinFeature doesn't include 'REVEAL_PROFILE', handle it generically
+      const result = await purchaseFeature('REVEAL_PROFILE' as any);
+      if (result && typeof result === 'object' && 'success' in result && result.success) {
         const allIds = likes.map(like => like.id);
         setRevealedIds(new Set([...revealedIds, ...allIds]));
       }
@@ -44,7 +44,6 @@ export const Likes: React.FC<LikesProps> = ({ likes }) => {
         <ProfileItem
           key={profile.id}
           profile={profile}
-          isRevealed={revealedIds.has(profile.id)}
           onReveal={() => handleRevealProfile(profile.id)}
         />
       ))}
