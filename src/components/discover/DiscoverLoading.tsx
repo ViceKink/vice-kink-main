@@ -1,12 +1,36 @@
 
 import React from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const DiscoverLoading = () => {
   return (
-    <div className="animate-pulse text-center space-y-4">
-      <div className="h-8 w-40 bg-gray-300 rounded mx-auto"></div>
-      <div className="h-48 w-full max-w-md bg-gray-300 rounded mx-auto"></div>
-      <div className="h-48 w-full max-w-md bg-gray-300 rounded mx-auto"></div>
+    <div className="space-y-6 px-2">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-[250px]" />
+        <Skeleton className="h-4 w-[200px]" />
+      </div>
+      
+      <div className="bg-card border border-border rounded-xl overflow-hidden shadow">
+        <Skeleton className="w-full h-[320px]" />
+        <div className="p-3">
+          <div className="flex justify-between">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <Skeleton className="h-12 w-12 rounded-full" />
+          </div>
+        </div>
+      </div>
+      
+      <div className="bg-card border border-border rounded-xl overflow-hidden shadow">
+        <Skeleton className="w-full h-[320px]" />
+        <div className="p-3">
+          <div className="flex justify-between">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <Skeleton className="h-12 w-12 rounded-full" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

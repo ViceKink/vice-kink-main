@@ -7,12 +7,13 @@ export interface Profile {
   name: string;
   avatar?: string;
   bio?: string;
-  distance: number;
+  distance?: number;
   age?: number;
   photos?: string[];
   interests?: string[];
   location?: string;
   occupation?: string;
+  verified?: boolean;
 }
 
 // Extended profile for discover
@@ -25,6 +26,7 @@ export interface DiscoverProfile {
   photos?: string[];
   location?: string;
   occupation?: string;
+  verified?: boolean;
   // Add other common profile fields
 }
 

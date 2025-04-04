@@ -1,4 +1,8 @@
+
 import React from 'react';
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export interface ChatViewProps {
   matchId: string;
@@ -18,10 +22,40 @@ const ChatView: React.FC<ChatViewProps> = ({
   onBack 
 }) => {
   return (
-    <div>
-      <h2>Chat with {partnerName}</h2>
-      <p>Match ID: {matchId}</p>
-      <button onClick={onBack}>Back to Messages</button>
+    <div className="flex flex-col h-full">
+      <div className="border-b p-3 flex items-center gap-3">
+        <Button onClick={onBack} variant="ghost" size="icon">
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        
+        <Avatar className="h-8 w-8">
+          <AvatarImage src={partnerAvatar} alt={partnerName} />
+          <AvatarFallback>{partnerName.charAt(0)}</AvatarFallback>
+        </Avatar>
+        
+        <div>
+          <h3 className="font-semibold">{partnerName}</h3>
+        </div>
+      </div>
+      
+      <div className="flex-1 p-4 overflow-y-auto">
+        <div className="text-center text-muted-foreground py-6">
+          You matched with {partnerName}. Say hello!
+        </div>
+        
+        {/* Messages will be displayed here */}
+      </div>
+      
+      <div className="border-t p-3">
+        <div className="flex gap-2">
+          <input 
+            type="text" 
+            className="flex-1 px-3 py-2 border rounded-full"
+            placeholder="Type a message..."
+          />
+          <Button>Send</Button>
+        </div>
+      </div>
     </div>
   );
 };

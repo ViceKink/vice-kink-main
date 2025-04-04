@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/auth';
 import { useQuery } from '@tanstack/react-query';
-import { DiscoverFilters } from '@/components/discover/DiscoverFilters';
-import { ProfilesGrid } from '@/components/discover/ProfilesGrid';
-import { DiscoverLoading } from '@/components/discover/DiscoverLoading';
-import { EmptyProfilesState } from '@/components/discover/EmptyProfilesState';
+import DiscoverFilters from '@/components/discover/DiscoverFilters';
+import ProfilesGrid from '@/components/discover/ProfilesGrid';
+import DiscoverLoading from '@/components/discover/DiscoverLoading';
+import EmptyProfilesState from '@/components/discover/EmptyProfilesState';
 import { DiscoverProfile } from '@/utils/match/types';
 import { matchingService } from '@/utils/matchUtils';
 
@@ -24,7 +25,7 @@ const Discover = () => {
   });
 
   return (
-    <div className="min-h-screen pt-16 pb-20 px-2">
+    <div className="min-h-screen pt-16 pb-20">
       <DiscoverFilters 
         distance={distance}
         setDistance={setDistance}
