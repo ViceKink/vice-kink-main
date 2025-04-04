@@ -1,7 +1,13 @@
-
 import React from 'react';
+import { Button } from '@/components/ui/button';
+import { QueryObserverResult } from '@tanstack/react-query';
+import { DiscoverProfile } from '@/utils/match/types';
 
-const EmptyProfilesState = () => {
+interface EmptyProfilesStateProps {
+  refetch: () => Promise<QueryObserverResult<DiscoverProfile[], Error>>;
+}
+
+const EmptyProfilesState: React.FC<EmptyProfilesStateProps> = ({ refetch }) => {
   return (
     <div className="p-8 text-center bg-card rounded-xl shadow">
       <div className="text-6xl mb-4">✨</div>

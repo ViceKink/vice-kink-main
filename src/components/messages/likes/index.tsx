@@ -1,102 +1,120 @@
-
-import React, { useEffect, useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { interactionService } from '@/utils/match/interactionService';
+import React, { useState, useEffect } from 'react';
+import ProfileItem from './ProfileItem';
 import { useAuth } from '@/context/auth';
 import { useAdCoins } from '@/hooks/useAdCoins';
-import { toast } from '@/components/ui/use-toast';
-import ProfileItem from './ProfileItem';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { interactionService } from '@/utils/match/interactionService';
+import { AdCoinFeature } from '@/utils/match/types';
 
-interface LikesProps {
-  userId: string;
-  onSelectLike: (profileId: string) => void;
-  balance: number;
-  isAdReady: boolean;
-  onWatchAd: () => Promise<void>;
-}
-
-export const Likes = ({
-  userId,
-  onSelectLike,
-  balance,
-  isAdReady,
-  onWatchAd
-}: LikesProps) => {
-  const { adCoins, purchaseFeature } = useAdCoins();
-  const [processingIds, setProcessingIds] = useState<string[]>([]);
+const LikesList = () => {
+  const { user } = useAuth();
+  const [selectedLike, setSelectedLike] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { 
+    spendAdCoins, 
+    canUseFeature, 
+    watchAd,
+    isAdReady 
+  } = useAdCoins();
+  const queryClient = useQueryClient();
   
-  // Query to get profiles who liked the current user
-  const { data: profiles, isLoading, refetch } = useQuery({
-    queryKey: ['likes', userId],
-    queryFn: () => interactionService.getLikesForUser(userId),
-    enabled: !!userId,
+  const { data: likes = [], isLoading } = useQuery({
+    queryKey: ['userLikes', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const userLikes = await interactionService.getLikesForUser(user.id);
+      console.log('Fetched likes:', userLikes);
+      return userLikes || [];
+    },
+    enabled: !!user?.id
   });
   
-  // Reveal profile mutation
-  const revealMutation = useMutation({
-    mutationFn: async ({ profileId, useCoins }: { profileId: string; useCoins: boolean }) => {
-      setProcessingIds(prev => [...prev, profileId]);
-      
-      // If using AdCoins, purchase the reveal feature
-      if (useCoins) {
-        await purchaseFeature('REVEAL_PROFILE');
-      }
-      
-      // Reveal the profile
-      return await interactionService.revealProfile(userId, profileId);
-    },
-    onSuccess: () => {
-      refetch();
-      toast({
-        title: "Profile revealed!",
-        description: "Now you can see who liked you",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error revealing profile",
-        description: String(error),
-        variant: "destructive",
-      });
-    },
-    onSettled: (_, __, variables) => {
-      setProcessingIds(prev => prev.filter(id => id !== variables.profileId));
-    }
-  });
-  
-  // Handle revealing a profile
-  const handleRevealProfile = (profileId: string, useCoins = true) => {
-    revealMutation.mutate({ profileId, useCoins });
+  const handleSelectLike = (profileId: string) => {
+    setSelectedLike(profileId);
   };
 
-  if (!profiles || profiles.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 px-4 bg-muted/30 rounded-lg">
-        <p className="text-xl font-medium mb-2">No likes yet</p>
-        <p className="text-muted-foreground text-center">
-          When someone likes you, they'll appear here
-        </p>
-      </div>
-    );
-  }
+  const handleRevealProfile = async () => {
+    if (!user?.id || !selectedLike) return;
+    
+    setIsProcessing(true);
+    try {
+      const featureName: AdCoinFeature = 'REVEAL_PROFILE';
+      const canUse = await canUseFeature(featureName);
+      
+      if (!canUse) {
+        toast.error('Not enough AdCoins to reveal this profile');
+        return;
+      }
+      
+      const spendSuccess = await spendAdCoins(featureName);
+      if (!spendSuccess) {
+        toast.error('Failed to spend AdCoins');
+        return;
+      }
+      
+      await interactionService.revealProfile(user.id, selectedLike);
+      
+      toast.success('Profile revealed!');
+      queryClient.invalidateQueries({ queryKey: ['userLikes'] });
+    } catch (error) {
+      console.error('Error revealing profile:', error);
+      toast.error('Failed to reveal profile');
+    } finally {
+      setIsProcessing(false);
+      setSelectedLike(null);
+    }
+  };
+  
+  const handleWatchAd = async () => {
+    if (!user?.id || !selectedLike) return;
+    
+    setIsProcessing(true);
+    try {
+      const success = await watchAd();
+      
+      if (!success) {
+        toast.error('Failed to watch ad');
+        return;
+      }
+      
+      await interactionService.revealProfile(user.id, selectedLike);
+      
+      toast.success('Profile revealed!');
+      queryClient.invalidateQueries({ queryKey: ['userLikes'] });
+    } catch (error) {
+      console.error('Error watching ad to reveal profile:', error);
+      toast.error('Failed to reveal profile');
+    } finally {
+      setIsProcessing(false);
+      setSelectedLike(null);
+    }
+  };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-2">
-      {profiles.map(profile => (
-        <ProfileItem
-          key={profile.id}
-          profile={profile}
-          onSelectLike={onSelectLike}
-          onReveal={() => handleRevealProfile(profile.id)}
-          onWatchAd={() => {
-            handleRevealProfile(profile.id, false);
-            onWatchAd();
-          }}
-          isProcessing={processingIds.includes(profile.id)}
-          canUseCoins={balance >= 50}
-          isAdReady={isAdReady}
-        />
-      ))}
-    </div>
+    <>
+      {isLoading ? (
+        <div>Loading...</div>
+      ) : likes.length === 0 ? (
+        <div>No likes yet</div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {likes.map((profile) => (
+            <ProfileItem
+              key={profile.id}
+              profile={profile}
+              onSelectLike={handleSelectLike}
+              onReveal={handleRevealProfile}
+              onWatchAd={handleWatchAd}
+              isProcessing={isProcessing && selectedLike === profile.id}
+              canUseCoins={true}
+              isAdReady={isAdReady}
+            />
+          ))}
+        </div>
+      )}
+    </>
   );
 };
+
+export default LikesList;

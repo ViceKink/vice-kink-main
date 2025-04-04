@@ -1,28 +1,46 @@
 
-/**
- * Interface for profiles in discover view
- */
+import { Json } from "@/integrations/supabase/types";
+
+// Basic profile interface
+export interface Profile {
+  id: string;
+  name: string;
+  avatar?: string;
+  bio?: string;
+  distance: number;
+  age?: number;
+  photos?: string[];
+  interests?: string[];
+  location?: string;
+  occupation?: string;
+}
+
+// Extended profile for discover
 export interface DiscoverProfile {
   id: string;
   name: string;
-  age: number;
-  location: string;
-  occupation?: string;
-  religion?: string;
-  height?: string;
-  verified: boolean;
   avatar?: string;
-  photos: string[];
   bio?: string;
-  passions?: string[];
-  vices?: string[];
-  kinks?: string[];
-  about: Record<string, any>;
+  age?: number;
+  photos?: string[];
+  location?: string;
+  occupation?: string;
+  // Add other common profile fields
 }
 
-export type InteractionType = 'like' | 'dislike' | 'superlike';
-
-export interface InteractionResult {
-  success: boolean;
-  matched: boolean;
+// Interface for a match with profile details
+export interface MatchWithProfile {
+  match_id: string;
+  matched_at: string;
+  other_user_id: string;
+  other_user: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+  last_message?: string | null;
+  unread_count?: number;
 }
+
+// Types for likes/matches feature
+export type AdCoinFeature = 'REVEAL_PROFILE' | 'BOOST_PROFILE' | 'SUPER_LIKE';

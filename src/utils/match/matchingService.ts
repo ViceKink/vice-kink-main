@@ -6,7 +6,7 @@ import { DiscoverProfile } from "./types";
 /**
  * Checks if two users are matched (both have liked each other)
  */
-export const checkIfMatched = async (currentUserId: string, targetUserId: string): Promise<boolean> => {
+const checkIfMatched = async (currentUserId: string, targetUserId: string): Promise<boolean> => {
   if (!currentUserId || !targetUserId) return false;
   
   try {
@@ -44,7 +44,7 @@ export const checkIfMatched = async (currentUserId: string, targetUserId: string
 /**
  * Creates a match between two users
  */
-export const createMatch = async (currentUserId: string, targetUserId: string): Promise<boolean> => {
+const createMatch = async (currentUserId: string, targetUserId: string): Promise<boolean> => {
   if (!currentUserId || !targetUserId) return false;
   
   try {
@@ -76,7 +76,7 @@ export const createMatch = async (currentUserId: string, targetUserId: string): 
 /**
  * Get all matches for a user
  */
-export const getUserMatches = async (userId: string): Promise<MatchWithProfile[]> => {
+const getUserMatches = async (userId: string): Promise<MatchWithProfile[]> => {
   if (!userId) return [];
   
   try {
@@ -176,7 +176,7 @@ export const getUserMatches = async (userId: string): Promise<MatchWithProfile[]
 /**
  * Force check for matches that may have been missed
  */
-export const forceCheckForMatches = async (userId: string): Promise<number> => {
+const forceCheckForMatches = async (userId: string): Promise<number> => {
   if (!userId) return 0;
   
   try {
@@ -259,7 +259,7 @@ export const forceCheckForMatches = async (userId: string): Promise<number> => {
 /**
  * Get compatible profiles for discover
  */
-export const getCompatibleProfiles = async (userId: string, distance: number, sortOption: string): Promise<DiscoverProfile[]> => {
+const getCompatibleProfiles = async (userId: string, distance: number, sortOption: string): Promise<DiscoverProfile[]> => {
   if (!userId) return [];
   
   try {
