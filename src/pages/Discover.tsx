@@ -7,7 +7,7 @@ import ProfilesGrid from '@/components/discover/ProfilesGrid';
 import DiscoverLoading from '@/components/discover/DiscoverLoading';
 import EmptyProfilesState from '@/components/discover/EmptyProfilesState';
 import { DiscoverProfile } from '@/utils/match/types';
-import { matchingService } from '@/utils/matchUtils';
+import { getCompatibleProfiles } from '@/utils/match';
 
 const Discover = () => {
   const { user } = useAuth();
@@ -19,7 +19,7 @@ const Discover = () => {
     queryKey: ['discoverProfiles', distance, sortOption],
     queryFn: async () => {
       if (!user) return [];
-      return await matchingService.getCompatibleProfiles(user.id, distance, sortOption);
+      return await getCompatibleProfiles(user.id, distance, sortOption);
     },
     enabled: !!user?.id
   });

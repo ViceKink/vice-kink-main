@@ -1,64 +1,37 @@
 
 import React from 'react';
-import { useAuth } from '@/context/auth';
-import { useAdCoins } from '@/hooks/useAdCoins';
-import { Likes } from './likes';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from "@/components/ui/skeleton";
+import { Likes } from '@/components/messages/likes';
 
-export interface LikesListProps {
+interface LikesListProps {
+  likes: any[];
   isLoading: boolean;
-  onSelectLike: (profileId: string) => void;
-  balance: number;
-  isAdReady: boolean;
-  onWatchAd: () => Promise<void>;
-  userId: string;
 }
 
-// Create a profile card skeleton component
-const ProfileCardSkeleton = () => {
-  return (
-    <div className="border rounded-lg p-4 shadow-sm space-y-2">
-      <Skeleton className="h-40 w-full" />
-      <div className="space-y-2">
-        <Skeleton className="h-6 w-2/3" />
-        <Skeleton className="h-4 w-1/2" />
-      </div>
-    </div>
-  );
-};
-
-const LikesList = ({
-  isLoading,
-  onSelectLike,
-  balance,
-  isAdReady,
-  onWatchAd,
-  userId
-}: LikesListProps) => {
-  const { user } = useAuth();
-  const { adCoins } = useAdCoins();
-  
+const LikesList: React.FC<LikesListProps> = ({ likes, isLoading }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-        {[...Array(4)].map((_, i) => (
-          <ProfileCardSkeleton key={i} />
+      <div className="space-y-4">
+        {[...Array(3)].map((_, i) => (
+          <Skeleton key={i} className="w-full h-24" />
         ))}
       </div>
     );
   }
 
-  return (
-    <div>
-      <Likes
-        userId={userId}
-        onSelectLike={onSelectLike}
-        balance={balance}
-        isAdReady={isAdReady}
-        onWatchAd={onWatchAd}
-      />
-    </div>
-  );
+  if (likes.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-6xl mb-4">✨</div>
+        <h3 className="text-xl font-semibold mb-2">No likes yet</h3>
+        <p className="text-sm text-muted-foreground">
+          When someone likes you, they'll appear here
+        </p>
+      </div>
+    );
+  }
+
+  return <Likes likes={likes} />;
 };
 
 export default LikesList;
