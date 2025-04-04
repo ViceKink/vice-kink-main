@@ -168,15 +168,22 @@ async function rejectProfile(currentUserId: string, rejectedProfileId: string) {
 // Function to reveal a profile that has liked the current user
 async function revealProfile(profileId: string) {
   try {
-    const { user } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+    // Fixed: Getting the user session correctly
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    
+    if (!session?.user) {
+      throw new Error('Not authenticated');
+    }
+    
+    const userId = session.user.id;
 
     // Update the interaction to mark it as revealed
     const { data, error } = await supabase
       .from('profile_interactions')
       .update({ is_revealed: true })
       .eq('user_id', profileId)  // The liker's ID
-      .eq('target_profile_id', user.id)  // The current user's ID
+      .eq('target_profile_id', userId)  // The current user's ID
       .select();
 
     if (error) {

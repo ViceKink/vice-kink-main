@@ -28,13 +28,18 @@ export const Likes: React.FC<LikesProps> = ({ likes }) => {
       const result = await purchaseFeature('REVEAL_PROFILE' as AdCoinFeature);
       
       if (result) {
-        // Update the profile interaction in database
-        await interactionService.revealProfile(profileId);
-        
-        // Invalidate queries to reflect changes
-        queryClient.invalidateQueries({ queryKey: ['likes'] });
-        
-        toast.success('Profile revealed successfully!');
+        try {
+          // Update the profile interaction in database
+          await interactionService.revealProfile(profileId);
+          
+          // Invalidate queries to reflect changes
+          queryClient.invalidateQueries({ queryKey: ['likes'] });
+          
+          toast.success('Profile revealed successfully!');
+        } catch (revealError) {
+          console.error('Error revealing profile:', revealError);
+          toast.error('Failed to reveal profile');
+        }
       }
     } catch (error) {
       console.error('Error revealing profile:', error);
@@ -53,13 +58,18 @@ export const Likes: React.FC<LikesProps> = ({ likes }) => {
       
       const success = await showRewardedAd();
       if (success) {
-        // Update the profile interaction in database
-        await interactionService.revealProfile(profileId);
-        
-        // Invalidate queries to reflect changes
-        queryClient.invalidateQueries({ queryKey: ['likes'] });
-        
-        toast.success('Profile revealed successfully!');
+        try {
+          // Update the profile interaction in database
+          await interactionService.revealProfile(profileId);
+          
+          // Invalidate queries to reflect changes
+          queryClient.invalidateQueries({ queryKey: ['likes'] });
+          
+          toast.success('Profile revealed successfully!');
+        } catch (revealError) {
+          console.error('Error revealing profile:', revealError);
+          toast.error('Failed to reveal profile');
+        }
       }
     } catch (error) {
       console.error('Error watching ad:', error);
