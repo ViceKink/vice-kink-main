@@ -65,7 +65,7 @@ const Messages = () => {
             userId={user?.id || ''}
             partnerId={activeMatch.other_user_id}
             partnerName={activeMatch.other_user.name || 'User'}
-            partnerAvatar={activeMatch.other_user.avatar}
+            partnerAvatar={activeMatch.other_user.avatar || ''}
             onBack={handleBackFromChat} 
           />
         </div>

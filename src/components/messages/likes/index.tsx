@@ -5,6 +5,8 @@ import { ProfileWithInteraction } from '@/models/profileTypes';
 import { useAdCoins } from '@/hooks/useAdCoins';
 import { toast } from 'sonner';
 import { AdCoinFeature } from '@/models/adCoinsTypes';
+import { interactionService } from '@/utils/match';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface LikesProps {
   likes: ProfileWithInteraction[];
@@ -12,18 +14,26 @@ interface LikesProps {
 
 export const Likes: React.FC<LikesProps> = ({ likes }) => {
   const { purchaseFeature, showRewardedAd } = useAdCoins();
-  const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   
   // Function to handle revealing a profile
   const handleRevealProfile = async (profileId: string) => {
     try {
       setIsProcessing(true);
+      setSelectedProfileId(profileId);
+      
+      // Purchase the feature with AdCoins
       const result = await purchaseFeature('REVEAL_PROFILE' as AdCoinFeature);
       
       if (result) {
-        setRevealedIds(prev => new Set([...prev, profileId]));
+        // Update the profile interaction in database
+        await interactionService.revealProfile(profileId);
+        
+        // Invalidate queries to reflect changes
+        queryClient.invalidateQueries({ queryKey: ['likes'] });
+        
         toast.success('Profile revealed successfully!');
       }
     } catch (error) {
@@ -31,20 +41,32 @@ export const Likes: React.FC<LikesProps> = ({ likes }) => {
       toast.error('Failed to reveal profile');
     } finally {
       setIsProcessing(false);
+      setSelectedProfileId(null);
     }
   };
 
   // Function to handle watching an ad to reveal a profile
   const handleWatchAd = async (profileId: string) => {
     try {
+      setIsProcessing(true);
+      setSelectedProfileId(profileId);
+      
       const success = await showRewardedAd();
       if (success) {
-        setRevealedIds(prev => new Set([...prev, profileId]));
+        // Update the profile interaction in database
+        await interactionService.revealProfile(profileId);
+        
+        // Invalidate queries to reflect changes
+        queryClient.invalidateQueries({ queryKey: ['likes'] });
+        
         toast.success('Profile revealed successfully!');
       }
     } catch (error) {
       console.error('Error watching ad:', error);
       toast.error('Failed to watch ad');
+    } finally {
+      setIsProcessing(false);
+      setSelectedProfileId(null);
     }
   };
 
@@ -52,15 +74,9 @@ export const Likes: React.FC<LikesProps> = ({ likes }) => {
     setSelectedProfileId(profileId);
   };
 
-  // Update the likes with revealed state
-  const likesWithRevealedState = likes.map(profile => ({
-    ...profile,
-    is_revealed: revealedIds.has(profile.id)
-  }));
-
   return (
     <div className="space-y-4">
-      {likesWithRevealedState.map(profile => (
+      {likes.map(profile => (
         <ProfileItem
           key={profile.id}
           profile={profile}
