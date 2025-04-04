@@ -24,6 +24,13 @@ const Discover = () => {
     enabled: !!user?.id
   });
 
+  // Update profiles when user changes
+  useEffect(() => {
+    if (user?.id) {
+      refetch();
+    }
+  }, [user?.id, refetch]);
+
   return (
     <div className="min-h-screen pt-16 pb-20">
       <DiscoverFilters 
