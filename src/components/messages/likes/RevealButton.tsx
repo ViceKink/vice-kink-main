@@ -33,7 +33,7 @@ const RevealButton: React.FC<RevealButtonProps> = ({
         ) : (
           <>
             <Coins className="w-4 h-4 mr-2" />
-            Reveal with 50 Coins
+            Reveal with 1 Coin
           </>
         )}
       </Button>

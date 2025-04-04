@@ -21,7 +21,7 @@ export const Likes: React.FC<LikesProps> = ({ likes }) => {
       setIsProcessing(true);
       // Since AdCoinFeature doesn't include 'REVEAL_PROFILE', handle it generically
       const result = await purchaseFeature('REVEAL_PROFILE' as any);
-      if (result && typeof result === 'object' && 'success' in result && result.success) {
+      if (result && typeof result === 'object' && 'success' in result && result.success === true) {
         const allIds = likes.map(like => like.id);
         setRevealedIds(new Set([...revealedIds, ...allIds]));
       }

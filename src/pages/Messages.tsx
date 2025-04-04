@@ -8,16 +8,30 @@ import { interactionService } from '@/utils/match';
 import LikesList from '@/components/messages/LikesList';
 import MatchesList from '@/components/messages/MatchesList';
 import ChatView from '@/components/messages/ChatView';
+import { MatchWithProfile } from '@/models/matchesTypes';
 
 const Messages = () => {
   const { user } = useAuth();
-  const [activeChat, setActiveChat] = useState<{ matchId: string } | null>(null);
+  const [activeMatch, setActiveMatch] = useState<MatchWithProfile | null>(null);
 
   const { data: matches = [], isLoading: isLoadingMatches } = useQuery({
     queryKey: ['matches'],
     queryFn: async () => {
       if (!user?.id) return [];
-      return await interactionService.getMatches(user.id);
+      const matchData = await interactionService.getMatches(user.id);
+      // Transform data to ensure it matches MatchWithProfile type
+      return matchData.map((match: any) => ({
+        match_id: match.match_id,
+        matched_at: match.matched_at,
+        other_user_id: match.other_user_id,
+        other_user: {
+          id: match.other_user.id || match.other_user_id,
+          name: match.other_user.name || 'User',
+          avatar: match.other_user.avatar
+        },
+        last_message: match.last_message,
+        unread_count: match.unread_count || 0
+      })) as MatchWithProfile[];
     },
     enabled: !!user?.id,
   });
@@ -32,19 +46,26 @@ const Messages = () => {
   });
 
   const handleBackFromChat = () => {
-    setActiveChat(null);
+    setActiveMatch(null);
   };
 
   const handleOpenChat = (matchId: string) => {
-    setActiveChat({ matchId });
+    const selectedMatch = matches.find(m => m.match_id === matchId);
+    if (selectedMatch) {
+      setActiveMatch(selectedMatch);
+    }
   };
 
   return (
     <div className="h-screen pt-14 pb-14 overflow-y-auto">
-      {activeChat ? (
+      {activeMatch ? (
         <div className="h-full">
           <ChatView 
-            matchId={activeChat.matchId} 
+            matchId={activeMatch.match_id}
+            userId={user?.id || ''}
+            partnerId={activeMatch.other_user_id}
+            partnerName={activeMatch.other_user.name || 'User'}
+            partnerAvatar={activeMatch.other_user.avatar}
             onBack={handleBackFromChat} 
           />
         </div>
@@ -61,7 +82,7 @@ const Messages = () => {
             <TabsContent value="matches" className="space-y-4">
               <MatchesList 
                 matches={matches} 
-                loading={isLoadingMatches}
+                isLoading={isLoadingMatches}
                 onSelectMatch={handleOpenChat}
               />
             </TabsContent>
@@ -69,7 +90,7 @@ const Messages = () => {
             <TabsContent value="likes" className="space-y-4">
               <LikesList 
                 likes={likes} 
-                loading={isLoadingLikes}
+                isLoading={isLoadingLikes}
               />
             </TabsContent>
           </Tabs>

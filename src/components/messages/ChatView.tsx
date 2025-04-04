@@ -21,6 +21,9 @@ const ChatView: React.FC<ChatViewProps> = ({
   partnerAvatar,
   onBack 
 }) => {
+  // Default to '?' if name is undefined or empty
+  const nameInitial = partnerName && partnerName.length > 0 ? partnerName.charAt(0) : '?';
+  
   return (
     <div className="flex flex-col h-full">
       <div className="border-b p-3 flex items-center gap-3">
@@ -29,18 +32,18 @@ const ChatView: React.FC<ChatViewProps> = ({
         </Button>
         
         <Avatar className="h-8 w-8">
-          <AvatarImage src={partnerAvatar} alt={partnerName} />
-          <AvatarFallback>{partnerName.charAt(0)}</AvatarFallback>
+          <AvatarImage src={partnerAvatar} alt={partnerName || 'User'} />
+          <AvatarFallback>{nameInitial}</AvatarFallback>
         </Avatar>
         
         <div>
-          <h3 className="font-semibold">{partnerName}</h3>
+          <h3 className="font-semibold">{partnerName || 'User'}</h3>
         </div>
       </div>
       
       <div className="flex-1 p-4 overflow-y-auto">
         <div className="text-center text-muted-foreground py-6">
-          You matched with {partnerName}. Say hello!
+          You matched with {partnerName || 'this user'}. Say hello!
         </div>
         
         {/* Messages will be displayed here */}

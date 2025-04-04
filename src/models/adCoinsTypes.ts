@@ -32,7 +32,8 @@ export type AdCoinFeature =
   | 'profile_boost'
   | 'post_boost'
   | 'super_like'
-  | 'match_with_artist';
+  | 'match_with_artist'
+  | 'REVEAL_PROFILE';
 
 export interface FeatureCost {
   id: AdCoinFeature;
@@ -49,5 +50,6 @@ export const FEATURE_COSTS: Record<AdCoinFeature, number> = {
   profile_boost: 5,
   post_boost: 5,
   super_like: 3,
-  match_with_artist: 2
+  match_with_artist: 2,
+  REVEAL_PROFILE: 1
 };

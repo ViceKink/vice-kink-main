@@ -68,12 +68,12 @@ const MatchesList: React.FC<MatchesListProps> = ({ matches, isLoading, onSelectM
             <div className="flex items-start">
               <Avatar className="h-12 w-12 mr-3 flex-shrink-0">
                 <AvatarImage src={match.other_user.avatar} />
-                <AvatarFallback>{match.other_user.name?.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{match.other_user.name ? match.other_user.name.charAt(0) : '?'}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
                 <div className="flex justify-between items-baseline">
                   <h3 className="text-sm font-medium truncate">
-                    {match.other_user.name}
+                    {match.other_user.name || 'User'}
                   </h3>
                   <span className="text-xs text-muted-foreground">
                     {format(new Date(match.matched_at), 'P')}
