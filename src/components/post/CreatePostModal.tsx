@@ -133,6 +133,7 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
   
   const handleSaveComic = (panels: ComicPanelData[]) => {
     setComicData(panels);
+    toast.success("Comic created! Click Post to share it.");
   };
   
   const handlePost = async () => {

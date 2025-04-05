@@ -5,6 +5,7 @@ import { PlusCircle, LayoutGrid, Save } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ComicPanel, ComicPanelData } from './ComicPanel';
 import { comicLayouts, PanelLayout } from './ComicLayoutTemplates';
+import { toast } from 'sonner';
 
 interface ComicCreatorProps {
   onSave: (panels: ComicPanelData[]) => void;
@@ -38,7 +39,19 @@ const ComicCreator: React.FC<ComicCreatorProps> = ({ onSave, onCancel }) => {
   };
   
   const handleSaveComic = () => {
+    if (panels.length === 0) {
+      toast.error("Please add at least one panel before saving");
+      return;
+    }
+    
+    // Check if any panel is currently being edited
+    if (editingPanelId) {
+      toast.warning("Please save the panel you're currently editing first");
+      return;
+    }
+    
     onSave(panels);
+    toast.success("Comic saved successfully!");
   };
   
   const applyLayout = (layout: PanelLayout) => {
