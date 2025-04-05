@@ -3,9 +3,12 @@ import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { HeartIcon, MessageCircle, Share2, Bookmark, MoreHorizontal } from 'lucide-react';
+import { HeartIcon, MessageCircle } from 'lucide-react';
 import { ComicPanelData } from './comic/ComicPanel';
 import './comic/comic.css';
+import { BoostButton } from '@/components/boost/BoostButton';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface PostCardProps {
   post: {
@@ -28,7 +31,7 @@ interface PostCardProps {
 
 export const PostCard = ({ post }: PostCardProps) => {
   const [isLiked, setIsLiked] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
+  const queryClient = useQueryClient();
   
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -40,10 +43,23 @@ export const PostCard = ({ post }: PostCardProps) => {
   
   const toggleLike = () => {
     setIsLiked(!isLiked);
+    
+    // Update local state immediately for better UX
+    const newLikesCount = isLiked ? post.likes_count - 1 : post.likes_count + 1;
+    
+    // We'll simulate updating the likes count here
+    // In a real implementation, this would call an API endpoint
+    toast.success(isLiked ? "Post unliked" : "Post liked");
+    
+    // Refresh posts data after like/unlike
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['allPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['userPosts'] });
+    }, 300);
   };
   
-  const toggleSave = () => {
-    setIsSaved(!isSaved);
+  const handleComment = () => {
+    toast.info("Comments feature coming soon");
   };
   
   const renderComicContent = () => {
@@ -193,9 +209,6 @@ export const PostCard = ({ post }: PostCardProps) => {
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="icon">
-            <MoreHorizontal className="h-5 w-5" />
-          </Button>
         </div>
         
         {post.title && (
@@ -223,22 +236,12 @@ export const PostCard = ({ post }: PostCardProps) => {
               <HeartIcon className="h-4 w-4 mr-1" />
               {post.likes_count || 0}
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={handleComment}>
               <MessageCircle className="h-4 w-4 mr-1" />
               {post.comments_count || 0}
             </Button>
-            <Button variant="ghost" size="sm">
-              <Share2 className="h-4 w-4 mr-1" />
-            </Button>
+            <BoostButton entityId={post.id} entityType="post" className="text-foreground" />
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={toggleSave}
-            className={isSaved ? "text-yellow-500" : ""}
-          >
-            <Bookmark className="h-4 w-4" />
-          </Button>
         </div>
       </div>
     </Card>

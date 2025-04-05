@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ComicPanel, ComicPanelData } from './ComicPanel';
 import { comicLayouts, PanelLayout } from './ComicLayoutTemplates';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface ComicCreatorProps {
   onSave: (panels: ComicPanelData[]) => void;
@@ -17,6 +18,7 @@ const ComicCreator: React.FC<ComicCreatorProps> = ({ onSave, onCancel }) => {
   const [editingPanelId, setEditingPanelId] = useState<string>('');
   const [selectedLayout, setSelectedLayout] = useState<PanelLayout | null>(null);
   const [activeTab, setActiveTab] = useState<string>('layout');
+  const queryClient = useQueryClient();
   
   const addPanel = () => {
     const newPanel: ComicPanelData = {
@@ -52,6 +54,10 @@ const ComicCreator: React.FC<ComicCreatorProps> = ({ onSave, onCancel }) => {
     
     onSave(panels);
     toast.success("Comic saved successfully!");
+    
+    // Let's invalidate the posts query to make sure the post list is refreshed
+    queryClient.invalidateQueries({ queryKey: ['allPosts'] });
+    queryClient.invalidateQueries({ queryKey: ['userPosts'] });
   };
   
   const applyLayout = (layout: PanelLayout) => {

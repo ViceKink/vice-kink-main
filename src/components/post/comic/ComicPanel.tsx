@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { FileInput } from '@/components/ui/file-input';
 import { ComicBubble, BubbleToolbar, BubbleType, Bubble } from './ComicBubble';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 
 export interface ComicPanelData {
   id: string;
@@ -201,58 +202,46 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
             </div>
           </div>
           
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full flex items-center justify-center gap-1"
-                  >
-                    <Image className="h-4 w-4" />
-                    Upload Image
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm">Upload Image</h4>
-                    <FileInput
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
+          <div className="space-y-4">
+            {/* Improved mobile layout with Upload and Background in separate rows */}
+            <div className="flex flex-col gap-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full flex items-center justify-center gap-1"
+                onClick={() => document.getElementById(`file-upload-${panel.id}`)?.click()}
+              >
+                <Image className="h-4 w-4" />
+                Upload Image
+              </Button>
+              <input
+                type="file"
+                id={`file-upload-${panel.id}`}
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageUpload}
+              />
               
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full flex items-center justify-center gap-1"
-                  >
-                    <Palette className="h-4 w-4" />
-                    Background Color
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-60">
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm">Select Background</h4>
-                    <div className="grid grid-cols-4 gap-2">
-                      {bgColors.map((color) => (
-                        <button
-                          key={color.value}
-                          className={`w-8 h-8 rounded border ${bgColor === color.value ? 'ring-2 ring-primary' : ''}`}
-                          style={{ backgroundColor: color.value }}
-                          onClick={() => handleSelectBackground(color.value)}
-                          title={color.label}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+              <div className="flex items-center justify-center">
+                <div className="border-t border-border w-full"></div>
+                <span className="px-2 text-xs text-muted-foreground">OR</span>
+                <div className="border-t border-border w-full"></div>
+              </div>
+              
+              <div>
+                <p className="text-xs mb-1 text-center">Background Color</p>
+                <div className="grid grid-cols-7 gap-2 justify-center">
+                  {bgColors.map((color) => (
+                    <button
+                      key={color.value}
+                      className={`w-6 h-6 rounded border ${bgColor === color.value ? 'ring-2 ring-primary' : ''}`}
+                      style={{ backgroundColor: color.value }}
+                      onClick={() => handleSelectBackground(color.value)}
+                      title={color.label}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
             
             {panel.image && (
@@ -295,7 +284,36 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
             
             <div>
               <label className="text-sm font-medium mb-2 block">Bubbles</label>
-              <BubbleToolbar onAddBubble={handleAddBubble} />
+              {/* Improved bubble toolbar layout for mobile */}
+              <div className="grid grid-cols-1 gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="justify-start"
+                  onClick={() => handleAddBubble('speech')}
+                >
+                  <div className="border border-foreground h-5 w-5 rounded-full mr-2 flex items-center justify-center text-xs">💬</div>
+                  Speech Bubble
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="justify-start" 
+                  onClick={() => handleAddBubble('thought')}
+                >
+                  <div className="border border-foreground h-5 w-5 rounded-full mr-2 flex items-center justify-center text-xs">💭</div>
+                  Thought Bubble
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="justify-start"  
+                  onClick={() => handleAddBubble('description')}
+                >
+                  <div className="border border-foreground h-5 w-5 rounded-full mr-2 flex items-center justify-center text-xs">📝</div>
+                  Description Box
+                </Button>
+              </div>
             </div>
             
             <Button
