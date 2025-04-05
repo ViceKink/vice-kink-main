@@ -9,6 +9,8 @@ import './comic/comic.css';
 import { BoostButton } from '@/components/boost/BoostButton';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Textarea } from '@/components/ui/textarea';
 
 interface PostCardProps {
   post: {
@@ -31,6 +33,10 @@ interface PostCardProps {
 
 export const PostCard = ({ post }: PostCardProps) => {
   const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(post.likes_count);
+  const [showCommentInput, setShowCommentInput] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const queryClient = useQueryClient();
   
   const formatDate = (dateString: string) => {
@@ -41,26 +47,146 @@ export const PostCard = ({ post }: PostCardProps) => {
     }).format(date);
   };
   
-  const toggleLike = () => {
-    setIsLiked(!isLiked);
-    
-    // Update local state immediately for better UX
-    const newLikesCount = isLiked ? post.likes_count - 1 : post.likes_count + 1;
-    
-    // We'll simulate updating the likes count here
-    // In a real implementation, this would call an API endpoint
-    toast.success(isLiked ? "Post unliked" : "Post liked");
-    
-    // Refresh posts data after like/unlike
-    setTimeout(() => {
+  const toggleLike = async () => {
+    try {
+      const sessionData = await supabase.auth.getSession();
+      const userId = sessionData.data.session?.user?.id;
+      
+      if (!userId) {
+        toast.error("You need to be logged in to like posts");
+        return;
+      }
+      
+      // Optimistic UI update
+      setIsLiked(!isLiked);
+      setLikesCount(prevCount => isLiked ? prevCount - 1 : prevCount + 1);
+      
+      if (!isLiked) {
+        // Like the post
+        const { error } = await supabase
+          .from('post_likes')
+          .insert({ post_id: post.id, user_id: userId });
+          
+        if (error) throw error;
+        
+        // Update the likes count in posts table
+        await supabase
+          .from('posts')
+          .update({ likes_count: likesCount + 1 })
+          .eq('id', post.id);
+          
+        toast.success("Post liked");
+      } else {
+        // Unlike the post
+        const { error } = await supabase
+          .from('post_likes')
+          .delete()
+          .eq('post_id', post.id)
+          .eq('user_id', userId);
+          
+        if (error) throw error;
+        
+        // Update the likes count in posts table
+        await supabase
+          .from('posts')
+          .update({ likes_count: likesCount - 1 })
+          .eq('id', post.id);
+          
+        toast.success("Post unliked");
+      }
+      
+      // Refresh posts data
       queryClient.invalidateQueries({ queryKey: ['allPosts'] });
       queryClient.invalidateQueries({ queryKey: ['userPosts'] });
-    }, 300);
+      queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
+    } catch (error) {
+      console.error('Error liking/unliking post:', error);
+      // Revert optimistic update on error
+      setIsLiked(!isLiked);
+      setLikesCount(prevCount => isLiked ? prevCount + 1 : prevCount - 1);
+      toast.error("Failed to update like");
+    }
   };
   
   const handleComment = () => {
-    toast.info("Comments feature coming soon");
+    setShowCommentInput(!showCommentInput);
   };
+  
+  const submitComment = async () => {
+    if (!commentText.trim()) {
+      toast.error("Comment cannot be empty");
+      return;
+    }
+    
+    try {
+      setIsSubmittingComment(true);
+      
+      const sessionData = await supabase.auth.getSession();
+      const userId = sessionData.data.session?.user?.id;
+      
+      if (!userId) {
+        toast.error("You need to be logged in to comment");
+        return;
+      }
+      
+      const { error } = await supabase
+        .from('comments')
+        .insert({
+          post_id: post.id,
+          user_id: userId,
+          content: commentText.trim()
+        });
+        
+      if (error) throw error;
+      
+      // Update comments count in posts table
+      await supabase
+        .from('posts')
+        .update({ comments_count: post.comments_count + 1 })
+        .eq('id', post.id);
+        
+      toast.success("Comment added");
+      setCommentText('');
+      setShowCommentInput(false);
+      
+      // Refresh posts data
+      queryClient.invalidateQueries({ queryKey: ['allPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['userPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
+    } catch (error) {
+      console.error('Error submitting comment:', error);
+      toast.error("Failed to add comment");
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+  
+  // Check if post is liked when component mounts
+  React.useEffect(() => {
+    const checkLikeStatus = async () => {
+      try {
+        const sessionData = await supabase.auth.getSession();
+        const userId = sessionData.data.session?.user?.id;
+        
+        if (!userId) return;
+        
+        const { data, error } = await supabase
+          .from('post_likes')
+          .select('id')
+          .eq('post_id', post.id)
+          .eq('user_id', userId)
+          .maybeSingle();
+          
+        if (error) throw error;
+        
+        setIsLiked(!!data);
+      } catch (error) {
+        console.error('Error checking like status:', error);
+      }
+    };
+    
+    checkLikeStatus();
+  }, [post.id]);
   
   const renderComicContent = () => {
     if (!post.comicData || post.comicData.length === 0) {
@@ -233,8 +359,8 @@ export const PostCard = ({ post }: PostCardProps) => {
               className={isLiked ? "text-red-500" : ""}
               onClick={toggleLike}
             >
-              <HeartIcon className="h-4 w-4 mr-1" />
-              {post.likes_count || 0}
+              <HeartIcon className={`h-4 w-4 mr-1 ${isLiked ? "fill-red-500" : ""}`} />
+              {likesCount || 0}
             </Button>
             <Button variant="ghost" size="sm" onClick={handleComment}>
               <MessageCircle className="h-4 w-4 mr-1" />
@@ -243,6 +369,34 @@ export const PostCard = ({ post }: PostCardProps) => {
             <BoostButton entityId={post.id} entityType="post" className="text-foreground" />
           </div>
         </div>
+        
+        {showCommentInput && (
+          <div className="mt-4 space-y-2">
+            <Textarea
+              placeholder="Write a comment..."
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              className="w-full h-24"
+            />
+            <div className="flex justify-end gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowCommentInput(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={submitComment} 
+                disabled={isSubmittingComment || !commentText.trim()}
+                className="bg-vice-purple hover:bg-vice-dark-purple"
+              >
+                Post Comment
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </Card>
   );
