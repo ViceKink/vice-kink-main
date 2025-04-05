@@ -47,6 +47,10 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
   const [tempTitle, setTempTitle] = useState(panel.title || '');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [bgColor, setBgColor] = useState(panel.bgColor || '#FFFFFF');
+  const [titlePosition, setTitlePosition] = useState({ x: 20, y: 20 });
+  const [contentPosition, setContentPosition] = useState({ x: 20, y: panel.image ? 160 : 60 });
+  const [isDraggingTitle, setIsDraggingTitle] = useState(false);
+  const [isDraggingContent, setIsDraggingContent] = useState(false);
   
   const handleSave = () => {
     onUpdate({
@@ -79,11 +83,12 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
     reader.readAsDataURL(file);
   };
   
-  const handleSelectBackground = () => {
+  const handleSelectBackground = (colorValue: string) => {
+    setBgColor(colorValue);
     onUpdate({
       ...panel,
       image: undefined,
-      bgColor
+      bgColor: colorValue
     });
   };
   
@@ -120,6 +125,66 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
     });
   };
   
+  // Title dragging handlers
+  const handleTitleDragStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDraggingTitle(true);
+    
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startPosX = titlePosition.x;
+    const startPosY = titlePosition.y;
+    
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+      
+      setTitlePosition({
+        x: startPosX + dx,
+        y: startPosY + dy
+      });
+    };
+    
+    const handleMouseUp = () => {
+      setIsDraggingTitle(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+  
+  // Content dragging handlers
+  const handleContentDragStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDraggingContent(true);
+    
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const startPosX = contentPosition.x;
+    const startPosY = contentPosition.y;
+    
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+      
+      setContentPosition({
+        x: startPosX + dx,
+        y: startPosY + dy
+      });
+    };
+    
+    const handleMouseUp = () => {
+      setIsDraggingContent(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+  
   return (
     <div 
       className="bg-background rounded-lg border border-border relative group"
@@ -132,9 +197,6 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
             <div className="flex gap-1">
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => onEdit('')}>
                 <X className="h-4 w-4" />
-              </Button>
-              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSave}>
-                <Check className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -183,14 +245,11 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
                           key={color.value}
                           className={`w-8 h-8 rounded border ${bgColor === color.value ? 'ring-2 ring-primary' : ''}`}
                           style={{ backgroundColor: color.value }}
-                          onClick={() => setBgColor(color.value)}
+                          onClick={() => handleSelectBackground(color.value)}
                           title={color.label}
                         />
                       ))}
                     </div>
-                    <Button size="sm" className="w-full mt-2" onClick={handleSelectBackground}>
-                      Apply Background
-                    </Button>
                   </div>
                 </PopoverContent>
               </Popover>
@@ -266,13 +325,29 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
           )}
           
           {panel.title && (
-            <div className="absolute top-2 right-2 bg-purple-500 text-white px-3 py-1 text-sm font-bold uppercase transform rotate-2 shadow-md">
+            <div 
+              className="absolute bg-purple-500 text-white px-3 py-1 text-sm font-bold uppercase transform rotate-2 shadow-md cursor-grab"
+              style={{
+                top: `${titlePosition.y}px`,
+                left: `${titlePosition.x}px`,
+                cursor: isDraggingTitle ? 'grabbing' : 'grab',
+              }}
+              onMouseDown={handleTitleDragStart}
+            >
               {panel.title}
             </div>
           )}
           
           {panel.content && (
-            <div className="absolute bottom-2 left-0 right-0 mx-2 bg-black/70 text-white p-2 rounded text-sm">
+            <div 
+              className="absolute bg-black/70 text-white p-2 rounded text-sm cursor-grab"
+              style={{
+                top: `${contentPosition.y}px`,
+                left: `${contentPosition.x}px`,
+                cursor: isDraggingContent ? 'grabbing' : 'grab',
+              }}
+              onMouseDown={handleContentDragStart}
+            >
               {panel.content}
             </div>
           )}

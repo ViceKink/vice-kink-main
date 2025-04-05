@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { MessageSquare, Cloud, MessageCircle, Square, StickyNote, X, Check, Menu } from 'lucide-react';
+import { MessageSquare, Cloud, StickyNote, X, Check, Move } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 export type BubbleType = 'speech' | 'thought' | 'description';
 export type BubbleStyle = 'comic-round' | 'comic-cloud' | 'comic-sharp' | 'comic-burst' | 'modern';
@@ -205,14 +206,7 @@ export const ComicBubble: React.FC<BubbleProps> = ({
                 {Object.entries(bubbleColors).map(([colorName, _]) => (
                   <button
                     key={colorName}
-                    className={`w-5 h-5 rounded-full bg-[${colorName === 'white' ? '#FFFFFF' : 
-                      colorName === 'red' ? '#ea384c' : 
-                      colorName === 'orange' ? '#F97316' : 
-                      colorName === 'pink' ? '#D946EF' : 
-                      colorName === 'purple' ? '#8B5CF6' : 
-                      colorName === 'blue' ? '#33C3F0' : 
-                      colorName === 'yellow' ? '#FACC15' : 
-                      '#FFFFFF'}] border ${localColor === colorName ? 'ring-2 ring-primary' : ''}`}
+                    className={`w-5 h-5 rounded-full border ${localColor === colorName ? 'ring-2 ring-primary' : ''}`}
                     onClick={() => setLocalColor(colorName)}
                     style={{ backgroundColor: colorName === 'white' ? '#FFFFFF' : 
                       colorName === 'red' ? '#ea384c' : 
@@ -257,8 +251,12 @@ export const ComicBubble: React.FC<BubbleProps> = ({
             className="handle w-full h-6 absolute -top-3 left-0 cursor-grab"
             onMouseDown={handleDragStart}
           />
+          <div 
+            className="absolute inset-0 cursor-grab" 
+            onMouseDown={handleDragStart}
+          />
           <p 
-            className="text-sm whitespace-pre-wrap" 
+            className="text-sm whitespace-pre-wrap z-10 relative" 
             onClick={() => setEditing(true)}
           >
             {content}
@@ -269,39 +267,195 @@ export const ComicBubble: React.FC<BubbleProps> = ({
   );
 };
 
-// Component to add new bubbles to panels
+// Component to add new bubbles to panels - now with proper dialogs
 export const BubbleToolbar: React.FC<{ 
   onAddBubble: (type: BubbleType) => void 
 }> = ({ onAddBubble }) => {
+  const [showSpeechDialog, setShowSpeechDialog] = useState(false);
+  const [showThoughtDialog, setShowThoughtDialog] = useState(false);
+  const [showDescDialog, setShowDescDialog] = useState(false);
+  const [content, setContent] = useState("");
+  const [style, setStyle] = useState<BubbleStyle>("comic-round");
+  const [color, setColor] = useState<string>("white");
+  
+  const handleAddBubble = (type: BubbleType) => {
+    // Reset form state
+    setContent("");
+    setStyle("comic-round");
+    setColor("white");
+    
+    // Show appropriate dialog
+    if (type === "speech") setShowSpeechDialog(true);
+    else if (type === "thought") setShowThoughtDialog(true);
+    else setShowDescDialog(true);
+  };
+  
+  const handleSubmit = (type: BubbleType) => {
+    onAddBubble(type);
+    
+    // Close all dialogs
+    setShowSpeechDialog(false);
+    setShowThoughtDialog(false);
+    setShowDescDialog(false);
+  };
+  
   return (
-    <div className="flex items-center gap-2 mb-3">
-      <Button 
-        variant="outline" 
-        size="sm"
-        onClick={() => onAddBubble('speech')}
-        className="flex items-center gap-1"
-      >
-        <MessageCircle className="h-4 w-4" />
-        Speech
-      </Button>
-      <Button 
-        variant="outline" 
-        size="sm"
-        onClick={() => onAddBubble('thought')}
-        className="flex items-center gap-1"
-      >
-        <Cloud className="h-4 w-4" />
-        Thought
-      </Button>
-      <Button 
-        variant="outline" 
-        size="sm"
-        onClick={() => onAddBubble('description')}
-        className="flex items-center gap-1"
-      >
-        <StickyNote className="h-4 w-4" />
-        Description
-      </Button>
-    </div>
+    <>
+      <div className="flex items-center gap-2 mb-3">
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => handleAddBubble('speech')}
+          className="flex items-center gap-1"
+        >
+          <MessageSquare className="h-4 w-4" />
+          Speech
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => handleAddBubble('thought')}
+          className="flex items-center gap-1"
+        >
+          <Cloud className="h-4 w-4" />
+          Thought
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => handleAddBubble('description')}
+          className="flex items-center gap-1"
+        >
+          <StickyNote className="h-4 w-4" />
+          Description
+        </Button>
+      </div>
+
+      <Dialog open={showSpeechDialog} onOpenChange={setShowSpeechDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Speech Bubble</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Speech Text:</label>
+              <Textarea 
+                placeholder="What do you want your character to say?" 
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Bubble Style:</label>
+              <div className="flex flex-wrap gap-2">
+                {['comic-round', 'comic-cloud', 'comic-sharp', 'comic-burst', 'modern'].map((bubbleStyle) => (
+                  <button 
+                    key={bubbleStyle}
+                    className={`w-12 h-10 border ${style === bubbleStyle ? 'ring-2 ring-primary' : ''}`}
+                    onClick={() => setStyle(bubbleStyle as BubbleStyle)}
+                  >
+                    <div className={`w-full h-full ${bubbleStyle === 'comic-round' ? 'rounded-full' : 
+                      bubbleStyle === 'comic-cloud' ? 'rounded-[50%/60%]' :
+                      bubbleStyle === 'comic-sharp' ? 'rotate-45' :
+                      bubbleStyle === 'comic-burst' ? '' : 'rounded-md'}`}
+                      style={bubbleStyle === 'comic-burst' ? {clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'} : {}}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSpeechDialog(false)}>Cancel</Button>
+            <Button onClick={() => handleSubmit('speech')}>Add Bubble</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showThoughtDialog} onOpenChange={setShowThoughtDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Thought Bubble</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Thought Text:</label>
+              <Textarea 
+                placeholder="What is your character thinking?" 
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Bubble Style:</label>
+              <div className="flex flex-wrap gap-2">
+                {['comic-round', 'comic-cloud', 'comic-sharp', 'comic-burst', 'modern'].map((bubbleStyle) => (
+                  <button 
+                    key={bubbleStyle}
+                    className={`w-12 h-10 border ${style === bubbleStyle ? 'ring-2 ring-primary' : ''}`}
+                    onClick={() => setStyle(bubbleStyle as BubbleStyle)}
+                  >
+                    <div className={`w-full h-full ${bubbleStyle === 'comic-round' ? 'rounded-full' : 
+                      bubbleStyle === 'comic-cloud' ? 'rounded-[50%/60%]' :
+                      bubbleStyle === 'comic-sharp' ? 'rotate-45' :
+                      bubbleStyle === 'comic-burst' ? '' : 'rounded-md'}`}
+                      style={bubbleStyle === 'comic-burst' ? {clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'} : {}}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowThoughtDialog(false)}>Cancel</Button>
+            <Button onClick={() => handleSubmit('thought')}>Add Bubble</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDescDialog} onOpenChange={setShowDescDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Description Box</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description Text:</label>
+              <Textarea 
+                placeholder="Add a description or narration..." 
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="min-h-[100px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Box Style:</label>
+              <div className="flex flex-wrap gap-2">
+                {['comic-round', 'comic-cloud', 'comic-sharp', 'comic-burst', 'modern'].map((bubbleStyle) => (
+                  <button 
+                    key={bubbleStyle}
+                    className={`w-12 h-10 border ${style === bubbleStyle ? 'ring-2 ring-primary' : ''}`}
+                    onClick={() => setStyle(bubbleStyle as BubbleStyle)}
+                  >
+                    <div className={`w-full h-full ${bubbleStyle === 'comic-round' ? 'rounded-full' : 
+                      bubbleStyle === 'comic-cloud' ? 'rounded-[50%/60%]' :
+                      bubbleStyle === 'comic-sharp' ? 'rotate-45' :
+                      bubbleStyle === 'comic-burst' ? '' : 'rounded-md'}`}
+                      style={bubbleStyle === 'comic-burst' ? {clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'} : {}}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDescDialog(false)}>Cancel</Button>
+            <Button onClick={() => handleSubmit('description')}>Add Box</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };

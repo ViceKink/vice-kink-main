@@ -27,10 +27,10 @@ const ProfilePostCreationProvider = ({ profileId, children }: ProfilePostCreatio
   const childrenWithProps = React.Children.map(children, child => {
     // Check if the child is a valid React element
     if (React.isValidElement(child)) {
-      // Pass onCreatePost prop using a type assertion
+      // Pass onCreatePost prop 
       return React.cloneElement(child, { 
         onCreatePost: handleCreatePost 
-      } as any); // Use type assertion to bypass TypeScript errors
+      });
     }
     return child;
   });

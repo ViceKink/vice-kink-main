@@ -56,6 +56,11 @@ const ComicCreator: React.FC<ComicCreatorProps> = ({ onSave, onCancel }) => {
     
     // Automatically switch to Edit Panels tab after selecting a layout
     setActiveTab('custom');
+    
+    // Set the first panel to edit mode
+    if (newPanels.length > 0) {
+      setEditingPanelId(newPanels[0].id);
+    }
   };
   
   return (
