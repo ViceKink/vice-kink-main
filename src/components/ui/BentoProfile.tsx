@@ -77,13 +77,15 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
           Your profile is waiting to be filled with your personality, photos, and interests. 
           Complete your profile to connect with others!
         </p>
-        <NavLink to="/edit-profile">
-          <Button 
-            className="bg-vice-purple hover:bg-vice-dark-purple flex items-center gap-2"
-          >
-            <Pencil className="w-4 h-4" /> Edit Your Profile <ArrowRight className="w-4 h-4" />
-          </Button>
-        </NavLink>
+        <div className="flex justify-center">
+          <NavLink to="/edit-profile">
+            <Button 
+              className="bg-vice-purple hover:bg-vice-dark-purple flex items-center gap-2"
+            >
+              <Pencil className="w-4 h-4" /> Edit Your Profile <ArrowRight className="w-4 h-4" />
+            </Button>
+          </NavLink>
+        </div>
       </div>
     );
   }
