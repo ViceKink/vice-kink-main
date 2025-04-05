@@ -2,7 +2,7 @@
 import React from 'react';
 import { UserProfile } from '@/types/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { MapPin } from 'lucide-react';
+import { MapPin, UserRound, Pencil, ArrowRight } from 'lucide-react';
 import ProfileDetailsCard from '@/components/profile/ProfileDetailsCard';
 import ProfileAudio from '@/components/profile/ProfileAudio';
 import ProfileTag from '@/components/ui/ProfileTag';
@@ -11,6 +11,8 @@ import ProfileQuote from '@/components/profile/ProfileQuote';
 import ProfileFlirtingStyle from '@/components/profile/ProfileFlirtingStyle';
 import ProfilePassion from '@/components/profile/ProfilePassion';
 import ProfileSecondaryPhotos from '@/components/profile/ProfileSecondaryPhotos';
+import { NavLink } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import '../ui/bento-grid.css';
 
 interface BentoProfileProps {
@@ -50,6 +52,58 @@ const BentoProfile = ({ profile, isCurrentUser = false }: BentoProfileProps) => 
     profile.about?.lifestyle?.drinking ||
     profile.about?.status
   );
+  
+  // Check if the profile is effectively empty (no meaningful content)
+  const isProfileEmpty = !hasPhotos && 
+                        !hasBio && 
+                        !hasQuote && 
+                        !hasAudio && 
+                        !hasAboutDetails && 
+                        !hasVicesOrKinks && 
+                        !hasPassions && 
+                        !hasFlirtingStyle;
+  
+  // If profile is empty and it's the current user, show empty state
+  if (isProfileEmpty && isCurrentUser) {
+    return (
+      <div className="p-8 bg-white dark:bg-card rounded-2xl shadow-md text-center">
+        <div className="flex justify-center mb-6">
+          <div className="p-4 bg-vice-purple/10 rounded-full">
+            <UserRound className="w-12 h-12 text-vice-purple" />
+          </div>
+        </div>
+        <h3 className="text-xl font-bold mb-4">Your Profile is Empty</h3>
+        <p className="text-foreground/70 mb-6">
+          Your profile is waiting to be filled with your personality, photos, and interests. 
+          Complete your profile to connect with others!
+        </p>
+        <NavLink to="/edit-profile">
+          <Button 
+            className="bg-vice-purple hover:bg-vice-dark-purple flex items-center gap-2"
+          >
+            <Pencil className="w-4 h-4" /> Edit Your Profile <ArrowRight className="w-4 h-4" />
+          </Button>
+        </NavLink>
+      </div>
+    );
+  }
+  
+  // If profile is empty but not the current user, show a different message
+  if (isProfileEmpty && !isCurrentUser) {
+    return (
+      <div className="p-8 bg-white dark:bg-card rounded-2xl shadow-md text-center">
+        <div className="flex justify-center mb-6">
+          <div className="p-4 bg-vice-purple/10 rounded-full">
+            <UserRound className="w-12 h-12 text-vice-purple" />
+          </div>
+        </div>
+        <h3 className="text-xl font-bold mb-4">Profile Incomplete</h3>
+        <p className="text-foreground/70 mb-6">
+          This user hasn't completed their profile yet.
+        </p>
+      </div>
+    );
+  }
   
   return (
     <div className="w-full mx-auto">
