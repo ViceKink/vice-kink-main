@@ -117,6 +117,12 @@ const Profile = () => {
     navigate('/auth');
   };
   
+  // Create post handler
+  const handleCreatePost = () => {
+    console.log("Create post triggered from Profile");
+    // This function will be used directly if needed
+  };
+  
   // Return appropriate view based on state
   if (authLoading) {
     console.log("Auth loading...");
@@ -164,6 +170,7 @@ const Profile = () => {
             profileUser={profileUser} 
             isCurrentUser={isCurrentUser} 
             userPosts={userPosts || []} 
+            onCreatePost={handleCreatePost}  
           />
         </ProfilePostCreationProvider>
       </div>

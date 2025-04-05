@@ -27,20 +27,12 @@ const ProfilePostCreationProvider = ({ profileId, children }: ProfilePostCreatio
   const childrenWithProps = React.Children.map(children, child => {
     // Check if the child is a valid React element
     if (React.isValidElement(child)) {
-      // Here's the key fix - we're checking the component's props to see if it accepts onCreatePost
-      const childType = child.type as any;
-      const hasOnCreatePostProp = 
-        // Check component's propTypes (React.Component)
-        (childType && childType.propTypes && 'onCreatePost' in childType.propTypes) ||
-        // For function components, we can't reliably detect if they accept a prop
-        // So we check if they're already receiving the prop
-        ('onCreatePost' in child.props);
-      
-      // Only pass the prop if the component seems to accept it
-      return React.cloneElement(child, hasOnCreatePostProp ? { 
+      // Instead of complex detection, simply ensure we pass the onCreatePost prop
+      // Only if the child already has this prop in its props
+      return React.cloneElement(child, {
         ...child.props,
-        onCreatePost: handleCreatePost 
-      } : child.props);
+        onCreatePost: handleCreatePost
+      });
     }
     return child;
   });
