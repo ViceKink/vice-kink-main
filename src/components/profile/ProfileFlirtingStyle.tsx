@@ -13,7 +13,7 @@ interface FlirtingStyleObject {
 
 interface ProfileFlirtingStyleProps {
   flirtingStyle: string | FlirtingStyleObject;
-  currentRow: number;
+  currentRow?: number; // Make optional
 }
 
 const ProfileFlirtingStyle = ({ flirtingStyle, currentRow }: ProfileFlirtingStyleProps) => {
@@ -74,6 +74,19 @@ const ProfileFlirtingStyle = ({ flirtingStyle, currentRow }: ProfileFlirtingStyl
   
   const styleDescription = createFlirtingStyleDescription(flirtingStyle);
   
+  // If used within the bento grid directly
+  if (currentRow === undefined) {
+    return (
+      <div className="flex items-center h-full">
+        <p className="text-sm break-words whitespace-normal">
+          <span className="font-medium mr-2">My idea of flirting is:</span>
+          {styleDescription}
+        </p>
+      </div>
+    );
+  }
+  
+  // Original version for use in profile grid layout
   return (
     <ProfileSection
       gridSpan={{
