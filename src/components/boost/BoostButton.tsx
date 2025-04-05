@@ -42,11 +42,14 @@ export const BoostButton: React.FC<BoostButtonProps> = ({
         return;
       }
 
-      // Call the appropriate boost function
-      const { data, error } = await supabase.rpc(
-        entityType === 'profile' ? 'boost_profile' : 'boost_post',
-        { p_user_id: entityType === 'profile' ? entityId : undefined, p_post_id: entityType === 'post' ? entityId : undefined }
-      );
+      // Call the appropriate boost function based on entity type
+      let data, error;
+      
+      if (entityType === 'profile') {
+        ({ data, error } = await supabase.rpc('boost_profile', { p_user_id: entityId }));
+      } else {
+        ({ data, error } = await supabase.rpc('boost_post', { p_post_id: entityId }));
+      }
       
       if (error) {
         console.error(`Error boosting ${entityType}:`, error);
