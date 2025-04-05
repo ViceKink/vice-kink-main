@@ -11,27 +11,27 @@ export const bubbleStyles: BubbleStyleOption[] = [
   {
     id: 'comic-round',
     name: 'Round',
-    description: 'Classic round comic bubble with tail'
+    description: 'Classic round comic bubble with tail pointing to speaker'
   },
   {
     id: 'comic-cloud',
     name: 'Cloud',
-    description: 'Fluffy cloud-like bubble for thoughts'
+    description: 'Fluffy cloud-like bubble with round edges and small circular tails'
   },
   {
     id: 'comic-sharp',
     name: 'Sharp',
-    description: 'Angular bubble with sharp corners'
+    description: 'Angular bubble with sharp corners and triangular tail'
   },
   {
     id: 'comic-burst',
     name: 'Burst',
-    description: 'Star-burst style for emphasis or action'
+    description: 'Star-burst style with jagged edges for emphasis or action'
   },
   {
     id: 'modern',
     name: 'Modern',
-    description: 'Simple modern style bubble'
+    description: 'Simple rectangular bubble with rounded corners and small tail'
   }
 ];
 

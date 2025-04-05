@@ -299,6 +299,53 @@ export const BubbleToolbar: React.FC<{
     setShowDescDialog(false);
   };
   
+  // Function to render bubble style preview
+  const renderBubbleStylePreview = (bubbleStyle: BubbleStyle) => {
+    switch (bubbleStyle) {
+      case 'comic-round':
+        return (
+          <div className="w-full h-full bg-white border border-gray-300 rounded-full">
+            <div className="relative w-full h-full">
+              <div className="absolute -bottom-1 -right-1 w-1/3 h-1/3 bg-white border border-gray-300 rounded-full transform rotate-45"></div>
+            </div>
+          </div>
+        );
+      case 'comic-cloud':
+        return (
+          <div className="w-full h-full bg-white border border-gray-300 rounded-[50%/60%]">
+            <div className="relative w-full h-full">
+              <div className="absolute -bottom-1 right-1 w-1/4 h-1/4 bg-white border border-gray-300 rounded-full"></div>
+              <div className="absolute -bottom-2 right-0 w-1/5 h-1/5 bg-white border border-gray-300 rounded-full"></div>
+            </div>
+          </div>
+        );
+      case 'comic-sharp':
+        return (
+          <div className="w-full h-full bg-white border border-gray-300">
+            <div className="relative w-full h-full">
+              <div className="absolute -bottom-2 left-1/4 w-0 h-0 border-l-[5px] border-r-[5px] border-t-[10px] border-transparent border-t-gray-300"></div>
+            </div>
+          </div>
+        );
+      case 'comic-burst':
+        return (
+          <div className="w-full h-full bg-white border border-gray-300" 
+            style={{clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'}}>
+          </div>
+        );
+      case 'modern':
+        return (
+          <div className="w-full h-full bg-white border border-gray-300 rounded-md">
+            <div className="relative w-full h-full">
+              <div className="absolute -bottom-2 left-1/4 w-0 h-0 border-l-[5px] border-r-[5px] border-t-[10px] border-transparent border-t-gray-300"></div>
+            </div>
+          </div>
+        );
+      default:
+        return <div className="w-full h-full bg-white border border-gray-300 rounded-full"></div>;
+    }
+  };
+  
   return (
     <>
       <div className="flex items-center gap-2 mb-3">
@@ -348,19 +395,14 @@ export const BubbleToolbar: React.FC<{
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Bubble Style:</label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {['comic-round', 'comic-cloud', 'comic-sharp', 'comic-burst', 'modern'].map((bubbleStyle) => (
                   <button 
                     key={bubbleStyle}
-                    className={`w-12 h-10 border ${style === bubbleStyle ? 'ring-2 ring-primary' : ''}`}
+                    className={`w-16 h-16 p-1 ${style === bubbleStyle ? 'ring-2 ring-primary' : 'border'}`}
                     onClick={() => setStyle(bubbleStyle as BubbleStyle)}
                   >
-                    <div className={`w-full h-full ${bubbleStyle === 'comic-round' ? 'rounded-full' : 
-                      bubbleStyle === 'comic-cloud' ? 'rounded-[50%/60%]' :
-                      bubbleStyle === 'comic-sharp' ? 'rotate-45' :
-                      bubbleStyle === 'comic-burst' ? '' : 'rounded-md'}`}
-                      style={bubbleStyle === 'comic-burst' ? {clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'} : {}}
-                    />
+                    {renderBubbleStylePreview(bubbleStyle as BubbleStyle)}
                   </button>
                 ))}
               </div>
@@ -390,19 +432,14 @@ export const BubbleToolbar: React.FC<{
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Bubble Style:</label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {['comic-round', 'comic-cloud', 'comic-sharp', 'comic-burst', 'modern'].map((bubbleStyle) => (
                   <button 
                     key={bubbleStyle}
-                    className={`w-12 h-10 border ${style === bubbleStyle ? 'ring-2 ring-primary' : ''}`}
+                    className={`w-16 h-16 p-1 ${style === bubbleStyle ? 'ring-2 ring-primary' : 'border'}`}
                     onClick={() => setStyle(bubbleStyle as BubbleStyle)}
                   >
-                    <div className={`w-full h-full ${bubbleStyle === 'comic-round' ? 'rounded-full' : 
-                      bubbleStyle === 'comic-cloud' ? 'rounded-[50%/60%]' :
-                      bubbleStyle === 'comic-sharp' ? 'rotate-45' :
-                      bubbleStyle === 'comic-burst' ? '' : 'rounded-md'}`}
-                      style={bubbleStyle === 'comic-burst' ? {clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'} : {}}
-                    />
+                    {renderBubbleStylePreview(bubbleStyle as BubbleStyle)}
                   </button>
                 ))}
               </div>
@@ -432,19 +469,14 @@ export const BubbleToolbar: React.FC<{
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Box Style:</label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {['comic-round', 'comic-cloud', 'comic-sharp', 'comic-burst', 'modern'].map((bubbleStyle) => (
                   <button 
                     key={bubbleStyle}
-                    className={`w-12 h-10 border ${style === bubbleStyle ? 'ring-2 ring-primary' : ''}`}
+                    className={`w-16 h-16 p-1 ${style === bubbleStyle ? 'ring-2 ring-primary' : 'border'}`}
                     onClick={() => setStyle(bubbleStyle as BubbleStyle)}
                   >
-                    <div className={`w-full h-full ${bubbleStyle === 'comic-round' ? 'rounded-full' : 
-                      bubbleStyle === 'comic-cloud' ? 'rounded-[50%/60%]' :
-                      bubbleStyle === 'comic-sharp' ? 'rotate-45' :
-                      bubbleStyle === 'comic-burst' ? '' : 'rounded-md'}`}
-                      style={bubbleStyle === 'comic-burst' ? {clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'} : {}}
-                    />
+                    {renderBubbleStylePreview(bubbleStyle as BubbleStyle)}
                   </button>
                 ))}
               </div>
