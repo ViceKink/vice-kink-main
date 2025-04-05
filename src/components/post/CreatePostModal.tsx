@@ -8,8 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/integrations/supabase/client';
-import ComicCreator from './ComicCreator';
 import { toast } from 'sonner';
+import ComicCreator from './comic/ComicCreator';
+import { ComicPanelData } from './comic/ComicPanel';
+import './comic/comic.css';
 
 interface Community {
   id: string;
@@ -19,7 +21,7 @@ interface Community {
 
 interface CreatePostModalProps {
   onClose: () => void;
-  onPost: (content: string, type: 'text' | 'comic', comicData?: any) => void;
+  onPost: (content: string, type: 'text' | 'photo' | 'comic', comicData?: any) => void;
 }
 
 const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
@@ -129,7 +131,7 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
     }
   };
   
-  const handleSaveComic = (panels: any[]) => {
+  const handleSaveComic = (panels: ComicPanelData[]) => {
     setComicData(panels);
   };
   

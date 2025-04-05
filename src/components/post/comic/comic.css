@@ -1,0 +1,53 @@
+
+/* Speech and Thought Bubble Styles */
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 20px;
+  border-width: 15px 15px 0;
+  border-style: solid;
+  border-color: white transparent;
+  display: block;
+  width: 0;
+}
+
+.speech-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -16px;
+  left: 19px;
+  border-width: 16px 16px 0;
+  border-style: solid;
+  border-color: #e2e8f0 transparent;
+  display: block;
+  width: 0;
+}
+
+.thought-bubble {
+  border-radius: 20px;
+}
+
+.thought-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -25px;
+  right: 20px;
+  width: 15px;
+  height: 15px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+}
+
+.thought-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -40px;
+  right: 10px;
+  width: 10px;
+  height: 10px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+}

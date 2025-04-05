@@ -28,7 +28,10 @@ const ProfilePostCreationProvider = ({ profileId, children }: ProfilePostCreatio
       {React.Children.map(children, child => {
         // Check if the child is a valid React element before cloning
         if (React.isValidElement(child)) {
-          return React.cloneElement(child, { onCreatePost: handleCreatePost });
+          // Pass onCreatePost to the child component
+          return React.cloneElement(child, { 
+            onCreatePost: handleCreatePost 
+          });
         }
         return child;
       })}
