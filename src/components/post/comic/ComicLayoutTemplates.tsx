@@ -22,10 +22,10 @@ export const comicLayouts: PanelLayout[] = [
     name: 'Vertical Story',
     description: 'A vertical sequence of panels',
     template: [
-      { id: 'panel-1', gridArea: '1 / 1 / 2 / 2', aspectRatio: 4/3 },
-      { id: 'panel-2', gridArea: '2 / 1 / 3 / 2', aspectRatio: 4/3 },
-      { id: 'panel-3', gridArea: '3 / 1 / 4 / 2', aspectRatio: 4/3 },
-      { id: 'panel-4', gridArea: '4 / 1 / 5 / 2', aspectRatio: 4/3 },
+      { id: 'panel-1', gridArea: '1 / 1 / 2 / 3', aspectRatio: 16/9 },
+      { id: 'panel-2', gridArea: '2 / 1 / 3 / 3', aspectRatio: 16/9 },
+      { id: 'panel-3', gridArea: '3 / 1 / 4 / 3', aspectRatio: 16/9 },
+      { id: 'panel-4', gridArea: '4 / 1 / 5 / 3', aspectRatio: 16/9 },
     ]
   },
   {

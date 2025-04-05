@@ -1,20 +1,16 @@
 
 import React, { useState } from 'react';
-import { Pencil, Trash2, Image, Move, X } from 'lucide-react';
+import { Pencil, Trash2, Image, X, Check, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ComicBubble, BubbleToolbar, BubbleType } from './ComicBubble';
-
-export interface Bubble {
-  id: string;
-  type: BubbleType;
-  content: string;
-  position: { x: number; y: number };
-}
+import { FileInput } from '@/components/ui/file-input';
+import { ComicBubble, BubbleToolbar, BubbleType, Bubble } from './ComicBubble';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export interface ComicPanelData {
   id: string;
   image?: string;
+  bgColor?: string;
   title?: string;
   content: string;
   bubbles: Bubble[];
@@ -29,6 +25,17 @@ interface ComicPanelProps {
   isEditing: boolean;
 }
 
+// Background color options
+const bgColors = [
+  { label: 'White', value: '#FFFFFF' },
+  { label: 'Light Gray', value: '#F3F4F6' },
+  { label: 'Light Blue', value: '#DBEAFE' },
+  { label: 'Light Red', value: '#FEE2E2' },
+  { label: 'Light Green', value: '#DCFCE7' },
+  { label: 'Light Yellow', value: '#FEF3C7' },
+  { label: 'Light Purple', value: '#F3E8FF' },
+];
+
 export const ComicPanel: React.FC<ComicPanelProps> = ({ 
   panel, 
   onEdit, 
@@ -38,28 +45,45 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
 }) => {
   const [tempContent, setTempContent] = useState(panel.content);
   const [tempTitle, setTempTitle] = useState(panel.title || '');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [bgColor, setBgColor] = useState(panel.bgColor || '#FFFFFF');
   
   const handleSave = () => {
     onUpdate({
       ...panel,
       content: tempContent,
-      title: tempTitle
+      title: tempTitle,
+      bgColor
     });
     onEdit(''); // Close editing
   };
   
-  const handleImageUpload = () => {
-    // Mock upload by setting a sample image URL
-    const sampleImages = [
-      "/lovable-uploads/d35b405d-2dbf-4fcc-837b-1d48cb945bf4.png",
-      "/lovable-uploads/ea8c69d9-6b5b-4bba-aceb-7d05f9a47ee5.png",
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1000&auto=format&fit=crop"
-    ];
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
     
-    const randomImage = sampleImages[Math.floor(Math.random() * sampleImages.length)];
+    setSelectedFile(file);
+    
+    // Create a preview URL
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        // In a real app, we would upload this to Supabase Storage
+        // For now, we'll use the data URL as our "uploaded image"
+        onUpdate({
+          ...panel,
+          image: event.target.result as string
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  
+  const handleSelectBackground = () => {
     onUpdate({
       ...panel,
-      image: randomImage
+      image: undefined,
+      bgColor
     });
   };
   
@@ -69,7 +93,9 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
       type,
       content: type === 'speech' ? 'Speech text here' : 
               type === 'thought' ? 'Thought bubble text' : 'Description text',
-      position: { x: 50, y: 50 }
+      position: { x: 50, y: 50 },
+      style: 'comic-round',
+      color: 'white'
     };
     
     onUpdate({
@@ -78,20 +104,11 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
     });
   };
   
-  const handleUpdateBubble = (id: string, content: string) => {
+  const handleUpdateBubble = (id: string, updates: Partial<Bubble>) => {
     onUpdate({
       ...panel,
       bubbles: panel.bubbles.map(bubble => 
-        bubble.id === id ? { ...bubble, content } : bubble
-      )
-    });
-  };
-  
-  const handleBubblePositionChange = (id: string, position: { x: number; y: number }) => {
-    onUpdate({
-      ...panel,
-      bubbles: panel.bubbles.map(bubble => 
-        bubble.id === id ? { ...bubble, position } : bubble
+        bubble.id === id ? { ...bubble, ...updates } : bubble
       )
     });
   };
@@ -117,21 +134,67 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
                 <X className="h-4 w-4" />
               </Button>
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleSave}>
-                <Pencil className="h-4 w-4" />
+                <Check className="h-4 w-4" />
               </Button>
             </div>
           </div>
           
           <div className="space-y-3">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full flex items-center justify-center gap-1"
-              onClick={handleImageUpload}
-            >
-              <Image className="h-4 w-4" />
-              {panel.image ? 'Change Image' : 'Add Image'}
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full flex items-center justify-center gap-1"
+                  >
+                    <Image className="h-4 w-4" />
+                    Upload Image
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">Upload Image</h4>
+                    <FileInput
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full flex items-center justify-center gap-1"
+                  >
+                    <Palette className="h-4 w-4" />
+                    Background Color
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-60">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">Select Background</h4>
+                    <div className="grid grid-cols-4 gap-2">
+                      {bgColors.map((color) => (
+                        <button
+                          key={color.value}
+                          className={`w-8 h-8 rounded border ${bgColor === color.value ? 'ring-2 ring-primary' : ''}`}
+                          style={{ backgroundColor: color.value }}
+                          onClick={() => setBgColor(color.value)}
+                          title={color.label}
+                        />
+                      ))}
+                    </div>
+                    <Button size="sm" className="w-full mt-2" onClick={handleSelectBackground}>
+                      Apply Background
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
             
             {panel.image && (
               <div className="relative">
@@ -175,6 +238,14 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
               <label className="text-sm font-medium mb-2 block">Bubbles</label>
               <BubbleToolbar onAddBubble={handleAddBubble} />
             </div>
+            
+            <Button
+              className="w-full bg-vice-purple hover:bg-vice-dark-purple mt-2"
+              onClick={handleSave}
+            >
+              <Check className="h-4 w-4 mr-2" />
+              Save Panel
+            </Button>
           </div>
         </div>
       ) : (
@@ -186,8 +257,11 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
               className="w-full h-full object-cover rounded-lg" 
             />
           ) : (
-            <div className="w-full h-full bg-muted flex items-center justify-center rounded-lg">
-              <p className="text-muted-foreground">No image</p>
+            <div 
+              className="w-full h-full flex items-center justify-center rounded-lg"
+              style={{ backgroundColor: panel.bgColor || '#F3F4F6' }}
+            >
+              {!panel.bgColor && <p className="text-muted-foreground">No image</p>}
             </div>
           )}
           
@@ -211,8 +285,9 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
               type={bubble.type}
               content={bubble.content}
               position={bubble.position}
-              onUpdate={handleUpdateBubble}
-              onPositionChange={handleBubblePositionChange}
+              style={bubble.style}
+              color={bubble.color}
+              onUpdate={(id, updates) => handleUpdateBubble(id, updates)}
               onDelete={handleDeleteBubble}
             />
           ))}

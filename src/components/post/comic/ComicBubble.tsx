@@ -1,33 +1,59 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { MessageSquare, ThumbsUp, X } from 'lucide-react';
+import { MessageSquare, Cloud, MessageCircle, Square, StickyNote, X, Check, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export type BubbleType = 'speech' | 'thought' | 'description';
+export type BubbleStyle = 'comic-round' | 'comic-cloud' | 'comic-sharp' | 'comic-burst' | 'modern';
+
+export interface Bubble {
+  id: string;
+  type: BubbleType;
+  content: string;
+  position: { x: number; y: number };
+  style?: BubbleStyle;
+  color?: string;
+}
 
 export interface BubbleProps {
   id: string;
   type: BubbleType;
   content: string;
   position: { x: number; y: number };
-  onUpdate: (id: string, content: string) => void;
-  onPositionChange: (id: string, position: { x: number; y: number }) => void;
+  style?: BubbleStyle;
+  color?: string;
+  onUpdate: (id: string, updates: Partial<Bubble>) => void;
   onDelete: (id: string) => void;
 }
+
+// Define bubble color options
+export const bubbleColors = {
+  white: { bg: 'bg-white', text: 'text-black', border: 'border-gray-300' },
+  red: { bg: 'bg-[#ea384c]', text: 'text-white', border: 'border-[#ea384c]' },
+  orange: { bg: 'bg-[#F97316]', text: 'text-white', border: 'border-[#F97316]' },
+  pink: { bg: 'bg-[#D946EF]', text: 'text-white', border: 'border-[#D946EF]' },
+  purple: { bg: 'bg-[#8B5CF6]', text: 'text-white', border: 'border-[#8B5CF6]' },
+  blue: { bg: 'bg-[#33C3F0]', text: 'text-black', border: 'border-[#33C3F0]' },
+  yellow: { bg: 'bg-yellow-300', text: 'text-black', border: 'border-yellow-300' },
+};
 
 export const ComicBubble: React.FC<BubbleProps> = ({ 
   id, 
   type, 
   content, 
   position, 
-  onUpdate, 
-  onPositionChange,
+  style = 'comic-round',
+  color = 'white',
+  onUpdate,
   onDelete
 }) => {
-  const [isDragging, setIsDragging] = React.useState(false);
-  const [editing, setEditing] = React.useState(false);
-  const [localContent, setLocalContent] = React.useState(content);
+  const [isDragging, setIsDragging] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [localContent, setLocalContent] = useState(content);
+  const [localStyle, setLocalStyle] = useState(style);
+  const [localColor, setLocalColor] = useState(color);
   
   const handleDragStart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -42,9 +68,11 @@ export const ComicBubble: React.FC<BubbleProps> = ({
       const dx = moveEvent.clientX - startX;
       const dy = moveEvent.clientY - startY;
       
-      onPositionChange(id, {
-        x: startPosX + dx,
-        y: startPosY + dy
+      onUpdate(id, {
+        position: {
+          x: startPosX + dx,
+          y: startPosY + dy
+        }
       });
     };
     
@@ -59,29 +87,72 @@ export const ComicBubble: React.FC<BubbleProps> = ({
   };
   
   const handleSave = () => {
-    onUpdate(id, localContent);
+    onUpdate(id, { 
+      content: localContent,
+      style: localStyle,
+      color: localColor
+    });
     setEditing(false);
   };
   
-  // Different styles based on bubble type
-  let bubbleClass = "absolute bg-white rounded-2xl p-3 shadow-md border border-gray-200 min-w-[120px] max-w-[200px]";
-  
-  if (type === 'speech') {
-    bubbleClass += " speech-bubble";
-  } else if (type === 'thought') {
-    bubbleClass += " thought-bubble";
-  } else {
-    bubbleClass += " text-sm px-4";
-  }
+  // Different styles based on bubble type and style
+  const getClassNames = () => {
+    const colorClasses = bubbleColors[color as keyof typeof bubbleColors] || bubbleColors.white;
+    
+    let baseClasses = `absolute ${colorClasses.bg} ${colorClasses.text} p-3 shadow-md border ${colorClasses.border} min-w-[120px] max-w-[250px] z-10`;
+    
+    if (style === 'comic-round') {
+      if (type === 'speech') {
+        return `${baseClasses} comic-speech-round`;
+      } else if (type === 'thought') {
+        return `${baseClasses} comic-thought-round`;
+      } else {
+        return `${baseClasses} comic-description-round`;
+      }
+    } else if (style === 'comic-cloud') {
+      if (type === 'speech') {
+        return `${baseClasses} comic-speech-cloud`;
+      } else if (type === 'thought') {
+        return `${baseClasses} comic-thought-cloud`;
+      } else {
+        return `${baseClasses} comic-description-cloud`;
+      }
+    } else if (style === 'comic-sharp') {
+      if (type === 'speech') {
+        return `${baseClasses} comic-speech-sharp`;
+      } else if (type === 'thought') {
+        return `${baseClasses} comic-thought-sharp`;
+      } else {
+        return `${baseClasses} comic-description-sharp`;
+      }
+    } else if (style === 'comic-burst') {
+      if (type === 'speech') {
+        return `${baseClasses} comic-speech-burst`;
+      } else if (type === 'thought') {
+        return `${baseClasses} comic-thought-burst`;
+      } else {
+        return `${baseClasses} comic-description-burst`;
+      }
+    } else { // modern
+      if (type === 'speech') {
+        return `${baseClasses} speech-bubble`;
+      } else if (type === 'thought') {
+        return `${baseClasses} thought-bubble`;
+      } else {
+        return `${baseClasses} text-sm px-4 rounded-md`;
+      }
+    }
+  };
   
   return (
     <div 
-      className={bubbleClass}
+      className={getClassNames()}
       style={{ 
         top: `${position.y}px`, 
         left: `${position.x}px`,
         cursor: isDragging ? 'grabbing' : 'grab',
-        zIndex: editing ? 10 : 5
+        zIndex: editing ? 100 : 5,
+        transform: type === 'description' ? 'translateX(-50%)' : undefined
       }}
     >
       {editing ? (
@@ -92,12 +163,79 @@ export const ComicBubble: React.FC<BubbleProps> = ({
             className="text-sm min-h-[60px]"
             autoFocus
           />
-          <div className="flex justify-end gap-1">
+          
+          <div className="flex flex-col gap-2 mt-2">
+            <div className="flex justify-between text-sm">
+              <span>Style:</span>
+              <div className="flex gap-2">
+                <button 
+                  className={`w-6 h-6 border ${localStyle === 'comic-round' ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => setLocalStyle('comic-round')}
+                >
+                  <span className="sr-only">Round</span>
+                  <div className="w-full h-full rounded-full bg-gray-200"></div>
+                </button>
+                <button 
+                  className={`w-6 h-6 border ${localStyle === 'comic-cloud' ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => setLocalStyle('comic-cloud')}
+                >
+                  <span className="sr-only">Cloud</span>
+                  <div className="w-full h-full rounded-full bg-gray-200" style={{borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%'}}></div>
+                </button>
+                <button 
+                  className={`w-6 h-6 border ${localStyle === 'comic-sharp' ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => setLocalStyle('comic-sharp')}
+                >
+                  <span className="sr-only">Sharp</span>
+                  <div className="w-full h-full bg-gray-200 rotate-45"></div>
+                </button>
+                <button 
+                  className={`w-6 h-6 border ${localStyle === 'comic-burst' ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => setLocalStyle('comic-burst')}
+                >
+                  <span className="sr-only">Burst</span>
+                  <div className="w-full h-full bg-gray-200" style={{clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)'}}></div>
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex justify-between text-sm">
+              <span>Color:</span>
+              <div className="flex gap-1">
+                {Object.entries(bubbleColors).map(([colorName, _]) => (
+                  <button
+                    key={colorName}
+                    className={`w-5 h-5 rounded-full bg-[${colorName === 'white' ? '#FFFFFF' : 
+                      colorName === 'red' ? '#ea384c' : 
+                      colorName === 'orange' ? '#F97316' : 
+                      colorName === 'pink' ? '#D946EF' : 
+                      colorName === 'purple' ? '#8B5CF6' : 
+                      colorName === 'blue' ? '#33C3F0' : 
+                      colorName === 'yellow' ? '#FACC15' : 
+                      '#FFFFFF'}] border ${localColor === colorName ? 'ring-2 ring-primary' : ''}`}
+                    onClick={() => setLocalColor(colorName)}
+                    style={{ backgroundColor: colorName === 'white' ? '#FFFFFF' : 
+                      colorName === 'red' ? '#ea384c' : 
+                      colorName === 'orange' ? '#F97316' : 
+                      colorName === 'pink' ? '#D946EF' : 
+                      colorName === 'purple' ? '#8B5CF6' : 
+                      colorName === 'blue' ? '#33C3F0' : 
+                      colorName === 'yellow' ? '#FACC15' : 
+                      '#FFFFFF' }}
+                  >
+                    <span className="sr-only">{colorName}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-1 mt-2">
             <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-              Cancel
+              <X className="h-4 w-4" />
             </Button>
             <Button size="sm" onClick={handleSave}>
-              Save
+              <Check className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -136,14 +274,14 @@ export const BubbleToolbar: React.FC<{
   onAddBubble: (type: BubbleType) => void 
 }> = ({ onAddBubble }) => {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 mb-3">
       <Button 
         variant="outline" 
         size="sm"
         onClick={() => onAddBubble('speech')}
         className="flex items-center gap-1"
       >
-        <MessageSquare className="h-4 w-4" />
+        <MessageCircle className="h-4 w-4" />
         Speech
       </Button>
       <Button 
@@ -152,14 +290,16 @@ export const BubbleToolbar: React.FC<{
         onClick={() => onAddBubble('thought')}
         className="flex items-center gap-1"
       >
-        <ThumbsUp className="h-4 w-4" />
+        <Cloud className="h-4 w-4" />
         Thought
       </Button>
       <Button 
         variant="outline" 
         size="sm"
         onClick={() => onAddBubble('description')}
+        className="flex items-center gap-1"
       >
+        <StickyNote className="h-4 w-4" />
         Description
       </Button>
     </div>

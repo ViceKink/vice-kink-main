@@ -1,5 +1,5 @@
 
-/* Speech and Thought Bubble Styles */
+/* Modern Speech and Thought Bubble Styles */
 .speech-bubble::after {
   content: '';
   position: absolute;
@@ -50,4 +50,162 @@
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 50%;
+}
+
+/* Comic Style Bubbles */
+
+/* Round Comic Speech */
+.comic-speech-round {
+  border-radius: 25px;
+  position: relative;
+}
+
+.comic-speech-round::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: 25px;
+  width: 40px;
+  height: 40px;
+  background: inherit;
+  border: inherit;
+  border-radius: 40% 40% 0 40%;
+  transform: rotate(45deg);
+  clip-path: polygon(0% 0%, 100% 100%, 0% 100%);
+}
+
+/* Cloud Comic Speech */
+.comic-speech-cloud {
+  border-radius: 50px;
+  position: relative;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+}
+
+.comic-speech-cloud::after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 20px;
+  width: 30px;
+  height: 30px;
+  background: inherit;
+  border: inherit;
+  border-radius: 50%;
+}
+
+.comic-speech-cloud::before {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  left: 5px;
+  width: 15px;
+  height: 15px;
+  background: inherit;
+  border: inherit;
+  border-radius: 50%;
+}
+
+/* Sharp Comic Speech */
+.comic-speech-sharp {
+  border-radius: 5px;
+  position: relative;
+}
+
+.comic-speech-sharp::after {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 30px;
+  width: 0;
+  height: 0;
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+  border-top: 20px solid;
+  border-top-color: inherit;
+}
+
+/* Burst Comic Speech */
+.comic-speech-burst {
+  clip-path: polygon(
+    0% 15%, 15% 0%, 85% 0%, 100% 15%, 
+    100% 85%, 85% 100%, 15% 100%, 0% 85%
+  );
+  position: relative;
+}
+
+.comic-speech-burst::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  left: 20px;
+  width: 40px;
+  height: 40px;
+  background: inherit;
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  transform: rotate(-45deg);
+}
+
+/* Thought Bubbles */
+.comic-thought-round {
+  border-radius: 25px;
+}
+
+.comic-thought-round::before,
+.comic-thought-cloud::before,
+.comic-thought-sharp::before,
+.comic-thought-burst::before {
+  content: '';
+  position: absolute;
+  bottom: -25px;
+  right: 20px;
+  width: 15px;
+  height: 15px;
+  background: inherit;
+  border: inherit;
+  border-radius: 50%;
+}
+
+.comic-thought-round::after,
+.comic-thought-cloud::after,
+.comic-thought-sharp::after,
+.comic-thought-burst::after {
+  content: '';
+  position: absolute;
+  bottom: -40px;
+  right: 10px;
+  width: 10px;
+  height: 10px;
+  background: inherit;
+  border: inherit;
+  border-radius: 50%;
+}
+
+/* Description Bubbles */
+.comic-description-round,
+.comic-description-cloud,
+.comic-description-sharp,
+.comic-description-burst {
+  padding: 10px 15px;
+  font-size: 0.9em;
+  transform: translateX(-50%);
+  max-width: 250px;
+}
+
+.comic-description-round {
+  border-radius: 15px;
+}
+
+.comic-description-cloud {
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+}
+
+.comic-description-sharp {
+  border-radius: 0;
+}
+
+.comic-description-burst {
+  clip-path: polygon(
+    0% 15%, 15% 0%, 85% 0%, 100% 15%, 
+    100% 85%, 85% 100%, 15% 100%, 0% 85%
+  );
 }

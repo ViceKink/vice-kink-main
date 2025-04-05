@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, LayoutGrid } from 'lucide-react';
+import { PlusCircle, LayoutGrid, Save } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ComicPanel, ComicPanelData } from './ComicPanel';
 import { comicLayouts, PanelLayout } from './ComicLayoutTemplates';
@@ -15,6 +15,7 @@ const ComicCreator: React.FC<ComicCreatorProps> = ({ onSave, onCancel }) => {
   const [panels, setPanels] = useState<ComicPanelData[]>([]);
   const [editingPanelId, setEditingPanelId] = useState<string>('');
   const [selectedLayout, setSelectedLayout] = useState<PanelLayout | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('layout');
   
   const addPanel = () => {
     const newPanel: ComicPanelData = {
@@ -52,13 +53,16 @@ const ComicCreator: React.FC<ComicCreatorProps> = ({ onSave, onCancel }) => {
     }));
     
     setPanels(newPanels);
+    
+    // Automatically switch to Edit Panels tab after selecting a layout
+    setActiveTab('custom');
   };
   
   return (
     <div className="bg-card p-6 rounded-xl border border-border">
       <h3 className="text-xl font-bold mb-4">Create Comic</h3>
       
-      <Tabs defaultValue="layout" className="mb-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
         <TabsList>
           <TabsTrigger value="layout" className="flex items-center gap-2">
             <LayoutGrid className="h-4 w-4" />
@@ -112,7 +116,7 @@ const ComicCreator: React.FC<ComicCreatorProps> = ({ onSave, onCancel }) => {
         <TabsContent value="custom">
           {selectedLayout ? (
             <div 
-              className="grid gap-4 mb-6" 
+              className="grid gap-4 mb-6 w-full" 
               style={{ 
                 display: 'grid',
                 gridTemplateRows: 'repeat(3, minmax(150px, auto))',
@@ -131,7 +135,7 @@ const ComicCreator: React.FC<ComicCreatorProps> = ({ onSave, onCancel }) => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 w-full gap-4 mb-6">
               {panels.map(panel => (
                 <ComicPanel
                   key={panel.id}
@@ -163,6 +167,7 @@ const ComicCreator: React.FC<ComicCreatorProps> = ({ onSave, onCancel }) => {
           onClick={handleSaveComic}
           disabled={panels.length === 0}
         >
+          <Save className="h-4 w-4 mr-2" />
           Save Comic
         </Button>
       </div>

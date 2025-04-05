@@ -22,19 +22,22 @@ const ProfilePostCreationProvider = ({ profileId, children }: ProfilePostCreatio
       queryClient.invalidateQueries({ queryKey: ['userPosts', profileId] });
     }
   };
+
+  // Clone children and pass the onCreatePost prop
+  const childrenWithProps = React.Children.map(children, child => {
+    // Check if the child is a valid React element
+    if (React.isValidElement(child)) {
+      // Pass onCreatePost prop using a type assertion
+      return React.cloneElement(child, { 
+        onCreatePost: handleCreatePost 
+      } as any); // Use type assertion to bypass TypeScript errors
+    }
+    return child;
+  });
   
   return (
     <>
-      {React.Children.map(children, child => {
-        // Check if the child is a valid React element before cloning
-        if (React.isValidElement(child)) {
-          // Pass onCreatePost to the child component
-          return React.cloneElement(child, { 
-            onCreatePost: handleCreatePost 
-          });
-        }
-        return child;
-      })}
+      {childrenWithProps}
       
       {showCreatePostModal && (
         <CreatePostModal 
