@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -31,12 +31,25 @@ interface PostCardProps {
   };
 }
 
+interface Comment {
+  id: string;
+  content: string;
+  created_at: string;
+  user: {
+    name: string;
+    avatar?: string;
+  };
+}
+
 export const PostCard = ({ post }: PostCardProps) => {
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes_count);
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentsCount, setCommentsCount] = useState(post.comments_count);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
   const queryClient = useQueryClient();
   
   const formatDate = (dateString: string) => {
@@ -110,6 +123,51 @@ export const PostCard = ({ post }: PostCardProps) => {
   
   const handleComment = () => {
     setShowCommentInput(!showCommentInput);
+    
+    // Fetch comments when opening the comment section
+    if (!showCommentInput && comments.length === 0) {
+      fetchComments();
+    }
+  };
+  
+  const fetchComments = async () => {
+    try {
+      setIsLoadingComments(true);
+      
+      const { data: commentsData, error } = await supabase
+        .from('comments')
+        .select(`
+          id,
+          content,
+          created_at,
+          user_id,
+          profiles(name, avatar)
+        `)
+        .eq('post_id', post.id)
+        .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      
+      if (commentsData) {
+        const formattedComments = commentsData.map(comment => ({
+          id: comment.id,
+          content: comment.content,
+          created_at: comment.created_at,
+          user: {
+            name: comment.profiles?.name || 'Anonymous',
+            avatar: comment.profiles?.avatar
+          }
+        }));
+        
+        setComments(formattedComments);
+        setCommentsCount(formattedComments.length);
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      toast.error("Failed to load comments");
+    } finally {
+      setIsLoadingComments(false);
+    }
   };
   
   const submitComment = async () => {
@@ -129,25 +187,44 @@ export const PostCard = ({ post }: PostCardProps) => {
         return;
       }
       
-      const { error } = await supabase
+      const { data: userData } = await supabase
+        .from('profiles')
+        .select('name, avatar')
+        .eq('id', userId)
+        .single();
+      
+      const { data: newComment, error } = await supabase
         .from('comments')
         .insert({
           post_id: post.id,
           user_id: userId,
           content: commentText.trim()
-        });
+        })
+        .select();
         
       if (error) throw error;
       
-      // Update comments count in posts table
-      await supabase
-        .from('posts')
-        .update({ comments_count: post.comments_count + 1 })
-        .eq('id', post.id);
+      if (newComment && newComment.length > 0) {
+        // Add the new comment to the comments array
+        setComments(prevComments => [
+          ...prevComments,
+          {
+            id: newComment[0].id,
+            content: newComment[0].content,
+            created_at: newComment[0].created_at,
+            user: {
+              name: userData?.name || 'Anonymous',
+              avatar: userData?.avatar
+            }
+          }
+        ]);
         
+        // Update the comments count
+        setCommentsCount(prevCount => prevCount + 1);
+      }
+      
       toast.success("Comment added");
       setCommentText('');
-      setShowCommentInput(false);
       
       // Refresh posts data
       queryClient.invalidateQueries({ queryKey: ['allPosts'] });
@@ -162,7 +239,7 @@ export const PostCard = ({ post }: PostCardProps) => {
   };
   
   // Check if post is liked when component mounts
-  React.useEffect(() => {
+  useEffect(() => {
     const checkLikeStatus = async () => {
       try {
         const sessionData = await supabase.auth.getSession();
@@ -364,36 +441,67 @@ export const PostCard = ({ post }: PostCardProps) => {
             </Button>
             <Button variant="ghost" size="sm" onClick={handleComment}>
               <MessageCircle className="h-4 w-4 mr-1" />
-              {post.comments_count || 0}
+              {commentsCount || 0}
             </Button>
             <BoostButton entityId={post.id} entityType="post" className="text-foreground" />
           </div>
         </div>
         
+        {/* Comments Section */}
         {showCommentInput && (
-          <div className="mt-4 space-y-2">
-            <Textarea
-              placeholder="Write a comment..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              className="w-full h-24"
-            />
-            <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowCommentInput(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={submitComment} 
-                disabled={isSubmittingComment || !commentText.trim()}
-                className="bg-vice-purple hover:bg-vice-dark-purple"
-              >
-                Post Comment
-              </Button>
+          <div className="mt-4">
+            {/* Display existing comments */}
+            {comments.length > 0 && (
+              <div className="mb-4 space-y-3 max-h-[300px] overflow-y-auto">
+                {comments.map(comment => (
+                  <div key={comment.id} className="flex gap-2 p-2 rounded-lg bg-muted/20">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={comment.user.avatar} />
+                      <AvatarFallback>{comment.user.name[0]}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">{comment.user.name}</p>
+                        <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
+                      </div>
+                      <p className="text-sm">{comment.content}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {isLoadingComments && (
+              <div className="py-4 text-center">
+                <p className="text-sm text-muted-foreground">Loading comments...</p>
+              </div>
+            )}
+            
+            {/* Comment input */}
+            <div className="space-y-2">
+              <Textarea
+                placeholder="Write a comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                className="w-full h-24"
+              />
+              <div className="flex justify-end gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowCommentInput(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={submitComment} 
+                  disabled={isSubmittingComment || !commentText.trim()}
+                  className="bg-vice-purple hover:bg-vice-dark-purple"
+                >
+                  Post Comment
+                </Button>
+              </div>
             </div>
           </div>
         )}
