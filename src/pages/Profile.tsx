@@ -1,102 +1,40 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
-import { NavLink, useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Settings, RefreshCw, Pencil, Heart, X, Star, Rocket } from 'lucide-react';
-import BentoProfile from '@/components/ui/BentoProfile';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { UserProfile } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { PostCard } from '@/components/post/PostCard';
 import CreatePostModal from '@/components/post/CreatePostModal';
 import { createInteraction } from '@/utils/matchUtils';
 import MatchAnimation from '@/components/match/MatchAnimation';
-import { cn } from '@/lib/utils';
-import { BoostButton } from '@/components/boost/BoostButton';
+
+// Refactored component imports
+import ProfileHeader from '@/components/profile/ProfileHeader';
+import ProfileContent from '@/components/profile/ProfileContent';
+import ProfileLoading from '@/components/profile/ProfileLoading';
+import ProfileError from '@/components/profile/ProfileError';
+import ProfileInteractionButtons from '@/components/profile/ProfileInteractionButtons';
 
 const Profile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, fetchProfile, isAuthenticated, isLoading: authLoading } = useAuth();
-  const [profileUser, setProfileUser] = useState<UserProfile | null>(null);
-  const [activeTab, setActiveTab] = useState<'persona' | 'erotica'>('persona');
+  const [profileUser, setProfileUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [fetchAttempts, setFetchAttempts] = useState(0);
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
   const [showMatchAnimation, setShowMatchAnimation] = useState(false);
-  const [matchedProfile, setMatchedProfile] = useState<{id: string; name: string; avatar?: string} | null>(null);
+  const [matchedProfile, setMatchedProfile] = useState(null);
   const queryClient = useQueryClient();
   
   const isCurrentUser = !id || id === user?.id;
   const profileId = id || user?.id;
 
-  const interactionMutation = useMutation({
-    mutationFn: async ({ 
-      profileId, 
-      type 
-    }: { 
-      profileId: string, 
-      type: 'like' | 'dislike' | 'superlike' 
-    }) => {
-      if (!user?.id) throw new Error('User not authenticated');
-      const result = await createInteraction(user.id, profileId, type);
-      if (!result.success) throw new Error(`Failed to ${type} profile`);
-      return { profileId, type, matched: result.matched };
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['userInteractions'] });
-      queryClient.invalidateQueries({ queryKey: ['discoverProfiles'] });
-      
-      if (data.type === 'like') {
-        toast.success('Profile liked!');
-      } else if (data.type === 'superlike') {
-        toast.success('Profile super liked!');
-      } else {
-        toast.success('Profile passed');
-      }
-      
-      if (data.matched && profileUser) {
-        setMatchedProfile({
-          id: profileUser.id,
-          name: profileUser.name,
-          avatar: profileUser.avatar
-        });
-        setShowMatchAnimation(true);
-        
-        queryClient.invalidateQueries({ queryKey: ['userMatches'] });
-        queryClient.invalidateQueries({ queryKey: ['likedByProfiles'] });
-      }
-    }
-  });
-  
-  const handleLike = () => {
-    if (profileId && !isCurrentUser) {
-      interactionMutation.mutate({ profileId, type: 'like' });
-    }
-  };
-  
-  const handleDislike = () => {
-    if (profileId && !isCurrentUser) {
-      interactionMutation.mutate({ profileId, type: 'dislike' });
-    }
-  };
-  
-  const handleSuperLike = () => {
-    if (profileId && !isCurrentUser) {
-      interactionMutation.mutate({ profileId, type: 'superlike' });
-    }
-  };
-  
-  const handleCloseMatchAnimation = () => {
-    setShowMatchAnimation(false);
-    setMatchedProfile(null);
-  };
-  
+  // Fetch user posts
   const { data: userPosts = [], isLoading: postsLoading } = useQuery({
     queryKey: ['userPosts', profileId],
     queryFn: async () => {
@@ -185,6 +123,71 @@ const Profile = () => {
     enabled: !!profileId
   });
   
+  // Interaction mutation
+  const interactionMutation = useMutation({
+    mutationFn: async ({ 
+      profileId, 
+      type 
+    }: { 
+      profileId: string, 
+      type: 'like' | 'dislike' | 'superlike' 
+    }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      const result = await createInteraction(user.id, profileId, type);
+      if (!result.success) throw new Error(`Failed to ${type} profile`);
+      return { profileId, type, matched: result.matched };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['userInteractions'] });
+      queryClient.invalidateQueries({ queryKey: ['discoverProfiles'] });
+      
+      if (data.type === 'like') {
+        toast.success('Profile liked!');
+      } else if (data.type === 'superlike') {
+        toast.success('Profile super liked!');
+      } else {
+        toast.success('Profile passed');
+      }
+      
+      if (data.matched && profileUser) {
+        setMatchedProfile({
+          id: profileUser.id,
+          name: profileUser.name,
+          avatar: profileUser.avatar
+        });
+        setShowMatchAnimation(true);
+        
+        queryClient.invalidateQueries({ queryKey: ['userMatches'] });
+        queryClient.invalidateQueries({ queryKey: ['likedByProfiles'] });
+      }
+    }
+  });
+  
+  // Profile interaction handlers
+  const handleLike = () => {
+    if (profileId && !isCurrentUser) {
+      interactionMutation.mutate({ profileId, type: 'like' });
+    }
+  };
+  
+  const handleDislike = () => {
+    if (profileId && !isCurrentUser) {
+      interactionMutation.mutate({ profileId, type: 'dislike' });
+    }
+  };
+  
+  const handleSuperLike = () => {
+    if (profileId && !isCurrentUser) {
+      interactionMutation.mutate({ profileId, type: 'superlike' });
+    }
+  };
+  
+  const handleCloseMatchAnimation = () => {
+    setShowMatchAnimation(false);
+    setMatchedProfile(null);
+  };
+  
+  // Loading effects
   useEffect(() => {
     return () => {
       setIsLoading(false);
@@ -214,6 +217,7 @@ const Profile = () => {
     }
   }, [isLoading]);
   
+  // Profile data fetching
   const getProfileData = useCallback(async () => {
     if (fetchAttempts > 3) {
       console.error("Maximum fetch attempts reached");
@@ -270,6 +274,12 @@ const Profile = () => {
     }
   }, [authLoading, getProfileData, isAuthenticated, isCurrentUser, isLoading, profileUser, fetchAttempts]);
   
+  // Create post modal handler
+  const handleCreatePost = () => {
+    setShowCreatePostModal(true);
+  };
+  
+  // UI handlers
   const handleRetry = () => {
     setLoadingTimeout(false);
     setIsLoading(true);
@@ -277,119 +287,39 @@ const Profile = () => {
     getProfileData();
   };
   
-  const handleTabChange = (tab: 'persona' | 'erotica') => {
-    setActiveTab(tab);
+  const navigateToDiscover = () => {
+    navigate('/discover');
   };
   
-  const handleCreatePost = () => {
-    setShowCreatePostModal(true);
+  const navigateToAuth = () => {
+    navigate('/auth');
   };
   
+  // Return appropriate view based on state
   if (authLoading) {
     console.log("Auth loading...");
-    return (
-      <div className="flex min-h-screen items-center justify-center flex-col p-4">
-        <div className="text-center mb-4 max-w-md">
-          <h2 className="text-2xl font-semibold mb-2">Loading Profile...</h2>
-          <p className="text-sm text-foreground/70 mb-6">Checking authentication</p>
-          <div className="w-full">
-            <Progress value={25} className="w-full h-2" />
-          </div>
-        </div>
-      </div>
-    );
+    return <ProfileLoading type="auth" progress={25} />;
   }
   
   if (loadingTimeout && isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center flex-col p-4">
-        <div className="text-center mb-4 max-w-md">
-          <h2 className="text-2xl font-semibold mb-2">Loading is taking longer than expected</h2>
-          <p className="text-sm text-foreground/70 mb-6">
-            There might be an issue loading your profile data
-          </p>
-          <div className="w-full mb-6">
-            <Progress value={loadingProgress} className="w-full h-2" />
-          </div>
-          <Button 
-            onClick={handleRetry}
-            className="bg-vice-purple hover:bg-vice-dark-purple flex items-center gap-2"
-          >
-            <RefreshCw className="w-4 h-4" /> Retry
-          </Button>
-        </div>
-      </div>
-    );
+    return <ProfileLoading type="timeout" progress={loadingProgress} onRetry={handleRetry} />;
   }
   
   if (isLoading) {
     console.log("Profile data loading...");
-    return (
-      <div className="flex min-h-screen items-center justify-center flex-col p-4">
-        <div className="text-center mb-4 max-w-md">
-          <h2 className="text-2xl font-semibold mb-2">Loading Profile...</h2>
-          <p className="text-sm text-foreground/70 mb-6">Please wait a moment</p>
-          <div className="w-full">
-            <Progress value={loadingProgress} className="w-full h-2" />
-          </div>
-        </div>
-      </div>
-    );
+    return <ProfileLoading type="initial" progress={loadingProgress} />;
   }
   
   if (error) {
-    return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="text-center max-w-md">
-          <h2 className="text-2xl font-semibold mb-4">Something went wrong</h2>
-          <p className="text-foreground/70 mb-6">{error}</p>
-          <Button 
-            className="bg-vice-purple hover:bg-vice-dark-purple"
-            onClick={handleRetry}
-          >
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
+    return <ProfileError type="error" error={error} onRetry={handleRetry} />;
   }
   
   if (isCurrentUser && !isAuthenticated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="text-center max-w-md">
-          <h2 className="text-2xl font-semibold mb-4">Sign in to view your profile</h2>
-          <p className="text-foreground/70 mb-6">
-            You need to be signed in to view and manage your profile.
-          </p>
-          <Button 
-            className="bg-vice-purple hover:bg-vice-dark-purple"
-            onClick={() => navigate('/auth')}
-          >
-            Sign In
-          </Button>
-        </div>
-      </div>
-    );
+    return <ProfileError type="unauthenticated" error="" onRetry={navigateToAuth} />;
   }
   
   if (!profileUser) {
-    return (
-      <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="text-center max-w-md">
-          <h2 className="text-2xl font-semibold mb-4">Profile Not Found</h2>
-          <p className="text-foreground/70 mb-6">
-            We couldn't find the profile you're looking for.
-          </p>
-          <Button 
-            className="bg-vice-purple hover:bg-vice-dark-purple"
-            onClick={() => navigate('/discover')}
-          >
-            Back to Discover
-          </Button>
-        </div>
-      </div>
-    );
+    return <ProfileError type="not-found" error="" onRetry={navigateToDiscover} />;
   }
   
   console.log("Rendering profile content", { 
@@ -401,137 +331,26 @@ const Profile = () => {
   return (
     <div className="min-h-screen pt-16 pb-20 px-2">
       <div className="w-full mx-auto">
-        <div className="flex justify-between items-center mb-4">
-          {!isCurrentUser ? (
-            <NavLink
-              to="/discover"
-              className="flex items-center text-foreground/70 hover:text-foreground transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5 mr-1" />
-              Back to Discover
-            </NavLink>
-          ) : (
-            <div className="flex items-center">
-            </div>
-          )}
-          
-          {isCurrentUser && (
-            <div className="flex items-center justify-center w-full gap-6">
-              {profileUser && (
-                <BoostButton 
-                  entityId={profileUser.id} 
-                  entityType="profile"
-                  className="flex items-center text-foreground/70 hover:text-foreground transition-colors"
-                />
-              )}
-              
-              <NavLink
-                to="/edit-profile"
-                className="flex items-center text-foreground/70 hover:text-foreground transition-colors"
-              >
-                <Pencil className="w-5 h-5 mr-1" />
-                Edit Profile
-              </NavLink>
-            </div>
-          )}
-        </div>
+        <ProfileHeader 
+          isCurrentUser={isCurrentUser} 
+          profileId={profileUser?.id} 
+          navigateToDiscover={navigateToDiscover} 
+        />
         
-        <div className="mb-6">
-          <div className="grid grid-cols-2 gap-2 bg-secondary/30 p-1 rounded-xl">
-            <button 
-              className={`px-4 py-3 rounded-lg flex justify-center items-center transition-all ${
-                activeTab === 'persona' 
-                  ? 'bg-white dark:bg-black text-foreground shadow-sm font-semibold' 
-                  : 'bg-transparent text-foreground/60 hover:text-foreground/80'
-              }`}
-              onClick={() => handleTabChange('persona')}
-            >
-              <span className="font-medium">Persona</span>
-            </button>
-            <button 
-              className={`px-4 py-3 rounded-lg flex justify-center items-center transition-all ${
-                activeTab === 'erotica' 
-                  ? 'bg-black text-white shadow-sm' 
-                  : 'bg-transparent text-foreground/60 hover:text-foreground/80'
-              }`}
-              onClick={() => handleTabChange('erotica')}
-            >
-              <span className="font-medium">Erotica</span>
-            </button>
-          </div>
-        </div>
-        
-        {activeTab === 'persona' && profileUser ? (
-          <BentoProfile 
-            profile={profileUser}
-            isCurrentUser={isCurrentUser}
-          />
-        ) : activeTab === 'erotica' ? (
-          <div className="space-y-6">
-            {userPosts && userPosts.length === 0 ? (
-              <div className="p-8 bg-white dark:bg-card rounded-2xl shadow-md text-center">
-                <h3 className="text-xl font-bold mb-4">No Posts Yet</h3>
-                <p className="text-foreground/70 mb-6">
-                  {isCurrentUser 
-                    ? "You haven't created any posts yet. Share your thoughts or stories!" 
-                    : "This user hasn't created any posts yet."}
-                </p>
-                {isCurrentUser && (
-                  <Button 
-                    className="bg-vice-purple hover:bg-vice-dark-purple"
-                    onClick={handleCreatePost}
-                  >
-                    Create Post
-                  </Button>
-                )}
-              </div>
-            ) : (
-              userPosts && userPosts.map(post => (
-                <PostCard key={post.id} post={post} />
-              ))
-            )}
-          </div>
-        ) : null}
+        <ProfileContent 
+          profileUser={profileUser} 
+          isCurrentUser={isCurrentUser} 
+          userPosts={userPosts || []} 
+          onCreatePost={handleCreatePost} 
+        />
       </div>
       
       {!isCurrentUser && (
-        <div className="fixed bottom-24 right-4 flex flex-col gap-3 z-10">
-          <button 
-            onClick={handleDislike}
-            className={cn(
-              "w-11 h-11 rounded-full bg-black shadow-lg flex items-center justify-center",
-              "transform transition-transform hover:scale-105 border-2 border-red-500 animate-fade-in",
-              "animate-float"
-            )}
-            aria-label="Dislike profile"
-          >
-            <X className="w-5 h-5 text-red-500" />
-          </button>
-          
-          <button 
-            onClick={handleSuperLike}
-            className={cn(
-              "w-11 h-11 rounded-full bg-black shadow-lg flex items-center justify-center",
-              "transform transition-transform hover:scale-105 border-2 border-orange-500 animate-fade-in delay-75",
-              "animate-float delay-75"
-            )}
-            aria-label="Super like profile"
-          >
-            <Star className="w-5 h-5 text-orange-500" />
-          </button>
-          
-          <button 
-            onClick={handleLike}
-            className={cn(
-              "w-11 h-11 rounded-full bg-black shadow-lg flex items-center justify-center",
-              "transform transition-transform hover:scale-105 border-2 border-purple-500 animate-fade-in delay-150",
-              "animate-float delay-150"
-            )}
-            aria-label="Like profile"
-          >
-            <Heart className="w-5 h-5 text-purple-500" />
-          </button>
-        </div>
+        <ProfileInteractionButtons 
+          onLike={handleLike} 
+          onDislike={handleDislike} 
+          onSuperLike={handleSuperLike} 
+        />
       )}
       
       {showCreatePostModal && (
