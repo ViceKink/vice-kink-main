@@ -8,6 +8,7 @@ import { PlusCircle, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import CreatePostModal from '@/components/post/CreatePostModal';
+import { ComicPanelData } from '@/components/post/comic/ComicPanel';
 
 const Home = () => {
   const [showCreatePostModal, setShowCreatePostModal] = useState(false);
@@ -29,7 +30,8 @@ const Home = () => {
           comments_count,
           media_url,
           community_id,
-          boosted_at
+          boosted_at,
+          type
         `)
         .order('boosted_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
@@ -80,23 +82,50 @@ const Home = () => {
         const profile = profilesMap[post.user_id] || { name: 'Anonymous' };
         const community = post.community_id ? communitiesMap[post.community_id] : null;
         
-        return {
+        // Process based on post type
+        let processedPost = {
           id: post.id,
           user_id: post.user_id,
           title: post.title,
           content: post.content,
-          images: post.media_url ? [post.media_url] : undefined,
           created_at: post.created_at,
           likes_count: post.likes_count || 0,
           comments_count: post.comments_count || 0,
           community_id: post.community_id,
           community_name: community ? community.name : undefined,
           boosted_at: post.boosted_at,
+          type: post.type || 'text',
           user: {
             name: profile.name || 'Anonymous',
             avatar: profile.avatar
           }
         };
+        
+        // Handle different post types
+        if (post.type === 'comic' && post.media_url) {
+          try {
+            // Parse comic data from media_url
+            const comicData = JSON.parse(post.media_url) as ComicPanelData[];
+            
+            // Filter out empty panels
+            const nonEmptyPanels = comicData.filter(panel => {
+              const hasContent = panel.content && panel.content.trim().length > 0;
+              const hasTitle = panel.title && panel.title.trim().length > 0;
+              const hasImage = !!panel.image;
+              const hasBubbles = panel.bubbles && panel.bubbles.length > 0;
+              
+              return hasContent || hasTitle || hasImage || hasBubbles;
+            });
+            
+            processedPost['comicData'] = nonEmptyPanels;
+          } catch (e) {
+            console.error("Failed to parse comic data:", e);
+          }
+        } else if (post.media_url) {
+          processedPost['images'] = [post.media_url];
+        }
+        
+        return processedPost;
       });
       
       return postsWithProfiles;

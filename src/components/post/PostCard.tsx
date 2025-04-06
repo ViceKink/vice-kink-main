@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -123,32 +123,41 @@ export const PostCard = ({ post }: PostCardProps) => {
   
   const fetchComments = async () => {
     try {
+      setIsLoadingComments(true);
+      
       const { data, error } = await supabase
         .from('comments')
         .select(`
-          *,
-          profiles(name, avatar)
+          id,
+          content,
+          user_id,
+          created_at,
+          profiles:user_id (name, avatar)
         `)
         .eq('post_id', post.id)
         .order('created_at', { ascending: false });
       
       if (error) {
         console.error("Error fetching comments:", error);
+        setIsLoadingComments(false);
         return;
       }
       
-      const formattedComments = data.map(comment => ({
+      const formattedComments: Comment[] = data.map(comment => ({
         id: comment.id,
         content: comment.content,
-        user_id: comment.user_id,
         created_at: comment.created_at,
-        user_name: comment.profiles?.name || 'Unknown User',
-        user_avatar: comment.profiles?.avatar || null,
+        user: {
+          name: comment.profiles?.name || 'Anonymous',
+          avatar: comment.profiles?.avatar
+        }
       }));
       
       setComments(formattedComments);
+      setIsLoadingComments(false);
     } catch (err) {
       console.error("Failed to fetch comments:", err);
+      setIsLoadingComments(false);
     }
   };
   
@@ -277,7 +286,11 @@ export const PostCard = ({ post }: PostCardProps) => {
                 />
               ) : (
                 <div className="w-full h-full bg-muted flex items-center justify-center">
-                  <p className="text-muted-foreground text-sm">No image</p>
+                  {(panel.title || panel.content || (panel.bubbles && panel.bubbles.length > 0)) ? (
+                    <div className="p-2 w-full h-full"></div>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">No image</p>
+                  )}
                 </div>
               )}
               
@@ -331,7 +344,11 @@ export const PostCard = ({ post }: PostCardProps) => {
               />
             ) : (
               <div className="w-full h-full min-h-[200px] bg-muted flex items-center justify-center">
-                <p className="text-muted-foreground">No image</p>
+                {(panel.title || panel.content || (panel.bubbles && panel.bubbles.length > 0)) ? (
+                  <div className="p-2 w-full h-full"></div>
+                ) : (
+                  <p className="text-muted-foreground">No image</p>
+                )}
               </div>
             )}
             
@@ -428,12 +445,12 @@ export const PostCard = ({ post }: PostCardProps) => {
                 {comments.map(comment => (
                   <div key={comment.id} className="flex gap-2 p-2 rounded-lg bg-muted/20">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={comment.user_avatar} />
-                      <AvatarFallback>{comment.user_name[0]}</AvatarFallback>
+                      <AvatarImage src={comment.user.avatar} />
+                      <AvatarFallback>{comment.user.name[0]}</AvatarFallback>
                     </Avatar>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium">{comment.user_name}</p>
+                        <p className="text-sm font-medium">{comment.user.name}</p>
                         <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
                       </div>
                       <p className="text-sm">{comment.content}</p>

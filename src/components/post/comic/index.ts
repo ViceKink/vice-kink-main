@@ -6,5 +6,5 @@ export * from './ComicLayoutTemplates';
 export * from './comic-bubble-styles';
 
 // Re-export CSS styles
-import { comicBubbleStyles } from './comic-bubble-styles';
-export { comicBubbleStyles };
+import { bubbleStyles } from './comic-bubble-styles';
+export { bubbleStyles };

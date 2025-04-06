@@ -31,3 +31,6 @@ export const bubbleStyles = {
     boxShadow: '0 0 0 8px rgba(255, 255, 255, 0.9), 0 0 0 16px rgba(255, 255, 255, 0.7), 0 0 0 24px rgba(255, 255, 255, 0.5)',
   }
 };
+
+// Export the styles for use in other files
+export { bubbleStyles as comicBubbleStyles };

@@ -52,7 +52,23 @@ const ComicCreator: React.FC<ComicCreatorProps> = ({ onSave, onCancel }) => {
       return;
     }
     
-    onSave(panels);
+    // Filter out empty panels that have no content, no title, no image, and no bubbles
+    const nonEmptyPanels = panels.filter(panel => {
+      const hasContent = panel.content && panel.content.trim().length > 0;
+      const hasTitle = panel.title && panel.title.trim().length > 0;
+      const hasImage = !!panel.image;
+      const hasBubbles = panel.bubbles && panel.bubbles.length > 0;
+      
+      return hasContent || hasTitle || hasImage || hasBubbles;
+    });
+    
+    // Check if there are any non-empty panels left
+    if (nonEmptyPanels.length === 0) {
+      toast.error("Please add content to at least one panel before saving");
+      return;
+    }
+    
+    onSave(nonEmptyPanels);
     toast.success("Comic saved successfully!");
     
     // Let's invalidate the posts query to make sure the post list is refreshed
