@@ -123,41 +123,32 @@ export const PostCard = ({ post }: PostCardProps) => {
   
   const fetchComments = async () => {
     try {
-      setIsLoadingComments(true);
-      
-      const { data: commentsData, error } = await supabase
+      const { data, error } = await supabase
         .from('comments')
         .select(`
-          id,
-          content,
-          created_at,
-          user_id,
-          profiles (name, avatar)
+          *,
+          profiles(name, avatar)
         `)
         .eq('post_id', post.id)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      
-      if (commentsData) {
-        const formattedComments = commentsData.map(comment => ({
-          id: comment.id,
-          content: comment.content,
-          created_at: comment.created_at,
-          user: {
-            name: comment.profiles?.name || 'Anonymous',
-            avatar: comment.profiles?.avatar
-          }
-        }));
-        
-        setComments(formattedComments);
-        setCommentsCount(formattedComments.length);
+      if (error) {
+        console.error("Error fetching comments:", error);
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching comments:', error);
-      toast.error("Failed to load comments");
-    } finally {
-      setIsLoadingComments(false);
+      
+      const formattedComments = data.map(comment => ({
+        id: comment.id,
+        content: comment.content,
+        user_id: comment.user_id,
+        created_at: comment.created_at,
+        user_name: comment.profiles?.name || 'Unknown User',
+        user_avatar: comment.profiles?.avatar || null,
+      }));
+      
+      setComments(formattedComments);
+    } catch (err) {
+      console.error("Failed to fetch comments:", err);
     }
   };
   
@@ -437,12 +428,12 @@ export const PostCard = ({ post }: PostCardProps) => {
                 {comments.map(comment => (
                   <div key={comment.id} className="flex gap-2 p-2 rounded-lg bg-muted/20">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={comment.user.avatar} />
-                      <AvatarFallback>{comment.user.name[0]}</AvatarFallback>
+                      <AvatarImage src={comment.user_avatar} />
+                      <AvatarFallback>{comment.user_name[0]}</AvatarFallback>
                     </Avatar>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium">{comment.user.name}</p>
+                        <p className="text-sm font-medium">{comment.user_name}</p>
                         <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
                       </div>
                       <p className="text-sm">{comment.content}</p>

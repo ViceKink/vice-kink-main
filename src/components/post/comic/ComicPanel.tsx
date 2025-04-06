@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Pencil, Trash2, Image, X, Check, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,7 +25,6 @@ interface ComicPanelProps {
   isEditing: boolean;
 }
 
-// Background color options
 const bgColors = [
   { label: 'White', value: '#FFFFFF' },
   { label: 'Light Gray', value: '#F3F4F6' },
@@ -69,12 +67,9 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
     
     setSelectedFile(file);
     
-    // Create a preview URL
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
-        // In a real app, we would upload this to Supabase Storage
-        // For now, we'll use the data URL as our "uploaded image"
         onUpdate({
           ...panel,
           image: event.target.result as string
@@ -93,12 +88,11 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
     });
   };
   
-  const handleAddBubble = (type: BubbleType) => {
+  const handleAddBubble = (type: BubbleType, content: string) => {
     const newBubble: Bubble = {
       id: `bubble-${Date.now()}`,
       type,
-      content: type === 'speech' ? 'Speech text here' : 
-              type === 'thought' ? 'Thought bubble text' : 'Description text',
+      content,
       position: { x: 50, y: 50 },
       style: 'comic-round',
       color: 'white'
@@ -126,7 +120,6 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
     });
   };
   
-  // Title dragging handlers
   const handleTitleDragStart = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsDraggingTitle(true);
@@ -156,7 +149,6 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
     document.addEventListener('mouseup', handleMouseUp);
   };
   
-  // Content dragging handlers
   const handleContentDragStart = (e: React.MouseEvent) => {
     e.preventDefault();
     setIsDraggingContent(true);
@@ -203,7 +195,6 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
           </div>
           
           <div className="space-y-4">
-            {/* Improved mobile layout with Upload and Background in separate rows */}
             <div className="flex flex-col gap-3">
               <Button 
                 variant="outline" 
@@ -284,36 +275,7 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
             
             <div>
               <label className="text-sm font-medium mb-2 block">Bubbles</label>
-              {/* Improved bubble toolbar layout for mobile */}
-              <div className="grid grid-cols-1 gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="justify-start"
-                  onClick={() => handleAddBubble('speech')}
-                >
-                  <div className="border border-foreground h-5 w-5 rounded-full mr-2 flex items-center justify-center text-xs">💬</div>
-                  Speech Bubble
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="justify-start" 
-                  onClick={() => handleAddBubble('thought')}
-                >
-                  <div className="border border-foreground h-5 w-5 rounded-full mr-2 flex items-center justify-center text-xs">💭</div>
-                  Thought Bubble
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="justify-start"  
-                  onClick={() => handleAddBubble('description')}
-                >
-                  <div className="border border-foreground h-5 w-5 rounded-full mr-2 flex items-center justify-center text-xs">📝</div>
-                  Description Box
-                </Button>
-              </div>
+              <BubbleToolbar onAddBubble={handleAddBubble} />
             </div>
             
             <Button
@@ -370,7 +332,6 @@ export const ComicPanel: React.FC<ComicPanelProps> = ({
             </div>
           )}
           
-          {/* Render all bubbles */}
           {panel.bubbles.map(bubble => (
             <ComicBubble 
               key={bubble.id}

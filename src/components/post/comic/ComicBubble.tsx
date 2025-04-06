@@ -4,6 +4,7 @@ import { X, Edit2, ChevronDown } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { bubbleStyles } from './comic-bubble-styles';
 
 export type BubbleType = 'speech' | 'thought' | 'description';
@@ -41,7 +42,7 @@ export const ComicBubble: React.FC<ComicBubbleProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [tempContent, setTempContent] = useState(content);
   const [isDragging, setIsDragging] = useState(false);
-  const [editPopoverOpen, setEditPopoverOpen] = useState(true); // Start with the popover open for new bubbles
+  const [editPopoverOpen, setEditPopoverOpen] = useState(false);
   const bubbleRef = useRef<HTMLDivElement>(null);
   
   // Effect to focus on text area when editing starts
@@ -64,6 +65,7 @@ export const ComicBubble: React.FC<ComicBubbleProps> = ({
     
     if (isDefaultContent) {
       setIsEditing(true);
+      setEditPopoverOpen(true);
     }
   }, [content, type]);
   
@@ -127,7 +129,7 @@ export const ComicBubble: React.FC<ComicBubbleProps> = ({
   };
   
   const getBubbleClassName = () => {
-    let className = `absolute p-3 bg-white shadow-md cursor-grab select-none min-w-[100px] max-w-[200px] text-sm`;
+    let className = `absolute p-3 shadow-md select-none min-w-[100px] max-w-[200px] text-sm`;
     
     if (type === 'speech') {
       className += ' speech-bubble';
@@ -139,6 +141,8 @@ export const ComicBubble: React.FC<ComicBubbleProps> = ({
     
     if (isDragging) {
       className += ' cursor-grabbing opacity-80';
+    } else {
+      className += ' cursor-grab';
     }
     
     return className;
@@ -232,38 +236,151 @@ export const ComicBubble: React.FC<ComicBubbleProps> = ({
   );
 };
 
-export const BubbleToolbar: React.FC<{
-  onAddBubble: (type: BubbleType) => void;
-}> = ({ onAddBubble }) => {
+interface BubbleCreationDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (content: string) => void;
+  bubbleType: BubbleType;
+}
+
+export const BubbleCreationDialog: React.FC<BubbleCreationDialogProps> = ({
+  isOpen,
+  onClose,
+  onSave,
+  bubbleType
+}) => {
+  const [content, setContent] = useState('');
+  
+  const getDefaultText = () => {
+    switch (bubbleType) {
+      case 'speech': return 'Speech text here';
+      case 'thought': return 'Thought bubble text';
+      case 'description': return 'Description text';
+      default: return '';
+    }
+  };
+  
+  // Set default content when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setContent(getDefaultText());
+    }
+  }, [isOpen, bubbleType]);
+  
+  const handleSave = () => {
+    onSave(content);
+    onClose();
+  };
+  
+  const getTypeIcon = () => {
+    switch (bubbleType) {
+      case 'speech': return '💬';
+      case 'thought': return '💭';
+      case 'description': return '📝';
+      default: return '💬';
+    }
+  };
+  
+  const getTypeTitle = () => {
+    return bubbleType.charAt(0).toUpperCase() + bubbleType.slice(1);
+  };
+  
   return (
-    <div className="flex gap-2">
-      <Button 
-        variant="outline" 
-        size="sm"
-        className="flex items-center gap-2"
-        onClick={() => onAddBubble('speech')}
-      >
-        <div className="h-4 w-4 flex items-center justify-center">💬</div>
-        <span>Speech</span>
-      </Button>
-      <Button 
-        variant="outline" 
-        size="sm"
-        className="flex items-center gap-2"
-        onClick={() => onAddBubble('thought')}
-      >
-        <div className="h-4 w-4 flex items-center justify-center">💭</div>
-        <span>Thought</span>
-      </Button>
-      <Button 
-        variant="outline" 
-        size="sm"
-        className="flex items-center gap-2"
-        onClick={() => onAddBubble('description')}
-      >
-        <div className="h-4 w-4 flex items-center justify-center">📝</div>
-        <span>Description</span>
-      </Button>
-    </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>
+            <div className="flex items-center gap-2">
+              <span>{getTypeIcon()}</span>
+              <span>Add {getTypeTitle()} Bubble</span>
+            </div>
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="py-4">
+          <label className="text-sm font-medium mb-2 block">Bubble Text</label>
+          <Textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="min-h-[100px]"
+            placeholder={`Enter ${bubbleType} text...`}
+            autoFocus
+          />
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button 
+            className="bg-vice-purple hover:bg-vice-dark-purple"
+            onClick={handleSave}
+          >
+            Add Bubble
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export const BubbleToolbar: React.FC<{
+  onAddBubble: (type: BubbleType, content: string) => void;
+}> = ({ onAddBubble }) => {
+  const [creatingBubbleType, setCreatingBubbleType] = useState<BubbleType | null>(null);
+  
+  const handleOpenCreationDialog = (type: BubbleType) => {
+    setCreatingBubbleType(type);
+  };
+  
+  const handleCloseDialog = () => {
+    setCreatingBubbleType(null);
+  };
+  
+  const handleSaveBubble = (content: string) => {
+    if (creatingBubbleType) {
+      onAddBubble(creatingBubbleType, content);
+      setCreatingBubbleType(null);
+    }
+  };
+  
+  return (
+    <>
+      <div className="flex gap-2">
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="flex items-center gap-2"
+          onClick={() => handleOpenCreationDialog('speech')}
+        >
+          <div className="h-4 w-4 flex items-center justify-center">💬</div>
+          <span>Speech</span>
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="flex items-center gap-2"
+          onClick={() => handleOpenCreationDialog('thought')}
+        >
+          <div className="h-4 w-4 flex items-center justify-center">💭</div>
+          <span>Thought</span>
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="flex items-center gap-2"
+          onClick={() => handleOpenCreationDialog('description')}
+        >
+          <div className="h-4 w-4 flex items-center justify-center">📝</div>
+          <span>Description</span>
+        </Button>
+      </div>
+      
+      {/* Creation Dialog */}
+      <BubbleCreationDialog 
+        isOpen={creatingBubbleType !== null}
+        onClose={handleCloseDialog}
+        onSave={handleSaveBubble}
+        bubbleType={creatingBubbleType || 'speech'}
+      />
+    </>
   );
 };
