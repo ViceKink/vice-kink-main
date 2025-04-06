@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { HeartIcon, MessageCircle } from 'lucide-react';
+import { HeartIcon, MessageCircle, MoreVertical, Trash2 } from 'lucide-react';
 import { ComicPanelData } from './comic/ComicPanel';
 import './comic/comic.css';
 import { BoostButton } from '@/components/boost/BoostButton';
@@ -11,6 +10,8 @@ import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Textarea } from '@/components/ui/textarea';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface PostCardProps {
   post: {
@@ -19,6 +20,7 @@ interface PostCardProps {
       name: string;
       avatar?: string;
     };
+    user_id: string;
     title?: string;
     content: string;
     created_at: string;
@@ -29,19 +31,21 @@ interface PostCardProps {
     type?: 'text' | 'photo' | 'comic';
     community_name?: string;
   };
+  onDelete?: () => void;
 }
 
 interface Comment {
   id: string;
   content: string;
   created_at: string;
+  user_id: string;
   user: {
     name: string;
     avatar?: string;
   };
 }
 
-export const PostCard = ({ post }: PostCardProps) => {
+export const PostCard = ({ post, onDelete }: PostCardProps) => {
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes_count);
   const [showCommentInput, setShowCommentInput] = useState(false);
@@ -148,6 +152,7 @@ export const PostCard = ({ post }: PostCardProps) => {
         id: comment.id,
         content: comment.content,
         created_at: comment.created_at,
+        user_id: comment.user_id,
         user: {
           name: comment.profiles?.name || 'Anonymous',
           avatar: comment.profiles?.avatar
@@ -203,6 +208,7 @@ export const PostCard = ({ post }: PostCardProps) => {
             id: newComment[0].id,
             content: newComment[0].content,
             created_at: newComment[0].created_at,
+            user_id: newComment[0].user_id,
             user: {
               name: userData?.name || 'Anonymous',
               avatar: userData?.avatar
@@ -224,6 +230,83 @@ export const PostCard = ({ post }: PostCardProps) => {
       toast.error("Failed to add comment");
     } finally {
       setIsSubmittingComment(false);
+    }
+  };
+  
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      const sessionData = await supabase.auth.getSession();
+      const userId = sessionData.data.session?.user?.id;
+      
+      if (!userId) {
+        toast.error("You need to be logged in to delete comments");
+        return;
+      }
+      
+      const { error } = await supabase
+        .from('comments')
+        .delete()
+        .eq('id', commentId)
+        .eq('user_id', userId);
+        
+      if (error) {
+        console.error("Error deleting comment:", error);
+        toast.error("Failed to delete comment");
+        return;
+      }
+      
+      setComments(comments.filter(comment => comment.id !== commentId));
+      setCommentsCount(prevCount => Math.max(0, prevCount - 1));
+      toast.success("Comment deleted successfully");
+      
+      queryClient.invalidateQueries({ queryKey: ['allPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['userPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
+    } catch (err) {
+      console.error("Failed to delete comment:", err);
+      toast.error("Failed to delete comment");
+    }
+  };
+  
+  const handleDeletePost = async () => {
+    try {
+      const sessionData = await supabase.auth.getSession();
+      const userId = sessionData.data.session?.user?.id;
+      
+      if (!userId) {
+        toast.error("You need to be logged in to delete posts");
+        return;
+      }
+      
+      if (userId !== post.user_id) {
+        toast.error("You can only delete your own posts");
+        return;
+      }
+      
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', post.id)
+        .eq('user_id', userId);
+        
+      if (error) {
+        console.error("Error deleting post:", error);
+        toast.error("Failed to delete post");
+        return;
+      }
+      
+      toast.success("Post deleted successfully");
+      
+      if (onDelete) {
+        onDelete();
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['allPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['userPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
+    } catch (err) {
+      console.error("Failed to delete post:", err);
+      toast.error("Failed to delete post");
     }
   };
   
@@ -261,7 +344,6 @@ export const PostCard = ({ post }: PostCardProps) => {
     const hasLayout = post.comicData.some(panel => panel.gridArea);
     
     if (hasLayout) {
-      // Filter out any panels that don't have content, images, or bubbles
       const nonEmptyPanels = post.comicData.filter(panel => {
         const hasContent = panel.content && panel.content.trim().length > 0;
         const hasTitle = panel.title && panel.title.trim().length > 0;
@@ -343,7 +425,6 @@ export const PostCard = ({ post }: PostCardProps) => {
       );
     }
     
-    // Filter non-layout panels as well
     const nonEmptyPanels = post.comicData.filter(panel => {
       const hasContent = panel.content && panel.content.trim().length > 0;
       const hasTitle = panel.title && panel.title.trim().length > 0;
@@ -415,6 +496,18 @@ export const PostCard = ({ post }: PostCardProps) => {
     );
   };
   
+  const [isCurrentUserPost, setIsCurrentUserPost] = useState(false);
+  
+  useEffect(() => {
+    const checkCurrentUser = async () => {
+      const sessionData = await supabase.auth.getSession();
+      const userId = sessionData.data.session?.user?.id;
+      setIsCurrentUserPost(userId === post.user_id);
+    };
+    
+    checkCurrentUser();
+  }, [post.user_id]);
+  
   return (
     <Card className="overflow-hidden">
       <div className="p-4">
@@ -432,6 +525,30 @@ export const PostCard = ({ post }: PostCardProps) => {
               </p>
             </div>
           </div>
+          
+          {isCurrentUserPost && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Post</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete this post? This action cannot be undone and will also remove all comments on this post.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeletePost} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
         
         {post.title && (
@@ -471,21 +588,56 @@ export const PostCard = ({ post }: PostCardProps) => {
           <div className="mt-4">
             {comments.length > 0 && (
               <div className="mb-4 space-y-3 max-h-[300px] overflow-y-auto">
-                {comments.map(comment => (
-                  <div key={comment.id} className="flex gap-2 p-2 rounded-lg bg-muted/20">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={comment.user.avatar} />
-                      <AvatarFallback>{comment.user.name[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium">{comment.user.name}</p>
-                        <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
+                {comments.map(comment => {
+                  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+                  
+                  useEffect(() => {
+                    const fetchCurrentUser = async () => {
+                      const { data } = await supabase.auth.getSession();
+                      setCurrentUserId(data.session?.user?.id || null);
+                    };
+                    
+                    fetchCurrentUser();
+                  }, []);
+                  
+                  const isCommentOwner = currentUserId === comment.user_id;
+                  
+                  return (
+                    <div key={comment.id} className="flex gap-2 p-2 rounded-lg bg-muted/20">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={comment.user.avatar} />
+                        <AvatarFallback>{comment.user.name[0]}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">{comment.user.name}</p>
+                            <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
+                          </div>
+                          {isCommentOwner && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-6 w-6">
+                                  <MoreVertical className="h-3 w-3" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem 
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => handleDeleteComment(comment.id)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
+                        <p className="text-sm">{comment.content}</p>
                       </div>
-                      <p className="text-sm">{comment.content}</p>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
             

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,24 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { Shield, Bell, LogOut, AlertCircle, Trash2 } from 'lucide-react';
+import { Shield, Bell, LogOut, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import DeleteProfile from '@/components/profile/DeleteProfile';
 
 const Settings = () => {
   const { user, logout } = useAuth();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   
   const handleLogout = async () => {
     try {
@@ -37,17 +25,6 @@ const Settings = () => {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    try {
-      // In a real application, this would delete the user's account
-      toast.error("Account deletion is not implemented in this demo");
-      setIsDialogOpen(false);
-    } catch (error) {
-      toast.error("Failed to delete account");
-      console.error(error);
-    }
-  };
-  
   return (
     <div className="container mx-auto px-4 max-w-4xl pt-20 pb-24 md:pb-10">
       <h1 className="text-2xl md:text-3xl font-bold mb-6">Settings</h1>
@@ -165,32 +142,7 @@ const Settings = () => {
                   <p className="text-sm text-muted-foreground mb-4">
                     Permanently delete your account and all associated data.
                   </p>
-                  <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="destructive" 
-                        className="flex items-center gap-2"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete Account
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete your
-                          account and remove your data from our servers.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                          Delete Account
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <DeleteProfile />
                 </div>
               </div>
             </CardContent>

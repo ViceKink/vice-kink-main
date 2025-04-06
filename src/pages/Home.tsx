@@ -14,7 +14,7 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredPosts, setFilteredPosts] = useState([]);
   
-  const { data: posts = [], isLoading } = useQuery({
+  const { data: posts = [], isLoading, refetch } = useQuery({
     queryKey: ['allPosts'],
     queryFn: fetchPosts
   });
@@ -45,10 +45,16 @@ const Home = () => {
   const handlePostCreation = (content, type, comicData) => {
     console.log('Post created:', { content, type, comicData });
     setShowCreatePostModal(false);
+    refetch(); // Refresh posts after creation
   };
 
   const handleClearSearch = () => {
     setSearchQuery('');
+  };
+
+  // Refresh posts function that can be called after deletion
+  const refreshPosts = () => {
+    refetch();
   };
   
   return (
@@ -78,6 +84,7 @@ const Home = () => {
             searchQuery={searchQuery}
             onClearSearch={handleClearSearch}
             onCreatePost={handleCreatePost}
+            refreshPosts={refreshPosts}
           />
         )}
       </div>

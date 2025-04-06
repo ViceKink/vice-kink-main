@@ -8,9 +8,10 @@ interface PostListProps {
   searchQuery: string;
   onClearSearch: () => void;
   onCreatePost: () => void;
+  refreshPosts?: () => void; // Added to refresh posts after deletion
 }
 
-const PostList = ({ posts, searchQuery, onClearSearch, onCreatePost }: PostListProps) => {
+const PostList = ({ posts, searchQuery, onClearSearch, onCreatePost, refreshPosts }: PostListProps) => {
   // Filter out any posts that might be completely empty
   const validPosts = posts.filter(post => {
     // For comic posts, check if they have any valid comic data
@@ -39,10 +40,17 @@ const PostList = ({ posts, searchQuery, onClearSearch, onCreatePost }: PostListP
     );
   }
 
+  // Handler for post deletion - will refresh the post list
+  const handlePostDelete = () => {
+    if (refreshPosts) {
+      refreshPosts();
+    }
+  };
+
   return (
     <div className="space-y-6">
       {validPosts.map(post => (
-        <PostCard key={post.id} post={post} />
+        <PostCard key={post.id} post={post} onDelete={handlePostDelete} />
       ))}
     </div>
   );
