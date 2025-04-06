@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -70,19 +69,16 @@ export const PostCard = ({ post }: PostCardProps) => {
         return;
       }
       
-      // Optimistic UI update
       setIsLiked(!isLiked);
       setLikesCount(prevCount => isLiked ? prevCount - 1 : prevCount + 1);
       
       if (!isLiked) {
-        // Like the post
         const { error } = await supabase
           .from('post_likes')
           .insert({ post_id: post.id, user_id: userId });
           
         if (error) throw error;
         
-        // Update the likes count in posts table
         await supabase
           .from('posts')
           .update({ likes_count: likesCount + 1 })
@@ -90,7 +86,6 @@ export const PostCard = ({ post }: PostCardProps) => {
           
         toast.success("Post liked");
       } else {
-        // Unlike the post
         const { error } = await supabase
           .from('post_likes')
           .delete()
@@ -99,7 +94,6 @@ export const PostCard = ({ post }: PostCardProps) => {
           
         if (error) throw error;
         
-        // Update the likes count in posts table
         await supabase
           .from('posts')
           .update({ likes_count: likesCount - 1 })
@@ -108,13 +102,11 @@ export const PostCard = ({ post }: PostCardProps) => {
         toast.success("Post unliked");
       }
       
-      // Refresh posts data
       queryClient.invalidateQueries({ queryKey: ['allPosts'] });
       queryClient.invalidateQueries({ queryKey: ['userPosts'] });
       queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
     } catch (error) {
       console.error('Error liking/unliking post:', error);
-      // Revert optimistic update on error
       setIsLiked(!isLiked);
       setLikesCount(prevCount => isLiked ? prevCount + 1 : prevCount - 1);
       toast.error("Failed to update like");
@@ -124,7 +116,6 @@ export const PostCard = ({ post }: PostCardProps) => {
   const handleComment = () => {
     setShowCommentInput(!showCommentInput);
     
-    // Fetch comments when opening the comment section
     if (!showCommentInput && comments.length === 0) {
       fetchComments();
     }
@@ -141,7 +132,7 @@ export const PostCard = ({ post }: PostCardProps) => {
           content,
           created_at,
           user_id,
-          profiles(name, avatar)
+          profiles:user_id (name, avatar)
         `)
         .eq('post_id', post.id)
         .order('created_at', { ascending: true });
@@ -205,7 +196,6 @@ export const PostCard = ({ post }: PostCardProps) => {
       if (error) throw error;
       
       if (newComment && newComment.length > 0) {
-        // Add the new comment to the comments array
         setComments(prevComments => [
           ...prevComments,
           {
@@ -219,14 +209,12 @@ export const PostCard = ({ post }: PostCardProps) => {
           }
         ]);
         
-        // Update the comments count
         setCommentsCount(prevCount => prevCount + 1);
       }
       
       toast.success("Comment added");
       setCommentText('');
       
-      // Refresh posts data
       queryClient.invalidateQueries({ queryKey: ['allPosts'] });
       queryClient.invalidateQueries({ queryKey: ['userPosts'] });
       queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
@@ -238,7 +226,6 @@ export const PostCard = ({ post }: PostCardProps) => {
     }
   };
   
-  // Check if post is liked when component mounts
   useEffect(() => {
     const checkLikeStatus = async () => {
       try {
@@ -270,7 +257,6 @@ export const PostCard = ({ post }: PostCardProps) => {
       return null;
     }
     
-    // Check if the comic data has layout information
     const hasLayout = post.comicData.some(panel => panel.gridArea);
     
     if (hasLayout) {
@@ -316,7 +302,6 @@ export const PostCard = ({ post }: PostCardProps) => {
                 </div>
               )}
               
-              {/* Render bubbles */}
               {panel.bubbles?.map(bubble => (
                 <div 
                   key={bubble.id}
@@ -339,7 +324,6 @@ export const PostCard = ({ post }: PostCardProps) => {
       );
     }
     
-    // Vertical layout for default view
     return (
       <div className="space-y-2 mb-4">
         {post.comicData.map(panel => (
@@ -372,7 +356,6 @@ export const PostCard = ({ post }: PostCardProps) => {
               </div>
             )}
             
-            {/* Render bubbles */}
             {panel.bubbles?.map(bubble => (
               <div 
                 key={bubble.id}
@@ -447,10 +430,8 @@ export const PostCard = ({ post }: PostCardProps) => {
           </div>
         </div>
         
-        {/* Comments Section */}
         {showCommentInput && (
           <div className="mt-4">
-            {/* Display existing comments */}
             {comments.length > 0 && (
               <div className="mb-4 space-y-3 max-h-[300px] overflow-y-auto">
                 {comments.map(comment => (
@@ -477,7 +458,6 @@ export const PostCard = ({ post }: PostCardProps) => {
               </div>
             )}
             
-            {/* Comment input */}
             <div className="space-y-2">
               <Textarea
                 placeholder="Write a comment..."
