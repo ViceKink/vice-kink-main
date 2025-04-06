@@ -18,6 +18,11 @@ const Home = () => {
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['allPosts'],
     queryFn: async () => {
+      // Calculate the time 1 hour ago for boost expiration
+      const oneHourAgo = new Date();
+      oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+      const oneHourAgoISOString = oneHourAgo.toISOString();
+      
       const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select(`
@@ -33,7 +38,6 @@ const Home = () => {
           boosted_at,
           type
         `)
-        .order('boosted_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
       
       if (postsError) {
@@ -117,7 +121,9 @@ const Home = () => {
               return hasContent || hasTitle || hasImage || hasBubbles;
             });
             
-            processedPost['comicData'] = nonEmptyPanels;
+            if (nonEmptyPanels.length > 0) {
+              processedPost['comicData'] = nonEmptyPanels;
+            }
           } catch (e) {
             console.error("Failed to parse comic data:", e);
           }
@@ -127,8 +133,25 @@ const Home = () => {
         
         return processedPost;
       });
-      
-      return postsWithProfiles;
+
+      // Sort posts based on boost status and creation date
+      // Only consider posts as boosted if they were boosted less than 1 hour ago
+      return postsWithProfiles.sort((a, b) => {
+        const aIsBoosted = a.boosted_at && new Date(a.boosted_at) > new Date(oneHourAgoISOString);
+        const bIsBoosted = b.boosted_at && new Date(b.boosted_at) > new Date(oneHourAgoISOString);
+        
+        if (aIsBoosted && !bIsBoosted) {
+          return -1; // a comes first
+        } else if (!aIsBoosted && bIsBoosted) {
+          return 1; // b comes first
+        } else if (aIsBoosted && bIsBoosted) {
+          // Both are boosted, use boosted_at time
+          return new Date(b.boosted_at).getTime() - new Date(a.boosted_at).getTime();
+        } else {
+          // Neither are boosted, use created_at time
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }
+      });
     }
   });
   

@@ -132,7 +132,7 @@ export const PostCard = ({ post }: PostCardProps) => {
           content,
           user_id,
           created_at,
-          profiles:user_id (name, avatar)
+          profiles (name, avatar)
         `)
         .eq('post_id', post.id)
         .order('created_at', { ascending: false });
