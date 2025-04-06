@@ -11,7 +11,27 @@ interface PostListProps {
 }
 
 const PostList = ({ posts, searchQuery, onClearSearch, onCreatePost }: PostListProps) => {
-  if (posts.length === 0) {
+  // Filter out any posts that might be completely empty
+  const validPosts = posts.filter(post => {
+    // For comic posts, check if they have any valid comic data
+    if (post.type === 'comic' && post.comicData) {
+      const hasValidPanels = post.comicData.some(panel => {
+        const hasContent = panel.content && panel.content.trim().length > 0;
+        const hasTitle = panel.title && panel.title.trim().length > 0;
+        const hasImage = !!panel.image;
+        const hasBubbles = panel.bubbles && panel.bubbles.length > 0;
+        
+        return hasContent || hasTitle || hasImage || hasBubbles;
+      });
+      
+      return hasValidPanels;
+    }
+    
+    // For other posts, check if they have content, images or title
+    return post.content?.trim() || post.images?.length > 0 || post.title?.trim();
+  });
+  
+  if (validPosts.length === 0) {
     return searchQuery ? (
       <NoResultsFound searchQuery={searchQuery} onClearSearch={onClearSearch} />
     ) : (
@@ -21,7 +41,7 @@ const PostList = ({ posts, searchQuery, onClearSearch, onCreatePost }: PostListP
 
   return (
     <div className="space-y-6">
-      {posts.map(post => (
+      {validPosts.map(post => (
         <PostCard key={post.id} post={post} />
       ))}
     </div>

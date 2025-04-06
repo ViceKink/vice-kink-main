@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -132,7 +133,7 @@ export const PostCard = ({ post }: PostCardProps) => {
           content,
           user_id,
           created_at,
-          profiles:profiles (name, avatar)
+          profiles (name, avatar)
         `)
         .eq('post_id', post.id)
         .order('created_at', { ascending: false });
@@ -260,6 +261,20 @@ export const PostCard = ({ post }: PostCardProps) => {
     const hasLayout = post.comicData.some(panel => panel.gridArea);
     
     if (hasLayout) {
+      // Filter out any panels that don't have content, images, or bubbles
+      const nonEmptyPanels = post.comicData.filter(panel => {
+        const hasContent = panel.content && panel.content.trim().length > 0;
+        const hasTitle = panel.title && panel.title.trim().length > 0;
+        const hasImage = !!panel.image;
+        const hasBubbles = panel.bubbles && panel.bubbles.length > 0;
+        
+        return hasContent || hasTitle || hasImage || hasBubbles;
+      });
+
+      if (nonEmptyPanels.length === 0) {
+        return null;
+      }
+      
       return (
         <div 
           className="grid gap-2 mb-4 bg-muted/20 p-2 rounded-lg"
@@ -269,7 +284,7 @@ export const PostCard = ({ post }: PostCardProps) => {
             gridTemplateColumns: 'repeat(2, 1fr)',
           }}
         >
-          {post.comicData.map(panel => (
+          {nonEmptyPanels.map(panel => (
             <div
               key={panel.id}
               className="relative bg-background rounded-lg overflow-hidden"
@@ -328,9 +343,23 @@ export const PostCard = ({ post }: PostCardProps) => {
       );
     }
     
+    // Filter non-layout panels as well
+    const nonEmptyPanels = post.comicData.filter(panel => {
+      const hasContent = panel.content && panel.content.trim().length > 0;
+      const hasTitle = panel.title && panel.title.trim().length > 0;
+      const hasImage = !!panel.image;
+      const hasBubbles = panel.bubbles && panel.bubbles.length > 0;
+      
+      return hasContent || hasTitle || hasImage || hasBubbles;
+    });
+
+    if (nonEmptyPanels.length === 0) {
+      return null;
+    }
+    
     return (
       <div className="space-y-2 mb-4">
-        {post.comicData.map(panel => (
+        {nonEmptyPanels.map(panel => (
           <div 
             key={panel.id}
             className="relative bg-background rounded-lg overflow-hidden"
