@@ -1,4 +1,3 @@
-
 import React, { 
   createContext, 
   useState, 
@@ -16,8 +15,8 @@ type AuthContextType = {
   session: Session | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string, username: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<any>;
+  signup: (email: string, password: string, name: string, username: string) => Promise<any>;
   logout: () => Promise<void>;
   updateProfile: (profileData: Partial<UserProfile>) => Promise<void>;
   fetchProfile: (userId?: string) => Promise<UserProfile | null>;
