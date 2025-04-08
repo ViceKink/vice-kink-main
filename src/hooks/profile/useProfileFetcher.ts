@@ -1,8 +1,9 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/context/auth';
 import { UserProfile } from '@/types/auth';
 import { toast } from 'sonner';
+import { fetchProfileById } from '@/utils/match/profileService';
 
 export const useProfileFetcher = (profileId?: string) => {
   const { user, fetchProfile, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -25,7 +26,7 @@ export const useProfileFetcher = (profileId?: string) => {
     
     setIsLoading(true);
     setError(null);
-    console.log("Fetching profile attempt", fetchAttempts + 1);
+    console.log("Fetching profile attempt", fetchAttempts + 1, "for profile ID:", currentProfileId);
     
     try {
       let profile = null;
@@ -34,17 +35,29 @@ export const useProfileFetcher = (profileId?: string) => {
         console.log("Using existing user profile:", user);
         profile = user;
       } 
-      else {
-        console.log("Fetching profile data for", profileId || "current user");
-        profile = await fetchProfile(profileId);
-        console.log("Profile data fetched:", profile);
+      else if (currentProfileId) {
+        console.log("Fetching profile data for", currentProfileId);
+        
+        // First try using fetchProfileById from profileService
+        try {
+          profile = await fetchProfileById(currentProfileId);
+          console.log("Profile fetched from profileService:", profile);
+        } catch (profileError) {
+          console.error("Error fetching from profileService:", profileError);
+          // Fallback to fetchProfile from auth context
+          profile = await fetchProfile(currentProfileId);
+        }
+        
+        console.log("Final profile data fetched:", profile);
       }
       
-      setProfileUser(profile);
-      
-      if (!profile && !authLoading && isAuthenticated) {
-        setError("Could not load profile data. Please try again.");
-        toast.error("Failed to load profile data");
+      if (profile) {
+        setProfileUser(profile);
+      } else {
+        if (!authLoading && isAuthenticated) {
+          setError("Could not load profile data. Please try again.");
+          toast.error("Failed to load profile data");
+        }
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -54,7 +67,14 @@ export const useProfileFetcher = (profileId?: string) => {
       setIsLoading(false);
       setFetchAttempts(prev => prev + 1);
     }
-  }, [profileId, user, fetchProfile, isAuthenticated, authLoading, isCurrentUser, fetchAttempts]);
+  }, [profileId, user, fetchProfile, isAuthenticated, authLoading, isCurrentUser, fetchAttempts, currentProfileId]);
+
+  // Auto-fetch on mount or when dependencies change
+  useEffect(() => {
+    if (currentProfileId && !profileUser && !isLoading && fetchAttempts === 0) {
+      getProfileData();
+    }
+  }, [currentProfileId, profileUser, isLoading, fetchAttempts, getProfileData]);
 
   return {
     profileUser,

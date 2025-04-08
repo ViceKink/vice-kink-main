@@ -7,6 +7,7 @@ import { likeProfile } from '@/utils/matchUtils';
 import { useAuth } from '@/context/auth';
 import { useQueryClient } from '@tanstack/react-query';
 import { IconButton } from '@/components/ui/icon-button';
+import { useNavigate } from 'react-router-dom';
 
 export interface ActionButtonsProps {
   profileId: string;
@@ -21,6 +22,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   
   const handleLikeBack = async () => {
     if (!user?.id) {
@@ -47,10 +49,10 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   };
 
   const handleViewProfile = () => {
-    if (onViewProfile) {
-      onViewProfile();
+    if (profileId) {
+      navigate(`/profile/${profileId}`);
     } else {
-      toast.info("View profile functionality not implemented");
+      toast.error("Could not load profile");
     }
   };
   

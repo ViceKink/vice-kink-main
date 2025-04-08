@@ -2,6 +2,7 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 
 export interface ProfileCardProps {
   profile: any;
@@ -11,10 +12,13 @@ export interface ProfileCardProps {
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onSelectLike, onViewProfile }) => {
   const initials = profile.name ? profile.name.split(' ').map((n: string) => n[0]).join('') : '?';
+  const navigate = useNavigate();
   
   const handleClick = () => {
     if (profile.is_revealed && onViewProfile) {
       onViewProfile();
+    } else if (profile.is_revealed && profile.id) {
+      navigate(`/profile/${profile.id}`);
     } else {
       onSelectLike();
     }

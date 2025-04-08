@@ -41,6 +41,7 @@ const LikesContainer: React.FC<LikesContainerProps> = ({ likes }) => {
 
   const handleViewProfile = (profileId: string) => {
     console.log("Navigating to profile:", profileId);
+    // Direct navigation without using onViewProfile prop
     navigate(`/profile/${profileId}`);
   };
 
@@ -54,7 +55,7 @@ const LikesContainer: React.FC<LikesContainerProps> = ({ likes }) => {
           profile={profile}
           onReveal={() => revealProfile(profile.id)}
           onSelectLike={() => handleSelectLike(profile.id)}
-          onViewProfile={handleViewProfile}
+          onViewProfile={() => handleViewProfile(profile.id)}
           onWatchAd={() => watchAdToReveal(profile.id)}
           isProcessing={isProcessing && selectedProfileId === profile.id}
           canUseCoins={true}
