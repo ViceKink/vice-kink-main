@@ -15,7 +15,6 @@ import { Separator } from '@/components/ui/separator';
 const Auth = () => {
   const {
     login,
-    loginWithGoogle,
     signup,
     isAuthenticated,
     isLoading
@@ -72,7 +71,6 @@ const Auth = () => {
             <TabsContent value="login">
               <LoginForm 
                 onLogin={login} 
-                onGoogleLogin={loginWithGoogle}
                 isLoading={isLoading} 
                 switchToSignup={() => setActiveTab('signup')} 
               />
@@ -81,7 +79,6 @@ const Auth = () => {
             <TabsContent value="signup">
               <SignupForm 
                 onSignup={signup}
-                onGoogleLogin={loginWithGoogle} 
                 isLoading={isLoading} 
                 setIsNewSignup={setIsNewSignup} 
               />
@@ -94,14 +91,12 @@ const Auth = () => {
 
 interface LoginFormProps {
   onLogin: (email: string, password: string) => Promise<void>;
-  onGoogleLogin: () => Promise<void>;
   isLoading: boolean;
   switchToSignup: () => void;
 }
 
 const LoginForm = ({
   onLogin,
-  onGoogleLogin,
   isLoading,
   switchToSignup
 }: LoginFormProps) => {
@@ -148,19 +143,6 @@ const LoginForm = ({
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      setLocalLoading(true);
-      setAuthError(null);
-      await onGoogleLogin();
-    } catch (error: any) {
-      console.error("Google login error:", error);
-      setAuthError(error?.message || 'Failed to login with Google');
-    } finally {
-      setLocalLoading(false);
-    }
-  };
-
   // Use both the global and local loading states
   const buttonLoading = isLoading || localLoading;
   
@@ -172,31 +154,6 @@ const LoginForm = ({
           <AlertDescription className="ml-2">{authError}</AlertDescription>
         </Alert>
       )}
-      
-      <Button 
-        type="button" 
-        variant="outline" 
-        onClick={handleGoogleLogin} 
-        disabled={buttonLoading} 
-        className="w-full flex items-center justify-center gap-2"
-      >
-        <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
-          <g transform="matrix(1, 0, 0, 1, 0, 0)">
-            <path d="M21.35,11.1H12v3.6h5.3c-0.2,1.4-1.6,4-5.3,4c-3.2,0-5.8-2.6-5.8-5.9C6.2,9.4,8.8,6.8,12,6.8c1.8,0,3.1,0.8,3.8,1.5 l2.9-2.7C17.3,4.2,14.8,3,12,3c-4.9,0-9,4-9,9s4,9,9,9c5.2,0,8.6-3.7,8.6-8.9C20.6,11.7,21.2,11.1,21.35,11.1z" fill="#4285f4"></path>
-            <path d="M3,3h18v18H3V3z" fill="none"></path>
-          </g>
-        </svg>
-        Sign in with Google
-      </Button>
-      
-      <div className="relative my-4">
-        <Separator className="absolute inset-0" />
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">
-            or continue with email
-          </span>
-        </div>
-      </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1">
@@ -254,14 +211,12 @@ const LoginForm = ({
 
 interface SignupFormProps {
   onSignup: (email: string, password: string, name: string, username: string) => Promise<void>;
-  onGoogleLogin: () => Promise<void>;
   isLoading: boolean;
   setIsNewSignup: (value: boolean) => void;
 }
 
 const SignupForm = ({
   onSignup,
-  onGoogleLogin,
   isLoading,
   setIsNewSignup
 }: SignupFormProps) => {
@@ -315,21 +270,6 @@ const SignupForm = ({
     }
   };
 
-  const handleGoogleSignup = async () => {
-    try {
-      setLocalLoading(true);
-      setAuthError(null);
-      setIsNewSignup(true);
-      await onGoogleLogin();
-    } catch (error: any) {
-      console.error("Google signup error:", error);
-      setAuthError(error?.message || 'Failed to sign up with Google');
-      setIsNewSignup(false);
-    } finally {
-      setLocalLoading(false);
-    }
-  };
-
   // Use both the global and local loading states
   const buttonLoading = isLoading || localLoading;
   
@@ -341,31 +281,6 @@ const SignupForm = ({
           <AlertDescription className="ml-2">{authError}</AlertDescription>
         </Alert>
       )}
-      
-      <Button 
-        type="button" 
-        variant="outline" 
-        onClick={handleGoogleSignup} 
-        disabled={buttonLoading} 
-        className="w-full flex items-center justify-center gap-2"
-      >
-        <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
-          <g transform="matrix(1, 0, 0, 1, 0, 0)">
-            <path d="M21.35,11.1H12v3.6h5.3c-0.2,1.4-1.6,4-5.3,4c-3.2,0-5.8-2.6-5.8-5.9C6.2,9.4,8.8,6.8,12,6.8c1.8,0,3.1,0.8,3.8,1.5 l2.9-2.7C17.3,4.2,14.8,3,12,3c-4.9,0-9,4-9,9s4,9,9,9c5.2,0,8.6-3.7,8.6-8.9C20.6,11.7,21.2,11.1,21.35,11.1z" fill="#4285f4"></path>
-            <path d="M3,3h18v18H3V3z" fill="none"></path>
-          </g>
-        </svg>
-        Sign up with Google
-      </Button>
-      
-      <div className="relative my-4">
-        <Separator className="absolute inset-0" />
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">
-            or continue with email
-          </span>
-        </div>
-      </div>
       
       <form onSubmit={handleSubmit} className="space-y-4">      
         <div className="space-y-1">

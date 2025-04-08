@@ -9,7 +9,6 @@ export type AuthContextType = {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<any>;
-  loginWithGoogle: () => Promise<any>;
   signup: (email: string, password: string, name: string, username: string) => Promise<any>;
   logout: () => Promise<void>;
   updateProfile: (profileData: Partial<UserProfile>) => Promise<void>;
