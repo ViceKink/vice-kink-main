@@ -53,7 +53,7 @@ const ChatView: React.FC<ChatViewProps> = ({
         <div className="flex gap-2">
           <input 
             type="text" 
-            className="flex-1 px-3 py-2 border rounded-full"
+            className="flex-1 px-3 py-2 border rounded-full bg-background border-input"
             placeholder="Type a message..."
           />
           <Button>Send</Button>

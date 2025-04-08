@@ -22,7 +22,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onSelectLike, onView
   
   return (
     <div 
-      className="relative cursor-pointer group bg-slate-50"
+      className="relative cursor-pointer group bg-card"
       onClick={handleClick}
     >
       <div className="p-4 flex items-center justify-between">
