@@ -26,15 +26,20 @@ import {
   Settings, 
   LogOut, 
   Menu,
-  Coins
+  Coins,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { useAuth } from '@/context/auth';
 import Logo from '../ui/Logo';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AdCoinsBalance from '@/components/adcoins/AdCoinsBalance';
+import ThemeToggle from '@/components/theme/ThemeToggle';
+import { useTheme } from '@/context/theme';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
@@ -102,6 +107,9 @@ const Navbar = () => {
         )}
         
         <div className="flex items-center space-x-2">
+          {/* Theme Toggle */}
+          <ThemeToggle className="mr-2" />
+          
           {user && (
             <Button
               variant="ghost"

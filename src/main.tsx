@@ -16,6 +16,22 @@ styleElement.textContent = `
 `;
 document.head.appendChild(styleElement);
 
+// Initialize theme from localStorage or system preference before rendering
+const initializeTheme = () => {
+  const savedTheme = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  
+  if (savedTheme) {
+    document.documentElement.classList.add(savedTheme);
+  } else if (prefersDark) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.add('light');
+  }
+};
+
+initializeTheme();
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <App />
 )
