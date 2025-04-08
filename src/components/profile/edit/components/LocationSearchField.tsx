@@ -62,7 +62,25 @@ export const LocationSearchField: React.FC<LocationSearchFieldProps> = ({
       } finally {
         setIsLoading(false);
       }
-    }, 500); // 500ms debounce
+    }, 300); // 300ms debounce
+  };
+
+  // Submit the current input value manually
+  const handleManualSubmit = async () => {
+    if (inputValue.length < 2) return;
+    
+    setIsLoading(true);
+    try {
+      const results = await searchLocations(inputValue);
+      if (results && results.length > 0) {
+        // Use the first result
+        handleSelectLocation(results[0]);
+      }
+    } catch (error) {
+      console.error('Error in manual submit:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSelectLocation = (city: GeocodedCity) => {
@@ -71,6 +89,14 @@ export const LocationSearchField: React.FC<LocationSearchFieldProps> = ({
     setInputValue(city.formatted_address);
     onChange(city.formatted_address, city.lat, city.lon);
     setOpen(false);
+  };
+
+  // Handle keydown events for enter key
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleManualSubmit();
+    }
   };
 
   return (
@@ -84,52 +110,71 @@ export const LocationSearchField: React.FC<LocationSearchFieldProps> = ({
             aria-expanded={open}
             className="w-full justify-between text-left font-normal h-10"
           >
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              {inputValue || placeholder || "Search for a location..."}
+            <div className="flex items-center gap-2 w-full overflow-hidden">
+              <MapPin className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+              <span className="truncate">
+                {inputValue || placeholder || "Search for a location..."}
+              </span>
             </div>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-background" align="start">
-          <Command>
-            <CommandInput 
-              placeholder="Search for a city..." 
-              value={inputValue}
-              onValueChange={handleSearch}
-              className="h-9"
-            />
-            <CommandList>
+        <PopoverContent 
+          className="w-[var(--radix-popover-trigger-width)] p-0 bg-background" 
+          align="start"
+          sideOffset={5}
+        >
+          <div className="flex flex-col">
+            <div className="flex items-center border-b p-2">
+              <Input 
+                placeholder="Search for a city..." 
+                value={inputValue}
+                onChange={(e) => handleSearch(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+              <Button 
+                size="sm" 
+                variant="ghost"
+                disabled={isLoading}
+                onClick={handleManualSubmit}
+                className="ml-2"
+              >
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
+              </Button>
+            </div>
+            
+            <div className="max-h-[300px] overflow-y-auto">
               {isLoading ? (
                 <div className="flex items-center justify-center p-4 text-sm">
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Loading locations...
                 </div>
+              ) : suggestions.length > 0 ? (
+                <div>
+                  {suggestions.map((city) => (
+                    <div 
+                      key={`${city.name}-${city.lat}-${city.lon}`}
+                      onClick={() => handleSelectLocation(city)}
+                      className="flex items-center gap-2 p-3 hover:bg-muted cursor-pointer"
+                    >
+                      <MapPin className="h-4 w-4" />
+                      <div className="truncate">
+                        <p className="truncate">{city.formatted_address || city.display_name}</p>
+                        {city.country && <p className="text-xs text-muted-foreground">{city.country}</p>}
+                      </div>
+                      {inputValue === city.formatted_address && (
+                        <Check className="h-4 w-4 ml-auto" />
+                      )}
+                    </div>
+                  ))}
+                </div>
               ) : (
-                <>
-                  <CommandEmpty>No locations found</CommandEmpty>
-                  <CommandGroup>
-                    {suggestions.map((city) => (
-                      <CommandItem 
-                        key={`${city.name}-${city.lat}-${city.lon}`}
-                        onSelect={() => handleSelectLocation(city)}
-                        className="cursor-pointer py-2"
-                      >
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          <div>
-                            <p>{city.formatted_address}</p>
-                          </div>
-                        </div>
-                        {inputValue === city.formatted_address && (
-                          <Check className="h-4 w-4 ml-auto" />
-                        )}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </>
+                <div className="p-4 text-sm text-center text-muted-foreground">
+                  {inputValue.length > 0 ? "No locations found" : "Type to search for locations"}
+                </div>
               )}
-            </CommandList>
-          </Command>
+            </div>
+          </div>
         </PopoverContent>
       </Popover>
     </div>

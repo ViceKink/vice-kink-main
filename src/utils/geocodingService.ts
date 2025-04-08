@@ -40,14 +40,29 @@ export async function searchLocations(query: string): Promise<GeocodedCity[]> {
       return [];
     }
     
-    return data.map((item: any) => ({
-      name: item.name || '',
-      display_name: item.display_name || '',
-      lat: parseFloat(item.lat) || 0,
-      lon: parseFloat(item.lon) || 0,
-      country: item.address?.country || '',
-      formatted_address: `${item.address?.city || item.address?.town || item.address?.village || item.name || ''}, ${item.address?.country || ''}`,
-    }));
+    // Map API results to our GeocodedCity interface
+    const results = data.map((item: any) => {
+      // Get city name from multiple possible sources
+      const city = item.address?.city || 
+                  item.address?.town || 
+                  item.address?.village || 
+                  item.name || '';
+      
+      // Get country
+      const country = item.address?.country || '';
+      
+      return {
+        name: item.name || '',
+        display_name: item.display_name || '',
+        lat: parseFloat(item.lat) || 0,
+        lon: parseFloat(item.lon) || 0,
+        country: country,
+        formatted_address: city ? `${city}, ${country}` : country,
+      };
+    });
+    
+    console.log('Processed location results:', results);
+    return results;
   } catch (error) {
     console.error('Error searching locations:', error);
     return [];
