@@ -21,7 +21,7 @@ const RevealButton: React.FC<RevealButtonProps> = ({
   return (
     <div className="p-4 space-y-2">
       <Button
-        className="w-full bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-800"
+        className="w-full bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-800 text-white"
         onClick={onReveal}
         disabled={!canUseCoins || isProcessing}
       >
@@ -41,7 +41,7 @@ const RevealButton: React.FC<RevealButtonProps> = ({
       {isAdReady && (
         <Button
           variant="outline"
-          className="w-full border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700"
+          className="w-full border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white"
           onClick={onWatchAd}
           disabled={isProcessing}
         >
