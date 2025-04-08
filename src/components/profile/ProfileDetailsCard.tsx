@@ -104,84 +104,84 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
         {profile.about?.status && (
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('status')}</span>
-            <span className="text-sm">{profile.about.status}</span>
+            <span className="text-sm text-black dark:text-foreground">{profile.about.status}</span>
           </div>
         )}
         
         {profile.about?.gender && (
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('gender')}</span>
-            <span className="text-sm">{profile.about.gender}</span>
+            <span className="text-sm text-black dark:text-foreground">{profile.about.gender}</span>
           </div>
         )}
         
         {profile.about?.height && (
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('height')}</span>
-            <span className="text-sm">{profile.about.height}</span>
+            <span className="text-sm text-black dark:text-foreground">{profile.about.height}</span>
           </div>
         )}
         
         {profile.about?.ethnicity && (
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('ethnicity')}</span>
-            <span className="text-sm">{profile.about.ethnicity}</span>
+            <span className="text-sm text-black dark:text-foreground">{profile.about.ethnicity}</span>
           </div>
         )}
         
         {profile.about?.education && (
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('education')}</span>
-            <span className="text-sm">{profile.about.education}</span>
+            <span className="text-sm text-black dark:text-foreground">{profile.about.education}</span>
           </div>
         )}
         
         {profile.about?.zodiac && (
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('zodiac')}</span>
-            <span className="text-sm">{profile.about.zodiac}</span>
+            <span className="text-sm text-black dark:text-foreground">{profile.about.zodiac}</span>
           </div>
         )}
         
         {profile.about?.religion && (
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('religion')}</span>
-            <span className="text-sm">{profile.about.religion}</span>
+            <span className="text-sm text-black dark:text-foreground">{profile.about.religion}</span>
           </div>
         )}
         
         {profile.about?.languages && profile.about.languages.length > 0 && (
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('language')}</span>
-            <span className="text-sm">{profile.about.languages.join(', ')}</span>
+            <span className="text-sm text-black dark:text-foreground">{profile.about.languages.join(', ')}</span>
           </div>
         )}
         
         {profile.about?.sexuality && (
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('sexuality')}</span>
-            <span className="text-sm">{profile.about.sexuality}</span>
+            <span className="text-sm text-black dark:text-foreground">{profile.about.sexuality}</span>
           </div>
         )}
         
         {profile.about?.occupation && (
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('occupation')}</span>
-            <span className="text-sm">{profile.about.occupation}</span>
+            <span className="text-sm text-black dark:text-foreground">{profile.about.occupation}</span>
           </div>
         )}
         
         {profile.about?.relationshipType && (
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('relationshipType')}</span>
-            <span className="text-sm">{profile.about.relationshipType}</span>
+            <span className="text-sm text-black dark:text-foreground">{profile.about.relationshipType}</span>
           </div>
         )}
         
         {profile.about?.datingIntention && (
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('datingIntention')}</span>
-            <span className="text-sm">{profile.about.datingIntention}</span>
+            <span className="text-sm text-black dark:text-foreground">{profile.about.datingIntention}</span>
           </div>
         )}
       </div>
@@ -191,7 +191,7 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
         <div className="mt-4">
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('flirting')}</span>
-            <span className="text-sm">
+            <span className="text-sm text-black dark:text-foreground">
               {getFlirtingStyleText(profile.flirtingStyle)}
             </span>
           </div>
@@ -203,7 +203,7 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
         <div className="mt-4">
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('looking')}</span>
-            <span className="text-sm">{profile.lookingFor}</span>
+            <span className="text-sm text-black dark:text-foreground">{profile.lookingFor}</span>
           </div>
         </div>
       )}
@@ -213,14 +213,14 @@ const ProfileDetailsCard = ({ profile, className }: ProfileDetailsCardProps) => 
         {profile.about?.lifestyle?.smoking !== undefined && (
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('smoking')}</span>
-            <span className="text-sm">{profile.about.lifestyle.smoking ? 'Smoker' : 'Non-smoker'}</span>
+            <span className="text-sm text-black dark:text-foreground">{profile.about.lifestyle.smoking ? 'Smoker' : 'Non-smoker'}</span>
           </div>
         )}
         
         {profile.about?.lifestyle?.drinking && (
           <div className="flex items-center gap-2">
             <span className="text-vice-purple">{getIcon('drinking')}</span>
-            <span className="text-sm">{profile.about.lifestyle.drinking}</span>
+            <span className="text-sm text-black dark:text-foreground">{profile.about.lifestyle.drinking}</span>
           </div>
         )}
       </div>

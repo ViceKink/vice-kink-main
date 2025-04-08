@@ -24,8 +24,8 @@ const ProfileTagsSection = ({ items, type, title, currentRow }: ProfileTagsSecti
       }}
       className="bg-white dark:bg-card p-4"
     >
-      <h3 className="text-base font-semibold mb-2">{title}</h3>
-      <div className="flex flex-wrap gap-2">
+      <h3 className="text-base font-semibold mb-2 text-black dark:text-foreground">{title}</h3>
+      <div className="flex flex-wrap gap-2 pb-1">
         {items.map((item, index) => (
           <ProfileTag key={index} label={item} type={type} />
         ))}
