@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,6 +8,9 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
 const Auth = () => {
   const {
     login,
@@ -64,7 +68,7 @@ const Auth = () => {
             </TabsList>
             
             <TabsContent value="login">
-              <LoginForm onLogin={login} isLoading={isLoading} />
+              <LoginForm onLogin={login} isLoading={isLoading} switchToSignup={() => setActiveTab('signup')} />
             </TabsContent>
             
             <TabsContent value="signup">
@@ -78,20 +82,25 @@ const Auth = () => {
 interface LoginFormProps {
   onLogin: (email: string, password: string) => Promise<void>;
   isLoading: boolean;
+  switchToSignup: () => void;
 }
 const LoginForm = ({
   onLogin,
-  isLoading
+  isLoading,
+  switchToSignup
 }: LoginFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [localLoading, setLocalLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Reset errors
     setErrors({});
+    setAuthError(null);
 
     // Basic validation
     const newErrors: Record<string, string> = {};
@@ -105,9 +114,19 @@ const LoginForm = ({
       setLocalLoading(true);
       await onLogin(email, password);
       // Login is handled in the auth context
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
-      // Error is handled in the auth context
+      
+      // Handle specific authentication errors with user-friendly messages
+      const errorMessage = error?.message || 'An error occurred during login';
+      
+      if (errorMessage.includes('Invalid login credentials') || 
+          errorMessage.includes('Email not confirmed') ||
+          errorMessage.includes('Invalid email or password')) {
+        setAuthError('Invalid email or password. Please check your credentials or sign up if you don\'t have an account.');
+      } else {
+        setAuthError(errorMessage);
+      }
     } finally {
       setLocalLoading(false);
     }
@@ -116,6 +135,13 @@ const LoginForm = ({
   // Use both the global and local loading states
   const buttonLoading = isLoading || localLoading;
   return <form onSubmit={handleSubmit} className="space-y-4">
+      {authError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="ml-2">{authError}</AlertDescription>
+        </Alert>
+      )}
+      
       <div className="space-y-1">
         <Label htmlFor="email">Email</Label>
         <Input id="email" type="email" placeholder="your.email@example.com" value={email} onChange={e => setEmail(e.target.value)} className={cn(errors.email && "border-destructive")} disabled={buttonLoading} />
@@ -131,6 +157,19 @@ const LoginForm = ({
       <Button type="submit" className="w-full bg-vice-purple hover:bg-vice-dark-purple" disabled={buttonLoading}>
         {buttonLoading ? 'Logging in...' : 'Login'}
       </Button>
+
+      {authError && (
+        <div className="text-center mt-2">
+          <span className="text-sm text-muted-foreground">Don't have an account? </span>
+          <button 
+            type="button" 
+            onClick={switchToSignup} 
+            className="text-sm text-vice-purple hover:underline"
+          >
+            Sign up
+          </button>
+        </div>
+      )}
     </form>;
 };
 interface SignupFormProps {
@@ -150,11 +189,14 @@ const SignupForm = ({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [localLoading, setLocalLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Reset errors
     setErrors({});
+    setAuthError(null);
 
     // Basic validation
     const newErrors: Record<string, string> = {};
@@ -173,8 +215,17 @@ const SignupForm = ({
       setIsNewSignup(true);
       await onSignup(email, password, name, username);
       toast.success('Please check your email to confirm your account.');
-    } catch (error) {
-      // Error is handled in the auth context
+    } catch (error: any) {
+      // Handle specific signup errors
+      console.error("Signup error:", error);
+      const errorMessage = error?.message || 'An error occurred during signup';
+      
+      if (errorMessage.includes('User already registered')) {
+        setAuthError('This email is already registered. Please login instead.');
+      } else {
+        setAuthError(errorMessage);
+      }
+      
       setIsNewSignup(false); // Reset if there's an error
     } finally {
       setLocalLoading(false);
@@ -184,6 +235,13 @@ const SignupForm = ({
   // Use both the global and local loading states
   const buttonLoading = isLoading || localLoading;
   return <form onSubmit={handleSubmit} className="space-y-4">
+      {authError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="ml-2">{authError}</AlertDescription>
+        </Alert>
+      )}
+      
       <div className="space-y-1">
         <Label htmlFor="name">Full Name</Label>
         <Input id="name" type="text" placeholder="John Doe" value={name} onChange={e => setName(e.target.value)} className={cn(errors.name && "border-destructive")} disabled={buttonLoading} />

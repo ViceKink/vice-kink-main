@@ -127,17 +127,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-    } catch (error) {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        console.error('Error signing in:', error);
+        throw error;
+      }
+      
+      if (!data || !data.session) {
+        throw new Error('No session returned from login');
+      }
+      
+      return data;
+    } catch (error: any) {
       console.error('Error signing in:', error);
+      
+      // Make error messages more user-friendly
+      if (error.message === 'Invalid login credentials') {
+        throw new Error('Invalid email or password. Please check your credentials.');
+      }
+      
       throw error;
     }
   };
 
   const signup = async (email: string, password: string, name: string, username: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -147,9 +163,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           },
         },
       });
-      if (error) throw error;
-    } catch (error) {
+      
+      if (error) {
+        console.error('Error signing up:', error);
+        throw error;
+      }
+      
+      return data;
+    } catch (error: any) {
       console.error('Error signing up:', error);
+      
+      // Make error messages more user-friendly
+      if (error.message.includes('already registered')) {
+        throw new Error('This email is already registered. Please login instead.');
+      }
+      
       throw error;
     }
   };
