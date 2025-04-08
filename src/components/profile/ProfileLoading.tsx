@@ -42,12 +42,14 @@ const ProfileLoading = ({ type, progress, onRetry }: ProfileLoadingProps) => {
         </div>
         
         {type === 'timeout' && onRetry && (
-          <Button 
-            onClick={onRetry}
-            className="bg-vice-purple hover:bg-vice-dark-purple flex items-center gap-2"
-          >
-            <RefreshCw className="w-4 h-4" /> Retry
-          </Button>
+          <div className="flex justify-center">
+            <Button 
+              onClick={onRetry}
+              className="bg-vice-purple hover:bg-vice-dark-purple flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" /> Retry
+            </Button>
+          </div>
         )}
       </div>
     </div>
