@@ -23,14 +23,14 @@ const ProfileTag = ({
           ? 'bg-vice-purple/90 text-white border-vice-purple hover:bg-vice-purple'
           : 'bg-vice-purple/10 text-black dark:text-white border-vice-purple/20 hover:border-vice-purple/40 dark:bg-vice-purple/20 dark:border-vice-purple/30';
       case 'vice':
-        // Use the requested pink color (#ff52b1) with better text contrast
+        // Use the requested pink color (#ff52b1) with white text in dark mode
         return isActive 
           ? 'bg-[#ff52b1]/90 text-white border-[#ff52b1] hover:bg-[#ff52b1]'
-          : 'bg-[#ff52b1]/10 text-black dark:bg-[#ff52b1]/20 border-[#ff52b1]/20 hover:border-[#ff52b1]/40 dark:border-[#ff52b1]/30';
+          : 'bg-[#ff52b1]/10 text-black border-[#ff52b1]/20 hover:border-[#ff52b1]/40 dark:bg-[#ff52b1]/60 dark:text-white dark:border-[#ff52b1]/80';
       case 'kink':
         return isActive 
           ? 'bg-amber-500/90 text-white border-amber-500 hover:bg-amber-500'
-          : 'bg-amber-500/10 text-black dark:bg-amber-500/20 border-amber-500/20 hover:border-amber-500/40 dark:border-amber-500/30';
+          : 'bg-amber-500/10 text-black border-amber-500/20 hover:border-amber-500/40 dark:bg-amber-500/60 dark:text-white dark:border-amber-500/80';
       case 'hobby':
         return isActive 
           ? 'bg-teal-500/90 text-white border-teal-500 hover:bg-teal-500'
