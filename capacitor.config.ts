@@ -3,10 +3,10 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'app.lovable.qgdacrkeafssldlxmajm',
-  appName: 'Lovable Dating App',
+  appName: 'Vice Kink',
   webDir: 'dist',
   server: {
-    url: 'https://qgdacrkeafssldlxmajm.lovable.app?forceHideBadge=true',
+    url: 'https://app.vicekink.com?forceHideBadge=true',
     cleartext: true
   },
   android: {
