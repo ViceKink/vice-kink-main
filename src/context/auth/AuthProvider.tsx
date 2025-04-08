@@ -5,6 +5,7 @@ import { AuthContext } from './AuthContext';
 import { useAuthState } from './useAuthState';
 import {
   login,
+  loginWithGoogle,
   signup,
   logout,
   updateUserProfileData,
@@ -109,6 +110,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated: !!session,
     isLoading: loading,
     login,
+    loginWithGoogle,
     signup,
     logout,
     updateProfile,

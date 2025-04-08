@@ -10,10 +10,12 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 
 const Auth = () => {
   const {
     login,
+    loginWithGoogle,
     signup,
     isAuthenticated,
     isLoading
@@ -68,24 +70,38 @@ const Auth = () => {
             </TabsList>
             
             <TabsContent value="login">
-              <LoginForm onLogin={login} isLoading={isLoading} switchToSignup={() => setActiveTab('signup')} />
+              <LoginForm 
+                onLogin={login} 
+                onGoogleLogin={loginWithGoogle}
+                isLoading={isLoading} 
+                switchToSignup={() => setActiveTab('signup')} 
+              />
             </TabsContent>
             
             <TabsContent value="signup">
-              <SignupForm onSignup={signup} isLoading={isLoading} setIsNewSignup={setIsNewSignup} />
+              <SignupForm 
+                onSignup={signup}
+                onGoogleLogin={loginWithGoogle} 
+                isLoading={isLoading} 
+                setIsNewSignup={setIsNewSignup} 
+              />
             </TabsContent>
           </Tabs>
         </div>
       </div>
     </div>;
 };
+
 interface LoginFormProps {
   onLogin: (email: string, password: string) => Promise<void>;
+  onGoogleLogin: () => Promise<void>;
   isLoading: boolean;
   switchToSignup: () => void;
 }
+
 const LoginForm = ({
   onLogin,
+  onGoogleLogin,
   isLoading,
   switchToSignup
 }: LoginFormProps) => {
@@ -132,9 +148,24 @@ const LoginForm = ({
     }
   };
 
+  const handleGoogleLogin = async () => {
+    try {
+      setLocalLoading(true);
+      setAuthError(null);
+      await onGoogleLogin();
+    } catch (error: any) {
+      console.error("Google login error:", error);
+      setAuthError(error?.message || 'Failed to login with Google');
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+
   // Use both the global and local loading states
   const buttonLoading = isLoading || localLoading;
-  return <form onSubmit={handleSubmit} className="space-y-4">
+  
+  return (
+    <div className="space-y-4">
       {authError && (
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
@@ -142,43 +173,95 @@ const LoginForm = ({
         </Alert>
       )}
       
-      <div className="space-y-1">
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" placeholder="your.email@example.com" value={email} onChange={e => setEmail(e.target.value)} className={cn(errors.email && "border-destructive")} disabled={buttonLoading} />
-        {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
-      </div>
-      
-      <div className="space-y-1">
-        <Label htmlFor="password">Password</Label>
-        <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className={cn(errors.password && "border-destructive")} disabled={buttonLoading} />
-        {errors.password && <p className="text-destructive text-sm">{errors.password}</p>}
-      </div>
-      
-      <Button type="submit" className="w-full bg-vice-purple hover:bg-vice-dark-purple" disabled={buttonLoading}>
-        {buttonLoading ? 'Logging in...' : 'Login'}
+      <Button 
+        type="button" 
+        variant="outline" 
+        onClick={handleGoogleLogin} 
+        disabled={buttonLoading} 
+        className="w-full flex items-center justify-center gap-2"
+      >
+        <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(1, 0, 0, 1, 0, 0)">
+            <path d="M21.35,11.1H12v3.6h5.3c-0.2,1.4-1.6,4-5.3,4c-3.2,0-5.8-2.6-5.8-5.9C6.2,9.4,8.8,6.8,12,6.8c1.8,0,3.1,0.8,3.8,1.5 l2.9-2.7C17.3,4.2,14.8,3,12,3c-4.9,0-9,4-9,9s4,9,9,9c5.2,0,8.6-3.7,8.6-8.9C20.6,11.7,21.2,11.1,21.35,11.1z" fill="#4285f4"></path>
+            <path d="M3,3h18v18H3V3z" fill="none"></path>
+          </g>
+        </svg>
+        Sign in with Google
       </Button>
-
-      {authError && (
-        <div className="text-center mt-2">
-          <span className="text-sm text-muted-foreground">Don't have an account? </span>
-          <button 
-            type="button" 
-            onClick={switchToSignup} 
-            className="text-sm text-vice-purple hover:underline"
-          >
-            Sign up
-          </button>
+      
+      <div className="relative my-4">
+        <Separator className="absolute inset-0" />
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card px-2 text-muted-foreground">
+            or continue with email
+          </span>
         </div>
-      )}
-    </form>;
+      </div>
+      
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-1">
+          <Label htmlFor="email">Email</Label>
+          <Input 
+            id="email" 
+            type="email" 
+            placeholder="your.email@example.com" 
+            value={email} 
+            onChange={e => setEmail(e.target.value)} 
+            className={cn(errors.email && "border-destructive")} 
+            disabled={buttonLoading} 
+          />
+          {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
+        </div>
+        
+        <div className="space-y-1">
+          <Label htmlFor="password">Password</Label>
+          <Input 
+            id="password" 
+            type="password" 
+            placeholder="••••••••" 
+            value={password} 
+            onChange={e => setPassword(e.target.value)} 
+            className={cn(errors.password && "border-destructive")} 
+            disabled={buttonLoading} 
+          />
+          {errors.password && <p className="text-destructive text-sm">{errors.password}</p>}
+        </div>
+        
+        <Button 
+          type="submit" 
+          className="w-full bg-vice-purple hover:bg-vice-dark-purple" 
+          disabled={buttonLoading}
+        >
+          {buttonLoading ? 'Logging in...' : 'Login'}
+        </Button>
+
+        {authError && (
+          <div className="text-center mt-2">
+            <span className="text-sm text-muted-foreground">Don't have an account? </span>
+            <button 
+              type="button" 
+              onClick={switchToSignup} 
+              className="text-sm text-vice-purple hover:underline"
+            >
+              Sign up
+            </button>
+          </div>
+        )}
+      </form>
+    </div>
+  );
 };
+
 interface SignupFormProps {
   onSignup: (email: string, password: string, name: string, username: string) => Promise<void>;
+  onGoogleLogin: () => Promise<void>;
   isLoading: boolean;
   setIsNewSignup: (value: boolean) => void;
 }
+
 const SignupForm = ({
   onSignup,
+  onGoogleLogin,
   isLoading,
   setIsNewSignup
 }: SignupFormProps) => {
@@ -232,9 +315,26 @@ const SignupForm = ({
     }
   };
 
+  const handleGoogleSignup = async () => {
+    try {
+      setLocalLoading(true);
+      setAuthError(null);
+      setIsNewSignup(true);
+      await onGoogleLogin();
+    } catch (error: any) {
+      console.error("Google signup error:", error);
+      setAuthError(error?.message || 'Failed to sign up with Google');
+      setIsNewSignup(false);
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+
   // Use both the global and local loading states
   const buttonLoading = isLoading || localLoading;
-  return <form onSubmit={handleSubmit} className="space-y-4">
+  
+  return (
+    <div className="space-y-4">
       {authError && (
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
@@ -242,40 +342,69 @@ const SignupForm = ({
         </Alert>
       )}
       
-      <div className="space-y-1">
-        <Label htmlFor="name">Full Name</Label>
-        <Input id="name" type="text" placeholder="John Doe" value={name} onChange={e => setName(e.target.value)} className={cn(errors.name && "border-destructive")} disabled={buttonLoading} />
-        {errors.name && <p className="text-destructive text-sm">{errors.name}</p>}
-      </div>
-      
-      <div className="space-y-1">
-        <Label htmlFor="username">Username</Label>
-        <Input id="username" type="text" placeholder="johndoe" value={username} onChange={e => setUsername(e.target.value)} className={cn(errors.username && "border-destructive")} disabled={buttonLoading} />
-        {errors.username && <p className="text-destructive text-sm">{errors.username}</p>}
-        <p className="text-xs text-muted-foreground">Username cannot be changed later</p>
-      </div>
-      
-      <div className="space-y-1">
-        <Label htmlFor="signup-email">Email</Label>
-        <Input id="signup-email" type="email" placeholder="your.email@example.com" value={email} onChange={e => setEmail(e.target.value)} className={cn(errors.email && "border-destructive")} />
-        {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
-      </div>
-      
-      <div className="space-y-1">
-        <Label htmlFor="signup-password">Password</Label>
-        <Input id="signup-password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className={cn(errors.password && "border-destructive")} />
-        {errors.password && <p className="text-destructive text-sm">{errors.password}</p>}
-      </div>
-      
-      <div className="space-y-1">
-        <Label htmlFor="confirm-password">Confirm Password</Label>
-        <Input id="confirm-password" type="password" placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={cn(errors.confirmPassword && "border-destructive")} />
-        {errors.confirmPassword && <p className="text-destructive text-sm">{errors.confirmPassword}</p>}
-      </div>
-      
-      <Button type="submit" className="w-full bg-vice-purple hover:bg-vice-dark-purple" disabled={buttonLoading}>
-        {buttonLoading ? 'Creating Account...' : 'Create Account'}
+      <Button 
+        type="button" 
+        variant="outline" 
+        onClick={handleGoogleSignup} 
+        disabled={buttonLoading} 
+        className="w-full flex items-center justify-center gap-2"
+      >
+        <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+          <g transform="matrix(1, 0, 0, 1, 0, 0)">
+            <path d="M21.35,11.1H12v3.6h5.3c-0.2,1.4-1.6,4-5.3,4c-3.2,0-5.8-2.6-5.8-5.9C6.2,9.4,8.8,6.8,12,6.8c1.8,0,3.1,0.8,3.8,1.5 l2.9-2.7C17.3,4.2,14.8,3,12,3c-4.9,0-9,4-9,9s4,9,9,9c5.2,0,8.6-3.7,8.6-8.9C20.6,11.7,21.2,11.1,21.35,11.1z" fill="#4285f4"></path>
+            <path d="M3,3h18v18H3V3z" fill="none"></path>
+          </g>
+        </svg>
+        Sign up with Google
       </Button>
-    </form>;
+      
+      <div className="relative my-4">
+        <Separator className="absolute inset-0" />
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card px-2 text-muted-foreground">
+            or continue with email
+          </span>
+        </div>
+      </div>
+      
+      <form onSubmit={handleSubmit} className="space-y-4">      
+        <div className="space-y-1">
+          <Label htmlFor="name">Full Name</Label>
+          <Input id="name" type="text" placeholder="John Doe" value={name} onChange={e => setName(e.target.value)} className={cn(errors.name && "border-destructive")} disabled={buttonLoading} />
+          {errors.name && <p className="text-destructive text-sm">{errors.name}</p>}
+        </div>
+        
+        <div className="space-y-1">
+          <Label htmlFor="username">Username</Label>
+          <Input id="username" type="text" placeholder="johndoe" value={username} onChange={e => setUsername(e.target.value)} className={cn(errors.username && "border-destructive")} disabled={buttonLoading} />
+          {errors.username && <p className="text-destructive text-sm">{errors.username}</p>}
+          <p className="text-xs text-muted-foreground">Username cannot be changed later</p>
+        </div>
+        
+        <div className="space-y-1">
+          <Label htmlFor="signup-email">Email</Label>
+          <Input id="signup-email" type="email" placeholder="your.email@example.com" value={email} onChange={e => setEmail(e.target.value)} className={cn(errors.email && "border-destructive")} />
+          {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
+        </div>
+        
+        <div className="space-y-1">
+          <Label htmlFor="signup-password">Password</Label>
+          <Input id="signup-password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className={cn(errors.password && "border-destructive")} />
+          {errors.password && <p className="text-destructive text-sm">{errors.password}</p>}
+        </div>
+        
+        <div className="space-y-1">
+          <Label htmlFor="confirm-password">Confirm Password</Label>
+          <Input id="confirm-password" type="password" placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={cn(errors.confirmPassword && "border-destructive")} />
+          {errors.confirmPassword && <p className="text-destructive text-sm">{errors.confirmPassword}</p>}
+        </div>
+        
+        <Button type="submit" className="w-full bg-vice-purple hover:bg-vice-dark-purple" disabled={buttonLoading}>
+          {buttonLoading ? 'Creating Account...' : 'Create Account'}
+        </Button>
+      </form>
+    </div>
+  );
 };
+
 export default Auth;
