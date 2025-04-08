@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -45,6 +45,69 @@ interface Comment {
   };
 }
 
+interface CommentItemProps {
+  comment: Comment;
+  onDelete: (commentId: string) => Promise<void>;
+}
+
+const CommentItem = ({ comment, onDelete }: CommentItemProps) => {
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const { data } = await supabase.auth.getSession();
+      setCurrentUserId(data.session?.user?.id || null);
+    };
+    
+    fetchCurrentUser();
+  }, []);
+  
+  const isCommentOwner = currentUserId === comment.user_id;
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric'
+    }).format(date);
+  };
+  
+  return (
+    <div className="flex gap-2 p-2 rounded-lg bg-muted/20">
+      <Avatar className="h-8 w-8">
+        <AvatarImage src={comment.user.avatar} />
+        <AvatarFallback>{comment.user.name[0]}</AvatarFallback>
+      </Avatar>
+      <div className="flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium">{comment.user.name}</p>
+            <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
+          </div>
+          {isCommentOwner && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-6 w-6">
+                  <MoreVertical className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem 
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => onDelete(comment.id)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+        <p className="text-sm">{comment.content}</p>
+      </div>
+    </div>
+  );
+};
+
 export const PostCard = ({ post, onDelete }: PostCardProps) => {
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes_count);
@@ -54,6 +117,7 @@ export const PostCard = ({ post, onDelete }: PostCardProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsCount, setCommentsCount] = useState(post.comments_count);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [isCurrentUserPost, setIsCurrentUserPost] = useState(false);
   const queryClient = useQueryClient();
   
   const formatDate = (dateString: string) => {
@@ -130,15 +194,9 @@ export const PostCard = ({ post, onDelete }: PostCardProps) => {
     try {
       setIsLoadingComments(true);
       
-      const { data, error } = await supabase
+      const { data: commentsData, error } = await supabase
         .from('comments')
-        .select(`
-          id,
-          content,
-          user_id,
-          created_at,
-          profiles (name, avatar)
-        `)
+        .select('id, content, user_id, created_at')
         .eq('post_id', post.id)
         .order('created_at', { ascending: false });
       
@@ -148,14 +206,37 @@ export const PostCard = ({ post, onDelete }: PostCardProps) => {
         return;
       }
       
-      const formattedComments: Comment[] = data.map(comment => ({
+      if (commentsData.length === 0) {
+        setComments([]);
+        setIsLoadingComments(false);
+        return;
+      }
+      
+      const userIds = [...new Set(commentsData.map(comment => comment.user_id))];
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, avatar')
+        .in('id', userIds);
+      
+      if (profilesError) {
+        console.error("Error fetching profiles for comments:", profilesError);
+        setIsLoadingComments(false);
+        return;
+      }
+      
+      const profilesMap = profilesData.reduce((acc, profile) => {
+        acc[profile.id] = profile;
+        return acc;
+      }, {});
+      
+      const formattedComments: Comment[] = commentsData.map(comment => ({
         id: comment.id,
         content: comment.content,
         created_at: comment.created_at,
         user_id: comment.user_id,
         user: {
-          name: comment.profiles?.name || 'Anonymous',
-          avatar: comment.profiles?.avatar
+          name: profilesMap[comment.user_id]?.name || 'Anonymous',
+          avatar: profilesMap[comment.user_id]?.avatar
         }
       }));
       
@@ -202,20 +283,18 @@ export const PostCard = ({ post, onDelete }: PostCardProps) => {
       if (error) throw error;
       
       if (newComment && newComment.length > 0) {
-        setComments(prevComments => [
-          ...prevComments,
-          {
-            id: newComment[0].id,
-            content: newComment[0].content,
-            created_at: newComment[0].created_at,
-            user_id: newComment[0].user_id,
-            user: {
-              name: userData?.name || 'Anonymous',
-              avatar: userData?.avatar
-            }
+        const newCommentWithUser = {
+          id: newComment[0].id,
+          content: newComment[0].content,
+          created_at: newComment[0].created_at,
+          user_id: newComment[0].user_id,
+          user: {
+            name: userData?.name || 'Anonymous',
+            avatar: userData?.avatar
           }
-        ]);
+        };
         
+        setComments(prevComments => [newCommentWithUser, ...prevComments]);
         setCommentsCount(prevCount => prevCount + 1);
       }
       
@@ -496,8 +575,6 @@ export const PostCard = ({ post, onDelete }: PostCardProps) => {
     );
   };
   
-  const [isCurrentUserPost, setIsCurrentUserPost] = useState(false);
-  
   useEffect(() => {
     const checkCurrentUser = async () => {
       const sessionData = await supabase.auth.getSession();
@@ -588,56 +665,13 @@ export const PostCard = ({ post, onDelete }: PostCardProps) => {
           <div className="mt-4">
             {comments.length > 0 && (
               <div className="mb-4 space-y-3 max-h-[300px] overflow-y-auto">
-                {comments.map(comment => {
-                  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-                  
-                  useEffect(() => {
-                    const fetchCurrentUser = async () => {
-                      const { data } = await supabase.auth.getSession();
-                      setCurrentUserId(data.session?.user?.id || null);
-                    };
-                    
-                    fetchCurrentUser();
-                  }, []);
-                  
-                  const isCommentOwner = currentUserId === comment.user_id;
-                  
-                  return (
-                    <div key={comment.id} className="flex gap-2 p-2 rounded-lg bg-muted/20">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={comment.user.avatar} />
-                        <AvatarFallback>{comment.user.name[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium">{comment.user.name}</p>
-                            <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
-                          </div>
-                          {isCommentOwner && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-6 w-6">
-                                  <MoreVertical className="h-3 w-3" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem 
-                                  className="text-destructive focus:text-destructive"
-                                  onClick={() => handleDeleteComment(comment.id)}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </div>
-                        <p className="text-sm">{comment.content}</p>
-                      </div>
-                    </div>
-                  );
-                })}
+                {comments.map(comment => (
+                  <CommentItem 
+                    key={comment.id} 
+                    comment={comment} 
+                    onDelete={handleDeleteComment} 
+                  />
+                ))}
               </div>
             )}
             
