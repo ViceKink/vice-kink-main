@@ -771,6 +771,10 @@ export type Database = {
         Args: { user_id_a: string; user_id_b: string }
         Returns: undefined
       }
+      delete_user_auth: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       get_conversation: {
         Args: { user1: string; user2: string }
         Returns: {

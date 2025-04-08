@@ -49,24 +49,20 @@ const DeleteProfile = () => {
         return;
       }
 
+      // Call our new database function to delete the auth user
+      const { data, error } = await supabase.rpc('delete_user_auth', {
+        user_id: userId
+      });
+      
+      if (error) {
+        console.error("Error calling delete_user_auth function:", error);
+        // Even if this fails, we've deleted most user data, so we'll still sign out
+      } else {
+        console.log("Auth user deletion result:", data);
+      }
+
       // Sign out the user after deleting all their data
       await supabase.auth.signOut();
-
-      // Now, we need to use the REST API to delete the actual auth user
-      // This requires admin access, so we'll make a request to Supabase's admin API
-      const response = await fetch(`https://qgdacrkeafssldlxmajm.supabase.co/rest/v1/rpc/delete_user_auth`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ user_id: userId })
-      });
-
-      if (!response.ok) {
-        console.error("Error deleting auth user:", await response.text());
-        // Even if this fails, we've deleted most user data and signed them out, so we can continue
-      }
       
       toast.success("Your account has been successfully deleted");
       setIsDialogOpen(false);
