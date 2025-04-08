@@ -25,8 +25,11 @@ export interface DiscoverProfile {
   age?: number;
   photos?: string[];
   location?: string;
+  distance?: string;
   occupation?: string;
   verified?: boolean;
+  location_lat?: number;
+  location_lng?: number;
   // Add other common profile fields
 }
 

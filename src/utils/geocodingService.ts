@@ -48,20 +48,18 @@ export async function calculateDistance(
   lng2: number
 ): Promise<number> {
   try {
-    // Using the Supabase function we created
-    const { data, error } = await supabase.rpc('calculate_distance', {
-      lat1,
-      lng1,
-      lat2,
-      lng2
-    });
+    // Manual calculation using Haversine formula since the RPC function isn't registered
+    const R = 6371; // Radius of Earth in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lng2 - lng1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    const distance = R * c;
     
-    if (error) {
-      console.error('Error calculating distance:', error);
-      throw error;
-    }
-    
-    return data || 0;
+    return distance;
   } catch (error) {
     console.error('Error calculating distance:', error);
     return 0;

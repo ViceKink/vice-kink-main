@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/models/profileTypes';
+import { calculateDistance } from '../geocodingService';
 
 /**
  * Fetch profiles for discover page with proper filtering
@@ -12,7 +13,7 @@ export const fetchDiscoverProfiles = async (userId: string, filters: any = {}): 
     // First, get the user's location coordinates
     const { data: userData, error: userError } = await supabase
       .from('profiles')
-      .select('location_lat, location_lng')
+      .select('location, location_lat, location_lng')
       .eq('id', userId)
       .single();
     
@@ -83,17 +84,18 @@ export const fetchDiscoverProfiles = async (userId: string, filters: any = {}): 
           // Calculate distance if both user and profile have coordinates
           if (userLat && userLng && profile.location_lat && profile.location_lng) {
             try {
-              const { data: distanceData } = await supabase.rpc('calculate_distance', {
-                lat1: userLat,
-                lng1: userLng,
-                lat2: profile.location_lat,
-                lng2: profile.location_lng
-              });
+              // Use our custom distance calculation function
+              const distanceKm = await calculateDistance(
+                userLat, 
+                userLng, 
+                profile.location_lat, 
+                profile.location_lng
+              );
               
-              if (distanceData) {
+              if (distanceKm) {
                 // Round to nearest whole number
-                const distanceKm = Math.round(distanceData);
-                distance = `${distanceKm} km`;
+                const roundedDistance = Math.round(distanceKm);
+                distance = `${roundedDistance} km`;
               }
             } catch (distError) {
               console.error('Error calculating distance:', distError);

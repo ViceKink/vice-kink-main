@@ -8,6 +8,8 @@ export interface UserProfile {
   birthDate?: string;
   gender?: string;
   location?: string;
+  location_lat?: number;
+  location_lng?: number;
   hometown?: string;
   bio?: string;
   avatar?: string;
