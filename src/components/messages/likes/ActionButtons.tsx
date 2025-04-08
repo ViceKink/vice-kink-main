@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { likeProfile } from '@/utils/matchUtils';
 import { useAuth } from '@/context/auth';
 import { useQueryClient } from '@tanstack/react-query';
-import { IconButton } from '@/components/ui/icon-button';
 import { useNavigate } from 'react-router-dom';
 
 export interface ActionButtonsProps {
@@ -58,26 +57,32 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   
   return (
     <div className="p-4 flex gap-2 justify-center">
-      <IconButton
-        icon={<Heart className="h-5 w-5" />}
+      <Button
         onClick={handleLikeBack}
         className="bg-slate-900 hover:bg-slate-800 text-white"
         aria-label="Like"
-      />
+      >
+        <Heart className="h-5 w-5 mr-1" />
+        Like
+      </Button>
       
-      <IconButton
-        icon={<User className="h-5 w-5" />}
+      <Button
         onClick={handleViewProfile}
         className="bg-slate-900 hover:bg-slate-800 text-white"
         aria-label="View Profile"
-      />
+      >
+        <User className="h-5 w-5 mr-1" />
+        View Profile
+      </Button>
       
-      <IconButton
-        icon={<X className="h-5 w-5" />}
+      <Button
         onClick={handleReject}
         className="bg-slate-900 hover:bg-slate-800 text-white"
         aria-label="Reject"
-      />
+      >
+        <X className="h-5 w-5 mr-1" />
+        Pass
+      </Button>
     </div>
   );
 };
