@@ -13,7 +13,7 @@ const ProfileTabs = ({ activeTab, onTabChange }: ProfileTabsProps) => {
         <button 
           className={`px-4 py-3 rounded-lg flex justify-center items-center transition-all ${
             activeTab === 'persona' 
-              ? 'bg-white dark:bg-black text-foreground shadow-sm font-semibold' 
+              ? 'bg-white dark:bg-black text-black dark:text-white shadow-sm font-semibold' 
               : 'bg-transparent text-foreground/60 hover:text-foreground/80'
           }`}
           onClick={() => onTabChange('persona')}

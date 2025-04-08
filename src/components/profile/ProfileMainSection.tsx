@@ -39,15 +39,15 @@ const ProfileMainSection = ({ profile, hasPhotos, hasQuote }: ProfileMainSection
 
       {hasQuote && (
         <div className={`user-details-container ${!hasPhotos ? 'w-full' : ''}`}>
-          <div className="user-info">
+          <div className="user-info dark:bg-card">
             <div className="flex items-baseline">
-              <h2 className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'} dark:text-foreground text-black`}>{profile.name}</h2>
+              <h2 className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'} text-black dark:text-white`}>{profile.name}</h2>
               {profile.verified && (
                 <span className="ml-1 text-blue-500">✓</span>
               )}
             </div>
             
-            <div className={`${isMobile ? 'text-lg' : 'text-xl'} dark:text-foreground text-black`}>{profile.age}</div>
+            <div className={`${isMobile ? 'text-lg' : 'text-xl'} text-black dark:text-white`}>{profile.age}</div>
             
             {profile.location && (
               <div className="text-sm text-foreground/70 mt-2 flex items-center">

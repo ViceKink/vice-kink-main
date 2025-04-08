@@ -16,8 +16,8 @@ const ProfileVicesKinks = ({ vices, kinks, hasSecondPhoto }: ProfileVicesKinksPr
     <div className={`tags-container ${!hasSecondPhoto ? 'w-full' : ''}`}>
       {hasVices && (
         <div className="vices-card bento-card p-4 mb-2">
-          <h3 className="text-base font-semibold mb-2 text-black dark:text-foreground">Vices</h3>
-          <div className="flex flex-wrap gap-2 pb-1">
+          <h3 className="text-base font-semibold mb-2 text-black dark:text-white">Vices</h3>
+          <div className="flex flex-wrap gap-2 pb-4">
             {vices?.slice(0, 5).map((vice, index) => (
               <ProfileTag key={index} label={vice} type="vice" />
             ))}
@@ -27,8 +27,8 @@ const ProfileVicesKinks = ({ vices, kinks, hasSecondPhoto }: ProfileVicesKinksPr
 
       {hasKinks && (
         <div className="kinks-card bento-card p-4 mb-2">
-          <h3 className="text-base font-semibold mb-2 text-black dark:text-foreground">Kinks</h3>
-          <div className="flex flex-wrap gap-2 pb-1">
+          <h3 className="text-base font-semibold mb-2 text-black dark:text-white">Kinks</h3>
+          <div className="flex flex-wrap gap-2 pb-4">
             {kinks?.slice(0, 5).map((kink, index) => (
               <ProfileTag key={index} label={kink} type="kink" />
             ))}
