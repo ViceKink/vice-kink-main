@@ -13,7 +13,9 @@ export interface Profile {
   rating?: number;
   interactionType?: 'like' | 'superlike';
   avatar?: string;
-  is_revealed?: boolean; // Add this property to fix the TypeScript error
+  is_revealed?: boolean;
+  location_lat?: number;
+  location_lng?: number;
 }
 
 export interface ProfileWithInteraction extends Profile {

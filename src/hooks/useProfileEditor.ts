@@ -23,7 +23,19 @@ export const useProfileEditor = (onComplete: () => void) => {
     setError(null);
     
     try {
-      await updateProfile(profileData);
+      // Extract special geographic fields if they exist
+      const { location_lat, location_lng, ...standardProfileData } = profileData;
+      
+      // Update profile including location coordinates if they exist
+      if (location_lat !== undefined && location_lng !== undefined) {
+        await updateProfile({
+          ...standardProfileData,
+          location_lat,
+          location_lng
+        });
+      } else {
+        await updateProfile(standardProfileData);
+      }
       
       if (profileData.vices) {
         await updateUserVices(profileData.vices);

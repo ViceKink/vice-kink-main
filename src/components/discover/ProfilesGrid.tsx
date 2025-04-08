@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Heart, X, Star } from "lucide-react";
+import { Heart, X, Star, MapPin } from "lucide-react";
 import { useAuth } from '@/context/auth';
 import { toast } from "sonner";
 import { useNavigate } from 'react-router-dom';
@@ -94,9 +94,17 @@ const ProfilesGrid: React.FC<ProfilesGridProps> = ({ profiles: initialProfiles }
                 <h3 className="text-xl font-bold">
                   {profile.name}{profile.age ? `, ${profile.age}` : ''}
                 </h3>
-                {profile.location && (
-                  <div className="text-sm opacity-80">{profile.location}</div>
+                {profile.distance && (
+                  <div className="text-sm opacity-80 flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    {profile.distance}
+                  </div>
                 )}
+              </div>
+              
+              <div className="flex items-center gap-1 text-sm opacity-80 mt-1">
+                <MapPin className="h-3 w-3" />
+                <span>{profile.location}</span>
               </div>
               
               {profile.bio && (

@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/models/profileTypes';
 
@@ -8,6 +9,20 @@ export const fetchDiscoverProfiles = async (userId: string, filters: any = {}): 
   console.log('Fetching discover profiles with filters:', filters);
   
   try {
+    // First, get the user's location coordinates
+    const { data: userData, error: userError } = await supabase
+      .from('profiles')
+      .select('location_lat, location_lng')
+      .eq('id', userId)
+      .single();
+    
+    if (userError) {
+      console.error('Error fetching user location:', userError);
+    }
+    
+    const userLat = userData?.location_lat;
+    const userLng = userData?.location_lng;
+    
     // Build the query with basic filters
     let query = supabase
       .from('profiles')
@@ -25,6 +40,12 @@ export const fetchDiscoverProfiles = async (userId: string, filters: any = {}): 
     }
     if (filters.ageMax) {
       query = query.lte('age', filters.ageMax);
+    }
+    
+    // Add distance filter if user has location and maxDistance is specified
+    if (userLat && userLng && filters.maxDistance) {
+      // This would ideally use the calculate_distance function or PostGIS
+      // For now, we'll fetch all and filter client-side
     }
     
     // Order by boosted profiles first, then by created_at
@@ -52,21 +73,50 @@ export const fetchDiscoverProfiles = async (userId: string, filters: any = {}): 
     
     const interactedIds = interactions ? interactions.map(i => i.target_profile_id) : [];
     
-    // Transform data to match Profile interface
-    const profiles = data
-      .filter(profile => !interactedIds.includes(profile.id))
-      .map(profile => ({
-        id: profile.id,
-        name: profile.name,
-        age: profile.age,
-        location: profile.location || 'Unknown',
-        photos: [profile.avatar].filter(Boolean),
-        occupation: profile.occupation,
-        religion: profile.religion,
-        height: profile.height,
-        verified: profile.verified || false,
-        avatar: profile.avatar
-      }));
+    // Transform data to match Profile interface and calculate distances
+    const profiles = await Promise.all(
+      data
+        .filter(profile => !interactedIds.includes(profile.id))
+        .map(async profile => {
+          let distance = undefined;
+          
+          // Calculate distance if both user and profile have coordinates
+          if (userLat && userLng && profile.location_lat && profile.location_lng) {
+            try {
+              const { data: distanceData } = await supabase.rpc('calculate_distance', {
+                lat1: userLat,
+                lng1: userLng,
+                lat2: profile.location_lat,
+                lng2: profile.location_lng
+              });
+              
+              if (distanceData) {
+                // Round to nearest whole number
+                const distanceKm = Math.round(distanceData);
+                distance = `${distanceKm} km`;
+              }
+            } catch (distError) {
+              console.error('Error calculating distance:', distError);
+            }
+          }
+          
+          return {
+            id: profile.id,
+            name: profile.name,
+            age: profile.age,
+            location: profile.location || 'Unknown',
+            distance,
+            photos: [profile.avatar].filter(Boolean),
+            occupation: profile.occupation,
+            religion: profile.religion,
+            height: profile.height,
+            verified: profile.verified || false,
+            avatar: profile.avatar,
+            location_lat: profile.location_lat,
+            location_lng: profile.location_lng
+          };
+        })
+    );
       
     return profiles;
   } catch (error) {

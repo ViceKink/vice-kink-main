@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { UserProfile } from '@/types/auth';
 import { DateOfBirthField } from './components/DateOfBirthField';
 import { GenderField } from './components/GenderField';
-import { LocationField } from './components/LocationField';
+import { LocationSearchField } from './components/LocationSearchField';
 import { NameField } from './components/NameField';
 
 // Define the interface for component props
@@ -49,6 +49,17 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
     updateField('about', currentAbout);
   };
 
+  const handleLocationChange = (value: string, lat?: number, lng?: number) => {
+    // Update location
+    updateField('location', value);
+    
+    // Update coordinates if provided
+    if (lat !== undefined && lng !== undefined) {
+      updateField('location_lat', lat);
+      updateField('location_lng', lng);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-semibold">Basic Information</h2>
@@ -71,15 +82,15 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
           onChange={handleGenderChange}
         />
         
-        <LocationField
+        <LocationSearchField
           id="location"
           label="Current Location"
           value={userData.location || ''}
-          onChange={(value) => updateField('location', value)}
+          onChange={handleLocationChange}
           placeholder="City, Country"
         />
         
-        <LocationField
+        <LocationSearchField
           id="hometown"
           label="Hometown"
           value={userData.hometown || ''}
