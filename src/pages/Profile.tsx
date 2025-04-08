@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { createInteraction } from '@/utils/matchUtils';
 
 // Custom hooks
-import { useProfileData } from '@/hooks/useProfileData';
+import { useProfileData } from '@/hooks/profile';
 import { useProfilePosts } from '@/hooks/useProfilePosts';
 
 // Components

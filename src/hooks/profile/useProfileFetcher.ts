@@ -1,17 +1,14 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useAuth } from '@/context/auth';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { UserProfile } from '@/types/auth';
+import { toast } from 'sonner';
 
-export const useProfileData = (profileId?: string) => {
+export const useProfileFetcher = (profileId?: string) => {
   const { user, fetchProfile, isAuthenticated, isLoading: authLoading } = useAuth();
   const [profileUser, setProfileUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const [fetchAttempts, setFetchAttempts] = useState(0);
   
   const isCurrentUser = !profileId || profileId === user?.id;
@@ -58,69 +55,15 @@ export const useProfileData = (profileId?: string) => {
       setFetchAttempts(prev => prev + 1);
     }
   }, [profileId, user, fetchProfile, isAuthenticated, authLoading, isCurrentUser, fetchAttempts]);
-  
-  // Loading effects
-  useEffect(() => {
-    return () => {
-      setIsLoading(false);
-      setLoadingTimeout(false);
-    };
-  }, []);
-  
-  useEffect(() => {
-    if (isLoading) {
-      const interval = setInterval(() => {
-        setLoadingProgress((prev) => {
-          const newValue = prev + Math.random() * 10;
-          return newValue >= 90 ? 90 : newValue;
-        });
-      }, 400);
-      
-      const timeout = setTimeout(() => {
-        setLoadingTimeout(true);
-      }, 10000);
-      
-      return () => {
-        clearInterval(interval);
-        clearTimeout(timeout);
-      };
-    } else {
-      setLoadingProgress(100);
-    }
-  }, [isLoading]);
-  
-  useEffect(() => {
-    if (!authLoading) {
-      if (isCurrentUser && !isAuthenticated) {
-        console.log("User not authenticated, skipping profile fetch");
-        setIsLoading(false);
-        return;
-      }
-      
-      if (!isLoading && !profileUser && fetchAttempts === 0) {
-        console.log("Initial profile fetch");
-        getProfileData();
-      }
-    }
-  }, [authLoading, getProfileData, isAuthenticated, isCurrentUser, isLoading, profileUser, fetchAttempts]);
-  
-  const handleRetry = () => {
-    setLoadingTimeout(false);
-    setIsLoading(true);
-    setLoadingProgress(0);
-    getProfileData();
-  };
-  
+
   return {
     profileUser,
     isLoading,
     error,
-    loadingTimeout,
-    loadingProgress,
+    getProfileData,
     isCurrentUser,
     currentProfileId,
-    authLoading,
-    isAuthenticated,
-    handleRetry,
+    setIsLoading,
+    fetchAttempts
   };
 };
