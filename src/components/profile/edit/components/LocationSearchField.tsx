@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Check, MapPin } from 'lucide-react';
+import { Check, MapPin, Loader2 } from 'lucide-react';
 import { searchLocations, GeocodedCity } from '@/utils/geocodingService';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -53,17 +53,20 @@ export const LocationSearchField: React.FC<LocationSearchFieldProps> = ({
     // Set new timeout
     searchTimeout.current = setTimeout(async () => {
       try {
+        console.log('Searching for locations with query:', searchQuery);
         const results = await searchLocations(searchQuery);
+        console.log('Location results received:', results);
         setSuggestions(results);
       } catch (error) {
         console.error('Error searching locations:', error);
       } finally {
         setIsLoading(false);
       }
-    }, 300);
+    }, 500); // Increased to 500ms for better UX
   };
 
   const handleSelectLocation = (city: GeocodedCity) => {
+    console.log('Selected location:', city);
     // Use formatted address for display
     setInputValue(city.formatted_address);
     onChange(city.formatted_address, city.lat, city.lon);
@@ -87,7 +90,7 @@ export const LocationSearchField: React.FC<LocationSearchFieldProps> = ({
             </div>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 bg-background" align="start">
           <Command>
             <CommandInput 
               placeholder="Search for a city..." 
@@ -98,6 +101,7 @@ export const LocationSearchField: React.FC<LocationSearchFieldProps> = ({
             <CommandList>
               {isLoading ? (
                 <div className="flex items-center justify-center p-4 text-sm">
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Loading locations...
                 </div>
               ) : (
@@ -106,7 +110,7 @@ export const LocationSearchField: React.FC<LocationSearchFieldProps> = ({
                   <CommandGroup>
                     {suggestions.map((city) => (
                       <CommandItem 
-                        key={`${city.lat}-${city.lon}`}
+                        key={`${city.name}-${city.lat}-${city.lon}`}
                         onSelect={() => handleSelectLocation(city)}
                         className="cursor-pointer py-2"
                       >

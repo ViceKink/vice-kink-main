@@ -16,23 +16,37 @@ export async function searchLocations(query: string): Promise<GeocodedCity[]> {
   if (!query || query.length < 2) return [];
   
   try {
+    console.log('Searching for location:', query);
+    
+    // Add proper headers and parameters
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5&featureType=city`
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5`,
+      {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Dating App Location Search (your-email@example.com)'
+        }
+      }
     );
     
     if (!response.ok) {
-      throw new Error('Failed to fetch location data');
+      throw new Error(`Failed to fetch location data: ${response.status} ${response.statusText}`);
     }
     
     const data = await response.json();
+    console.log('Location search results:', data);
+    
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return [];
+    }
     
     return data.map((item: any) => ({
       name: item.name || '',
-      display_name: item.display_name,
-      lat: parseFloat(item.lat),
-      lon: parseFloat(item.lon),
+      display_name: item.display_name || '',
+      lat: parseFloat(item.lat) || 0,
+      lon: parseFloat(item.lon) || 0,
       country: item.address?.country || '',
-      formatted_address: `${item.address?.city || item.address?.town || item.address?.village || item.name}, ${item.address?.country || ''}`,
+      formatted_address: `${item.address?.city || item.address?.town || item.address?.village || item.name || ''}, ${item.address?.country || ''}`,
     }));
   } catch (error) {
     console.error('Error searching locations:', error);
