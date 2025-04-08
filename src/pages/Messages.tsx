@@ -1,6 +1,4 @@
-
-import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from 'react';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/context/auth';
 import { useQuery } from '@tanstack/react-query';
@@ -15,12 +13,20 @@ const Messages = () => {
   const [activeMatch, setActiveMatch] = useState<MatchWithProfile | null>(null);
   const [activeTab, setActiveTab] = useState('matches');
 
+  const getRevealedProfilesFromStorage = () => {
+    try {
+      return JSON.parse(localStorage.getItem('revealedProfiles') || '{}');
+    } catch (e) {
+      console.error('Error parsing revealed profiles from localStorage:', e);
+      return {};
+    }
+  };
+
   const { data: matches = [], isLoading: isLoadingMatches, refetch: refetchMatches } = useQuery({
     queryKey: ['matches'],
     queryFn: async () => {
       if (!user?.id) return [];
       const matchData = await interactionService.getMatches(user.id);
-      // Transform data to ensure it matches MatchWithProfile type
       return matchData.map((match: any) => ({
         match_id: match.match_id,
         matched_at: match.matched_at,
@@ -35,7 +41,7 @@ const Messages = () => {
       })) as MatchWithProfile[];
     },
     enabled: !!user?.id,
-    refetchInterval: 10000, // Refetch every 10 seconds to ensure latest messages
+    refetchInterval: 10000,
   });
 
   const { data: likes = [], isLoading: isLoadingLikes } = useQuery({
@@ -45,17 +51,22 @@ const Messages = () => {
       console.log("Fetching likes data in Messages component");
       const likesData = await interactionService.getLikesForUser(user.id);
       console.log("Fetched likes data in Messages:", likesData);
-      return likesData;
+      
+      const revealedProfiles = getRevealedProfilesFromStorage();
+      
+      return likesData.map((like: any) => ({
+        ...like,
+        is_revealed: like.is_revealed || revealedProfiles[like.id] === true
+      }));
     },
     enabled: !!user?.id,
     refetchOnWindowFocus: true,
-    refetchOnMount: true, // Ensure fresh data when returning to the component
-    staleTime: 0, // Consider data always stale to force refresh
+    refetchOnMount: true,
+    staleTime: 0,
   });
 
   const handleBackFromChat = () => {
     setActiveMatch(null);
-    // Refresh the matches when going back to matches list
     refetchMatches();
   };
 
@@ -68,9 +79,7 @@ const Messages = () => {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    // Force refetch when switching to likes tab
     if (value === 'likes') {
-      // This will trigger a refetch of the likes data
     } else if (value === 'matches') {
       refetchMatches();
     }

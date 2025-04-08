@@ -13,7 +13,22 @@ async function getLikesForUser(userId: string) {
     }
 
     console.log('Raw data from get_profiles_who_liked_me:', data);
-    return data || [];
+    
+    // Try to get revealed status from localStorage for additional persistence
+    let revealedProfiles = {};
+    try {
+      revealedProfiles = JSON.parse(localStorage.getItem('revealedProfiles') || '{}');
+    } catch (e) {
+      console.error('Error parsing revealed profiles from localStorage:', e);
+    }
+    
+    // Apply revealed status from localStorage
+    const enhancedData = data.map((profile: any) => ({
+      ...profile,
+      is_revealed: profile.is_revealed || revealedProfiles[profile.id] === true
+    }));
+    
+    return enhancedData || [];
   } catch (error) {
     console.error('Error in getLikesForUser:', error);
     throw error;
@@ -222,6 +237,15 @@ async function revealProfile(profileId: string) {
     }
     
     console.log('Profile reveal response:', data);
+    
+    // Add to localStorage for additional persistence
+    try {
+      const revealedProfiles = JSON.parse(localStorage.getItem('revealedProfiles') || '{}');
+      revealedProfiles[profileId] = true;
+      localStorage.setItem('revealedProfiles', JSON.stringify(revealedProfiles));
+    } catch (e) {
+      console.error('Error saving to localStorage:', e);
+    }
     
     return data;
   } catch (error) {

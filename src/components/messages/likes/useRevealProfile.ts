@@ -43,8 +43,13 @@ export const useRevealProfile = ({
             )
           );
           
-          // Force refetch to ensure data consistency
+          // Invalidate queries to refresh data from server
           await queryClient.invalidateQueries({ queryKey: ['likes'] });
+          
+          // Store the revealed status in localStorage for additional persistence
+          const revealedProfiles = JSON.parse(localStorage.getItem('revealedProfiles') || '{}');
+          revealedProfiles[profileId] = true;
+          localStorage.setItem('revealedProfiles', JSON.stringify(revealedProfiles));
           
           toast.success('Profile revealed successfully!');
         } catch (revealError) {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProfileWithInteraction } from '@/models/profileTypes';
@@ -16,10 +15,21 @@ const LikesContainer: React.FC<LikesContainerProps> = ({ likes }) => {
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [localLikes, setLocalLikes] = useState<ProfileWithInteraction[]>([]);
   
-  // Update local state whenever props change
   useEffect(() => {
     console.log("Likes component received updated likes data:", likes);
-    setLocalLikes(likes);
+    
+    if (localLikes.length > 0) {
+      const mergedLikes = likes.map(incomingLike => {
+        const existingLike = localLikes.find(local => local.id === incomingLike.id);
+        if (existingLike && existingLike.is_revealed) {
+          return { ...incomingLike, is_revealed: true };
+        }
+        return incomingLike;
+      });
+      setLocalLikes(mergedLikes);
+    } else {
+      setLocalLikes(likes);
+    }
   }, [likes]);
 
   const { revealProfile } = useRevealProfile({
@@ -41,7 +51,6 @@ const LikesContainer: React.FC<LikesContainerProps> = ({ likes }) => {
 
   const handleViewProfile = (profileId: string) => {
     console.log("Navigating to profile:", profileId);
-    // Direct navigation without using onViewProfile prop
     navigate(`/profile/${profileId}`);
   };
 

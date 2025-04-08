@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import ProfileCard from './ProfileCard';
 import RevealButton from './RevealButton';
 import ActionButtons from './ActionButtons';
@@ -27,6 +26,9 @@ const ProfileItem: React.FC<ProfileItemProps> = ({
   canUseCoins,
   isAdReady
 }) => {
+  // Debug log to check if profile.is_revealed value is consistent
+  console.log(`ProfileItem rendering for ${profile.id}, is_revealed: ${profile.is_revealed}`);
+  
   return (
     <Card className="overflow-hidden">
       <ProfileCard 
