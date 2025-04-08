@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from '@tanstack/react-query';
 
 interface Message {
   id: string;
@@ -38,6 +39,7 @@ const ChatView: React.FC<ChatViewProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Default to '?' if name is undefined or empty
   const nameInitial = partnerName && partnerName.length > 0 ? partnerName.charAt(0) : '?';
@@ -63,6 +65,8 @@ const ChatView: React.FC<ChatViewProps> = ({
           if (newMessage.sender_id === partnerId) {
             setMessages(prev => [...prev, newMessage]);
             markMessagesAsRead();
+            // Invalidate matches query to refresh the list with the new message
+            queryClient.invalidateQueries({ queryKey: ['matches'] });
           }
         }
       )
@@ -71,7 +75,7 @@ const ChatView: React.FC<ChatViewProps> = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [matchId, userId, partnerId]);
+  }, [matchId, userId, partnerId, queryClient]);
 
   useEffect(() => {
     scrollToBottom();
@@ -140,6 +144,9 @@ const ChatView: React.FC<ChatViewProps> = ({
       
       setMessages(prev => [...prev, newMessage]);
       setMessageText(""); // Clear input field
+      
+      // Invalidate matches query to refresh the list with the new message
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
     } catch (error) {
       console.error('Error sending message:', error);
       toast({

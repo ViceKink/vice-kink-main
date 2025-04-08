@@ -15,7 +15,7 @@ const Messages = () => {
   const [activeMatch, setActiveMatch] = useState<MatchWithProfile | null>(null);
   const [activeTab, setActiveTab] = useState('matches');
 
-  const { data: matches = [], isLoading: isLoadingMatches } = useQuery({
+  const { data: matches = [], isLoading: isLoadingMatches, refetch: refetchMatches } = useQuery({
     queryKey: ['matches'],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -35,6 +35,7 @@ const Messages = () => {
       })) as MatchWithProfile[];
     },
     enabled: !!user?.id,
+    refetchInterval: 10000, // Refetch every 10 seconds to ensure latest messages
   });
 
   const { data: likes = [], isLoading: isLoadingLikes } = useQuery({
@@ -54,6 +55,8 @@ const Messages = () => {
 
   const handleBackFromChat = () => {
     setActiveMatch(null);
+    // Refresh the matches when going back to matches list
+    refetchMatches();
   };
 
   const handleOpenChat = (matchId: string) => {
@@ -68,6 +71,8 @@ const Messages = () => {
     // Force refetch when switching to likes tab
     if (value === 'likes') {
       // This will trigger a refetch of the likes data
+    } else if (value === 'matches') {
+      refetchMatches();
     }
   };
 

@@ -42,15 +42,42 @@ async function createMatch(currentUserId: string, likedUserId: string) {
   }
 }
 
-// Function to get all matches for the current user
+// Function to get all matches for the current user with last message
 async function getMatches(userId: string) {
   try {
-    const { data, error } = await supabase
+    // First get the matches
+    const { data: matchesData, error: matchesError } = await supabase
       .rpc('get_user_matches', { user_id: userId });
 
-    if (error) throw error;
+    if (matchesError) throw matchesError;
     
-    return data || [];
+    if (!matchesData || matchesData.length === 0) return [];
+    
+    // For each match, fetch additional information
+    const enhancedMatches = await Promise.all(matchesData.map(async (match) => {
+      // Get last message
+      const { data: lastMessageData } = await supabase
+        .rpc('get_last_message', {
+          user1: userId,
+          user2: match.other_user_id
+        });
+      
+      // Get unread message count
+      const { data: unreadCount } = await supabase
+        .rpc('count_unread_messages', {
+          user_id: userId,
+          other_user_id: match.other_user_id
+        });
+      
+      // Return enhanced match data
+      return {
+        ...match,
+        last_message: lastMessageData && lastMessageData.length > 0 ? lastMessageData[0].content : undefined,
+        unread_count: unreadCount || 0
+      };
+    }));
+    
+    return enhancedMatches;
   } catch (error) {
     console.error('Error in getMatches:', error);
     throw error;
