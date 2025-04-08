@@ -62,7 +62,7 @@ export const LocationSearchField: React.FC<LocationSearchFieldProps> = ({
       } finally {
         setIsLoading(false);
       }
-    }, 500); // Increased to 500ms for better UX
+    }, 500); // 500ms debounce
   };
 
   const handleSelectLocation = (city: GeocodedCity) => {

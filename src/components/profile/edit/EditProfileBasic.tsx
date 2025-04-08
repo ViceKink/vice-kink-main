@@ -57,6 +57,7 @@ const EditProfileBasic = ({ userData, updateField }: EditProfileBasicProps) => {
     if (lat !== undefined && lng !== undefined) {
       updateField('location_lat', lat);
       updateField('location_lng', lng);
+      console.log(`Location coordinates updated: lat=${lat}, lng=${lng}`);
     }
   };
 

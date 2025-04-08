@@ -18,7 +18,7 @@ export async function searchLocations(query: string): Promise<GeocodedCity[]> {
   try {
     console.log('Searching for location:', query);
     
-    // Add proper headers and parameters
+    // Make the API call with proper headers (important for Nominatim)
     const response = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5`,
       {
