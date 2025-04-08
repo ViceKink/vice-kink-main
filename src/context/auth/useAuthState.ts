@@ -24,27 +24,9 @@ export function useAuthState() {
     setLoading(false);
   }, []);
 
-  const fetchProfile = async (userId?: string): Promise<UserProfile | null> => {
+  const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
-      const targetId = userId || session?.user?.id;
-      
-      if (!targetId) {
-        console.error('No user ID available to fetch profile');
-        return null;
-      }
-      
-      const timeoutPromise = new Promise<null>((_, reject) => {
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 8000);
-      });
-      
-      const fetchPromise = fetchUserProfile(targetId);
-      
-      const userData = await Promise.race([fetchPromise, timeoutPromise]) as UserProfile;
-      
-      if (!userId && session?.user?.id === targetId) {
-        setUser(userData);
-      }
-      
+      const userData = await fetchUserProfile(userId);
       return userData;
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -102,6 +84,7 @@ export function useAuthState() {
     user,
     setUser,
     session,
-    loading
+    loading,
+    fetchProfile
   };
 }

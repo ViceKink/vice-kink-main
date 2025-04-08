@@ -75,7 +75,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const { fetchProfile } = useAuthState();
+  const fetchProfile = async (userId?: string): Promise<UserProfile | null> => {
+    try {
+      const targetId = userId || session?.user?.id;
+      
+      if (!targetId) {
+        console.error('No user ID available to fetch profile');
+        return null;
+      }
+      
+      const timeoutPromise = new Promise<null>((_, reject) => {
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 8000);
+      });
+      
+      const fetchPromise = useAuthState().fetchProfile(targetId);
+      
+      const userData = await Promise.race([fetchPromise, timeoutPromise]) as UserProfile;
+      
+      if (!userId && session?.user?.id === targetId) {
+        setUser(userData);
+      }
+      
+      return userData;
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      return null;
+    }
+  };
 
   const contextValue = {
     user,
