@@ -19,6 +19,8 @@ import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
 import Community from "./pages/Community";
 import AdCoins from "./pages/AdCoins";
+import DeleteAccount from "./pages/DeleteAccount";
+import { APP_URLS } from "./utils/constants";
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient({
@@ -78,6 +80,10 @@ const App = () => {
                         </ProtectedRoute>
                       } />
                       <Route path="/community/:id" element={<Community />} />
+                      
+                      {/* Delete account route for Google Play Store compliance */}
+                      <Route path={APP_URLS.ACCOUNT_DELETION} element={<DeleteAccount />} />
+                      
                       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>

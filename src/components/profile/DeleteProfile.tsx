@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -19,11 +19,31 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 
-const DeleteProfile = () => {
+interface DeleteProfileProps {
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
+}
+
+const DeleteProfile = ({ isOpen, onOpenChange }: DeleteProfileProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const navigate = useNavigate();
+
+  // Sync with external open state if provided
+  useEffect(() => {
+    if (isOpen !== undefined) {
+      setIsDialogOpen(isOpen);
+    }
+  }, [isOpen]);
+
+  // Notify parent component when dialog state changes
+  const updateDialogState = (newState: boolean) => {
+    setIsDialogOpen(newState);
+    if (onOpenChange) {
+      onOpenChange(newState);
+    }
+  };
 
   const handleDeleteProfile = async () => {
     try {
@@ -65,7 +85,7 @@ const DeleteProfile = () => {
       await supabase.auth.signOut();
       
       toast.success("Your account has been successfully deleted");
-      setIsDialogOpen(false);
+      updateDialogState(false);
       navigate('/');
     } catch (err) {
       console.error("Failed to delete profile:", err);
@@ -77,7 +97,7 @@ const DeleteProfile = () => {
   const isDeleteButtonDisabled = confirmText !== 'DELETE';
 
   return (
-    <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <AlertDialog open={isDialogOpen} onOpenChange={updateDialogState}>
       <AlertDialogTrigger asChild>
         <Button 
           variant="destructive" 

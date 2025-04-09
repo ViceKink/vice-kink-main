@@ -1,14 +1,24 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/context/auth';
 import AccountSettings from '@/components/settings/AccountSettings';
 import AccountActions from '@/components/settings/AccountActions';
 import NotificationSettings from '@/components/settings/NotificationSettings';
 import PrivacySettings from '@/components/settings/PrivacySettings';
+import { useLocation } from 'react-router-dom';
 
 const Settings = () => {
   const { user, logout } = useAuth();
+  const location = useLocation();
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  
+  // Check if we should open the delete dialog based on navigation state
+  useEffect(() => {
+    if (location.state?.openDeleteDialog) {
+      setOpenDeleteDialog(true);
+    }
+  }, [location.state]);
   
   return (
     <div className="container mx-auto px-4 max-w-4xl pt-20 pb-24 md:pb-10">
@@ -23,7 +33,11 @@ const Settings = () => {
         
         <TabsContent value="account" className="space-y-6">
           <AccountSettings user={user} />
-          <AccountActions onLogout={logout} />
+          <AccountActions 
+            onLogout={logout} 
+            openDeleteDialog={openDeleteDialog}
+            onDeleteDialogChange={setOpenDeleteDialog}
+          />
         </TabsContent>
         
         <TabsContent value="notifications" className="space-y-6">

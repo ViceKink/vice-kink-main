@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -9,9 +9,11 @@ import { toast } from 'sonner';
 
 interface AccountActionsProps {
   onLogout: () => Promise<void>;
+  openDeleteDialog?: boolean;
+  onDeleteDialogChange?: (isOpen: boolean) => void;
 }
 
-const AccountActions = ({ onLogout }: AccountActionsProps) => {
+const AccountActions = ({ onLogout, openDeleteDialog = false, onDeleteDialogChange }: AccountActionsProps) => {
   const handleLogout = async () => {
     try {
       await onLogout();
@@ -21,6 +23,17 @@ const AccountActions = ({ onLogout }: AccountActionsProps) => {
       console.error(error);
     }
   };
+
+  useEffect(() => {
+    // Scroll to delete section if dialog should be open
+    if (openDeleteDialog) {
+      const timer = setTimeout(() => {
+        document.getElementById('delete-account-section')?.scrollIntoView({ behavior: 'smooth' });
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [openDeleteDialog]);
 
   return (
     <Card className="border-destructive/20">
@@ -52,12 +65,15 @@ const AccountActions = ({ onLogout }: AccountActionsProps) => {
           
           <Separator className="my-2" />
           
-          <div>
+          <div id="delete-account-section">
             <h3 className="text-base font-medium mb-2 text-destructive">Danger Zone</h3>
             <p className="text-sm text-muted-foreground mb-4">
               Permanently delete your account and all associated data.
             </p>
-            <DeleteProfile />
+            <DeleteProfile 
+              isOpen={openDeleteDialog} 
+              onOpenChange={onDeleteDialogChange}
+            />
           </div>
         </div>
       </CardContent>
