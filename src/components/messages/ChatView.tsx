@@ -1,22 +1,11 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from '@tanstack/react-query';
-
-interface Message {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  content: string;
-  created_at: string;
-  read: boolean;
-  image_url?: string;
-}
+import { useChat } from "@/hooks/useChat";
+import { formatDistanceToNow } from "date-fns";
 
 export interface ChatViewProps {
   matchId: string;
@@ -36,134 +25,33 @@ const ChatView: React.FC<ChatViewProps> = ({
   onBack 
 }) => {
   const [messageText, setMessageText] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
+  
+  const { 
+    messages, 
+    isLoading, 
+    isSending, 
+    sendTextMessage 
+  } = useChat({ userId, partnerId });
   
   // Default to '?' if name is undefined or empty
   const nameInitial = partnerName && partnerName.length > 0 ? partnerName.charAt(0) : '?';
   
   useEffect(() => {
-    fetchMessages();
-    
-    // Mark messages as read
-    markMessagesAsRead();
-    
-    // Subscribe to new messages
-    const channel = supabase
-      .channel('messages-channel')
-      .on('postgres_changes', 
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'messages',
-          filter: `receiver_id=eq.${userId}`
-        }, 
-        (payload) => {
-          const newMessage = payload.new as Message;
-          if (newMessage.sender_id === partnerId) {
-            setMessages(prev => [...prev, newMessage]);
-            markMessagesAsRead();
-            // Invalidate matches query to refresh the list with the new message
-            queryClient.invalidateQueries({ queryKey: ['matches'] });
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [matchId, userId, partnerId, queryClient]);
-
-  useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const fetchMessages = async () => {
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase.rpc('get_conversation', {
-        user1: userId,
-        user2: partnerId
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      setMessages(data || []);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      toast({
-        title: "Failed to load messages",
-        description: "Please try again later",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const markMessagesAsRead = async () => {
-    try {
-      await supabase.rpc('mark_messages_as_read', {
-        user_id: userId,
-        other_user_id: partnerId
-      });
-    } catch (error) {
-      console.error('Error marking messages as read:', error);
-    }
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleSendMessage = async () => {
     if (!messageText.trim()) return;
     
-    try {
-      setIsLoading(true);
-      
-      // Use the new send_text_message function
-      const { data, error } = await supabase.rpc('send_text_message', {
-        sender: userId,
-        receiver: partnerId,
-        message_content: messageText.trim()
-      });
-      
-      if (error) {
-        console.error('Error response from send_text_message:', error);
-        throw error;
-      }
-      
-      // Add the new message to the list
-      const newMessage: Message = {
-        id: data,
-        sender_id: userId,
-        receiver_id: partnerId,
-        content: messageText.trim(),
-        created_at: new Date().toISOString(),
-        read: false
-      };
-      
-      setMessages(prev => [...prev, newMessage]);
+    const success = await sendTextMessage(messageText);
+    if (success) {
       setMessageText(""); // Clear input field
-      
-      // Invalidate matches query to refresh the list with the new message
-      queryClient.invalidateQueries({ queryKey: ['matches'] });
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast({
-        title: "Failed to send message",
-        description: "Please try again later",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
     }
-  };
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -173,9 +61,8 @@ const ChatView: React.FC<ChatViewProps> = ({
     }
   };
 
-  const formatMessageDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formatMessageTime = (dateString: string) => {
+    return formatDistanceToNow(new Date(dateString), { addSuffix: true });
   };
   
   return (
@@ -233,7 +120,7 @@ const ChatView: React.FC<ChatViewProps> = ({
                       ? 'text-primary-foreground/70' 
                       : 'text-muted-foreground'
                   }`}>
-                    {formatMessageDate(message.created_at)}
+                    {formatMessageTime(message.created_at)}
                   </p>
                 </div>
               </div>
@@ -251,11 +138,11 @@ const ChatView: React.FC<ChatViewProps> = ({
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             className="rounded-full"
-            disabled={isLoading}
+            disabled={isSending}
           />
           <Button 
             onClick={handleSendMessage} 
-            disabled={isLoading || !messageText.trim()}
+            disabled={isSending || !messageText.trim()}
             size="icon"
             className="rounded-full h-10 w-10"
           >

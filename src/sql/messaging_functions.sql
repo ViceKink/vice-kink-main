@@ -68,7 +68,8 @@ RETURNS TABLE (
   receiver_id UUID,
   content TEXT,
   created_at TIMESTAMPTZ,
-  read BOOLEAN
+  read BOOLEAN,
+  image_url TEXT
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
