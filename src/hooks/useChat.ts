@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from '@tanstack/react-query';
@@ -65,16 +66,18 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
       const fileExt = file.name.split('.').pop();
       const filePath = `${userId}/${uuidv4()}.${fileExt}`;
       
+      console.log('Starting image upload to "messages" bucket with path:', filePath);
+      
       const { error: uploadError, data } = await supabase
         .storage
-        .from('messages')
+        .from('messages')  // Make sure this is the exact name of your bucket
         .upload(filePath, file);
         
       if (uploadError) {
         console.error('Error uploading image:', uploadError);
         toast({
           title: "Failed to upload image",
-          description: "Please try again later",
+          description: "Storage error: " + uploadError.message,
           variant: "destructive"
         });
         return null;
@@ -82,7 +85,7 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
       
       const { data: urlData } = supabase
         .storage
-        .from('messages')
+        .from('messages')  // Make sure this matches the bucket name above
         .getPublicUrl(filePath);
         
       console.log('Image uploaded successfully, URL:', urlData.publicUrl);
