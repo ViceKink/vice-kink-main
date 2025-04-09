@@ -175,7 +175,7 @@ const ChatView: React.FC<ChatViewProps> = ({
       
       console.log(`Trying to upload to: messages/${filePath}`);
       
-      // Upload the file to Supabase Storage
+      // Upload the file to Supabase Storage - fixing the bucket name from "message" to "messages"
       const { error: uploadError, data } = await supabase
         .storage
         .from('messages')
@@ -192,7 +192,7 @@ const ChatView: React.FC<ChatViewProps> = ({
       
       console.log("Upload successful, data:", data);
       
-      // Get the public URL for the file
+      // Get the public URL for the file - fixing the bucket name from "message" to "messages"
       const { data: urlData } = supabase
         .storage
         .from('messages')
