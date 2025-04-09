@@ -113,15 +113,19 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
         }
       }
       
-      console.log('Sending message with content:', content, 'image URL:', imageUrl);
+      // Ensure we always have content, even for image-only messages
+      // This fixes the "content NOT NULL constraint" error
+      const messageContent = content.trim() || (imageUrl ? "[Image]" : null);
       
-      // Direct insert approach (fallback if RPC not working)
+      console.log('Sending message with content:', messageContent, 'image URL:', imageUrl);
+      
+      // Direct insert approach
       const { data, error } = await supabase
         .from('messages')
         .insert({
           sender_id: userId,
           receiver_id: partnerId,
-          content: content.trim() || null,
+          content: messageContent, // Using our default content if empty
           image_url: imageUrl,
           read: false
         })
