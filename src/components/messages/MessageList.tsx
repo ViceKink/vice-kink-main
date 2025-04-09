@@ -3,6 +3,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Message } from '@/models/matchesTypes';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Loader2, RefreshCw } from "lucide-react";
 
 interface MessageListProps {
   messages: Message[];
@@ -21,6 +22,7 @@ const MessageList: React.FC<MessageListProps> = ({
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [imageLoadErrors, setImageLoadErrors] = useState<Record<string, boolean>>({});
+  const [imageLoading, setImageLoading] = useState<Record<string, boolean>>({});
   
   useEffect(() => {
     scrollToBottom();
@@ -40,15 +42,38 @@ const MessageList: React.FC<MessageListProps> = ({
       ...prev,
       [messageId]: true
     }));
+    setImageLoading(prev => {
+      const newState = { ...prev };
+      delete newState[messageId];
+      return newState;
+    });
+  };
+
+  const handleImageLoad = (messageId: string) => {
+    setImageLoading(prev => {
+      const newState = { ...prev };
+      delete newState[messageId];
+      return newState;
+    });
+  };
+
+  const handleImageLoadStart = (messageId: string) => {
+    setImageLoading(prev => ({
+      ...prev,
+      [messageId]: true
+    }));
   };
 
   const retryLoadImage = (messageId: string, imageUrl: string) => {
-    // Remove from error state to allow retry
+    // Clear the error state
     setImageLoadErrors(prev => {
       const newState = { ...prev };
       delete newState[messageId];
       return newState;
     });
+    
+    // Set loading state
+    handleImageLoadStart(messageId);
     
     // Force image refresh by adding a timestamp query param
     return `${imageUrl}?t=${Date.now()}`;
@@ -109,26 +134,33 @@ const MessageList: React.FC<MessageListProps> = ({
             
             {message.image_url && !imageLoadErrors[message.id] && (
               <div className="mt-2 relative">
+                {imageLoading[message.id] && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/30 rounded-md">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                )}
                 <img 
                   src={message.image_url}
                   alt="Message attachment" 
                   className="rounded-md max-h-60 max-w-full object-contain"
                   onError={() => handleImageError(message.id)}
-                  onLoad={() => console.log("Image loaded successfully:", message.image_url)}
+                  onLoad={() => handleImageLoad(message.id)}
+                  onLoadStart={() => handleImageLoadStart(message.id)}
                 />
               </div>
             )}
 
             {message.image_url && imageLoadErrors[message.id] && (
-              <div className="mt-1 text-sm italic flex flex-col">
-                <span>Image could not be displayed</span>
+              <div className="mt-2 text-center p-3 bg-muted/50 rounded-md">
+                <p className="text-sm text-muted-foreground mb-1">Image failed to load</p>
                 <Button
-                  variant="link"
+                  variant="secondary"
                   size="sm"
-                  className="p-0 h-auto text-xs self-start underline"
-                  onClick={() => window.open(message.image_url, '_blank')}
+                  className="w-full flex items-center justify-center gap-1"
+                  onClick={() => retryLoadImage(message.id, message.image_url!)}
                 >
-                  Open in browser
+                  <RefreshCw className="h-3 w-3" />
+                  Retry
                 </Button>
               </div>
             )}
