@@ -21,3 +21,20 @@ export interface MatchWithProfile {
   last_message?: string;
   unread_count?: number;
 }
+
+export interface Match {
+  id: string;
+  user_id_1: string;
+  user_id_2: string;
+  matched_at: string;
+  profiles_1?: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+  profiles_2?: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+}

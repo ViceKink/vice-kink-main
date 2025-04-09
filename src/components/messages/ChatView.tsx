@@ -16,42 +16,20 @@ export interface ChatViewProps {
   onBack: () => void;
 }
 
-const ChatView: React.FC<ChatViewProps> = ({ 
-  matchId, 
-  userId, 
-  partnerId, 
-  partnerName, 
-  partnerAvatar,
-  onBack 
-}) => {
+const ChatView: React.FC<ChatViewProps> = ({ userId, partnerId, partnerName, partnerAvatar, onBack }) => {
   const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  const { 
-    messages, 
-    isLoading, 
-    isSending, 
-    sendTextMessage 
-  } = useChat({ userId, partnerId });
-  
-  // Default to '?' if name is undefined or empty
+  const { messages, isSending, sendTextMessage } = useChat({ userId, partnerId });
   const nameInitial = partnerName && partnerName.length > 0 ? partnerName.charAt(0) : '?';
   
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, [messages]);
 
   const handleSendMessage = async () => {
     if (!messageText.trim()) return;
-    
     const success = await sendTextMessage(messageText);
-    if (success) {
-      setMessageText(""); // Clear input field
-    }
+    if (success) setMessageText("");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -61,10 +39,6 @@ const ChatView: React.FC<ChatViewProps> = ({
     }
   };
 
-  const formatMessageTime = (dateString: string) => {
-    return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-  };
-  
   return (
     <div className="flex flex-col h-full">
       <div className="border-b p-3 flex items-center gap-3">
@@ -83,7 +57,7 @@ const ChatView: React.FC<ChatViewProps> = ({
       </div>
       
       <div className="flex-1 p-4 overflow-y-auto">
-        {messages.length === 0 && !isLoading ? (
+        {messages.length === 0 ? (
           <div className="text-center text-muted-foreground py-6">
             You matched with {partnerName || 'this user'}. Say hello!
           </div>
@@ -109,7 +83,6 @@ const ChatView: React.FC<ChatViewProps> = ({
                         alt="Message attachment" 
                         className="rounded max-w-full max-h-60 object-contain"
                         onError={(e) => {
-                          console.error('Image failed to load:', message.image_url);
                           (e.target as HTMLImageElement).style.display = 'none';
                         }}
                       />
@@ -120,7 +93,7 @@ const ChatView: React.FC<ChatViewProps> = ({
                       ? 'text-primary-foreground/70' 
                       : 'text-muted-foreground'
                   }`}>
-                    {formatMessageTime(message.created_at)}
+                    {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                   </p>
                 </div>
               </div>

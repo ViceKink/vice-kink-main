@@ -20,23 +20,12 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
   const fetchMessages = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.rpc('get_conversation', {
-        user1: userId,
-        user2: partnerId
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
+      const { data, error } = await supabase.rpc('get_conversation', { user1: userId, user2: partnerId });
+      if (error) throw error;
       setMessages(data || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
-      toast({
-        title: "Failed to load messages",
-        description: "Please try again later",
-        variant: "destructive"
-      });
+      toast({ title: "Failed to load messages", description: "Please try again later", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -45,10 +34,7 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
   // Mark messages as read
   const markMessagesAsRead = async () => {
     try {
-      await supabase.rpc('mark_messages_as_read', {
-        user_id: userId,
-        other_user_id: partnerId
-      });
+      await supabase.rpc('mark_messages_as_read', { user_id: userId, other_user_id: partnerId });
     } catch (error) {
       console.error('Error marking messages as read:', error);
     }
@@ -60,31 +46,15 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
     
     try {
       setIsSending(true);
-      
-      // Direct database insertion approach - more reliable
       const { data, error } = await supabase
         .from('messages')
-        .insert({
-          sender_id: userId,
-          receiver_id: partnerId,
-          content: content.trim()
-        })
+        .insert({ sender_id: userId, receiver_id: partnerId, content: content.trim() })
         .select('id')
         .single();
       
-      if (error) {
-        console.error('Error sending message:', error);
-        throw error;
-      }
+      if (error) throw error;
+      if (!data) throw new Error('Failed to send message');
       
-      if (!data) {
-        console.error('No data returned from message insert');
-        throw new Error('Failed to send message');
-      }
-      
-      console.log('Message sent successfully with ID:', data.id);
-      
-      // Create new message object and add to state
       const newMessage: Message = {
         id: data.id,
         sender_id: userId,
@@ -95,18 +65,11 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
       };
       
       setMessages(prev => [...prev, newMessage]);
-      
-      // Invalidate matches query to refresh the list with the new message
       queryClient.invalidateQueries({ queryKey: ['matches'] });
-      
       return true;
     } catch (error) {
       console.error('Error sending message:', error);
-      toast({
-        title: "Failed to send message",
-        description: "Please try again later",
-        variant: "destructive"
-      });
+      toast({ title: "Failed to send message", description: "Please try again later", variant: "destructive" });
       return false;
     } finally {
       setIsSending(false);
@@ -120,34 +83,23 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
     
     const channel = supabase
       .channel('messages-channel')
-      .on('postgres_changes', 
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'messages',
-          filter: `receiver_id=eq.${userId}`
-        }, 
-        (payload) => {
-          const newMessage = payload.new as Message;
-          if (newMessage.sender_id === partnerId) {
-            setMessages(prev => [...prev, newMessage]);
-            markMessagesAsRead();
-            queryClient.invalidateQueries({ queryKey: ['matches'] });
-          }
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'messages',
+        filter: `receiver_id=eq.${userId}`
+      }, payload => {
+        const newMessage = payload.new as Message;
+        if (newMessage.sender_id === partnerId) {
+          setMessages(prev => [...prev, newMessage]);
+          markMessagesAsRead();
+          queryClient.invalidateQueries({ queryKey: ['matches'] });
         }
-      )
+      })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [userId, partnerId, queryClient]);
 
-  return {
-    messages,
-    isLoading,
-    isSending,
-    sendTextMessage,
-    markMessagesAsRead
-  };
+  return { messages, isLoading, isSending, sendTextMessage, markMessagesAsRead };
 };
