@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, Image as ImageIcon, X, Lock } from "lucide-react";
@@ -214,10 +215,10 @@ const ChatView: React.FC<ChatViewProps> = ({
         sender_id: userId,
         receiver_id: partnerId,
         content: messageText.trim() || ' ',
-        image_url: imageUrl,
-        is_image_revealed: true, // Your own images are always revealed
         created_at: new Date().toISOString(),
-        read: false
+        read: false,
+        image_url: imageUrl ?? undefined,
+        is_image_revealed: true // Your own images are always revealed
       };
       
       setMessages(prev => [...prev, newMessage]);
@@ -254,10 +255,14 @@ const ChatView: React.FC<ChatViewProps> = ({
         );
         
         // Update the database to mark the image as revealed
-        await supabase
+        const { error } = await supabase
           .from('messages')
           .update({ is_image_revealed: true })
           .eq('id', messageId);
+          
+        if (error) {
+          console.error("Error updating message in database:", error);
+        }
           
         toast.success("Image revealed!");
       } else {
