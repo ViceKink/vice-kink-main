@@ -38,7 +38,9 @@ const MessageList: React.FC<MessageListProps> = ({
     const newImageSrcs: Record<string, string> = {};
     messages.forEach(message => {
       if (message.image_url && !imageSrcs[message.id]) {
-        newImageSrcs[message.id] = message.image_url;
+        // Make sure we're using the correct bucket name 'messages' (not 'message')
+        const correctedUrl = message.image_url?.replace('/message/', '/messages/');
+        newImageSrcs[message.id] = correctedUrl;
       }
     });
     
@@ -58,16 +60,30 @@ const MessageList: React.FC<MessageListProps> = ({
 
   // Enhanced error handling with logging
   const handleImageError = (messageId: string, imageUrl: string) => {
+    // Log the error with the URL for debugging
     console.error(`Image failed to load: ${imageUrl}`, new Error().stack);
-    setImageLoadErrors(prev => ({
-      ...prev,
-      [messageId]: true
-    }));
-    setImageLoading(prev => {
-      const newState = { ...prev };
-      delete newState[messageId];
-      return newState;
-    });
+    
+    // Check if URL contains 'message/' instead of 'messages/'
+    if (imageUrl?.includes('/message/')) {
+      // Correct the URL
+      const correctedUrl = imageUrl.replace('/message/', '/messages/');
+      console.log(`Fixing incorrect bucket name, using: ${correctedUrl}`);
+      setImageSrcs(prev => ({...prev, [messageId]: correctedUrl}));
+      
+      // Don't mark as error yet, let the corrected URL load
+      setImageLoading(prev => ({...prev, [messageId]: true}));
+    } else {
+      // Mark as error if the URL was already correct but still failed
+      setImageLoadErrors(prev => ({
+        ...prev,
+        [messageId]: true
+      }));
+      setImageLoading(prev => {
+        const newState = { ...prev };
+        delete newState[messageId];
+        return newState;
+      });
+    }
   };
 
   const handleImageLoad = (messageId: string) => {
@@ -107,8 +123,12 @@ const MessageList: React.FC<MessageListProps> = ({
     // Set loading state
     handleImageLoadStart(messageId);
     
-    // Try to apply a fix for potential CORS or cache issues
+    // Fix the bucket name if it's wrong
     let newSrc = imageUrl;
+    if (newSrc?.includes('/message/')) {
+      newSrc = newSrc.replace('/message/', '/messages/');
+      console.log("Correcting bucket name from 'message' to 'messages':", newSrc);
+    }
     
     // Add a timestamp to bust cache
     newSrc = `${newSrc}?t=${Date.now()}`;
@@ -132,7 +152,12 @@ const MessageList: React.FC<MessageListProps> = ({
 
   // Open image in new tab for fallback viewing
   const openImageInNewTab = (imageUrl: string) => {
-    window.open(imageUrl, '_blank');
+    // Fix URL if it's using the wrong bucket name
+    let correctedUrl = imageUrl;
+    if (correctedUrl?.includes('/message/')) {
+      correctedUrl = correctedUrl.replace('/message/', '/messages/');
+    }
+    window.open(correctedUrl, '_blank');
   };
 
   // Handle main message display logic
@@ -198,10 +223,10 @@ const MessageList: React.FC<MessageListProps> = ({
                   </div>
                 )}
                 <img 
-                  src={imageSrcs[message.id] || message.image_url}
+                  src={imageSrcs[message.id] || message.image_url.replace('/message/', '/messages/')}
                   alt="Message attachment" 
                   className="rounded-md max-h-60 max-w-full object-contain"
-                  onError={() => handleImageError(message.id, message.image_url || '')}
+                  onError={() => handleImageError(message.id, imageSrcs[message.id] || message.image_url)}
                   onLoad={() => handleImageLoad(message.id)}
                   onLoadStart={() => handleImageLoadStart(message.id)}
                   crossOrigin="anonymous"
@@ -219,7 +244,10 @@ const MessageList: React.FC<MessageListProps> = ({
                     size="sm"
                     className="flex-1 flex items-center justify-center gap-1"
                     onClick={() => {
-                      const newSrc = retryLoadImage(message.id, message.image_url!);
+                      const newSrc = retryLoadImage(
+                        message.id, 
+                        message.image_url!.replace('/message/', '/messages/')
+                      );
                       // Force a reload of the image element
                       const img = new Image();
                       img.src = newSrc;
