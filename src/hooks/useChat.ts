@@ -61,31 +61,32 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
     try {
       setIsSending(true);
       
-      console.log('Sending message with params:', { userId, partnerId, content: content.trim() });
-      
-      // Call the send_message function correctly
-      const { data, error } = await supabase.rpc('send_message', {
-        sender: userId,
-        receiver: partnerId,
-        message_content: content.trim()
-      });
+      // Direct database insertion approach - more reliable
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: userId,
+          receiver_id: partnerId,
+          content: content.trim()
+        })
+        .select('id')
+        .single();
       
       if (error) {
-        console.error('Supabase error:', error);
+        console.error('Error sending message:', error);
         throw error;
       }
       
-      // Check if data exists
       if (!data) {
-        console.error('No data returned from send_message');
-        throw new Error('No data returned from send_message');
+        console.error('No data returned from message insert');
+        throw new Error('Failed to send message');
       }
       
-      // Create new message object
-      const messageId = data as string;
+      console.log('Message sent successfully with ID:', data.id);
       
+      // Create new message object and add to state
       const newMessage: Message = {
-        id: messageId,
+        id: data.id,
         sender_id: userId,
         receiver_id: partnerId,
         content: content.trim(),
@@ -93,7 +94,6 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
         read: false
       };
       
-      console.log('Message sent successfully with ID:', messageId);
       setMessages(prev => [...prev, newMessage]);
       
       // Invalidate matches query to refresh the list with the new message
