@@ -36,6 +36,7 @@ const ChatView: React.FC<ChatViewProps> = ({
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [revealingImage, setRevealingImage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast: toastNotification } = useToast();
@@ -86,12 +87,11 @@ const ChatView: React.FC<ChatViewProps> = ({
       setIsLoading(true);
       setErrorMessage(null);
       
-      // Using direct query instead of RPC function since the RPC has an error
+      // Using direct query with improved error handling
       const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
-        .or(`sender_id.eq.${partnerId},receiver_id.eq.${partnerId}`)
+        .or(`and(sender_id.eq.${userId},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${userId})`)
         .order('created_at', { ascending: true });
       
       if (error) {
@@ -100,14 +100,8 @@ const ChatView: React.FC<ChatViewProps> = ({
         throw error;
       }
       
-      // Filter to only include messages between these two users
-      const filteredMessages = data.filter(msg => 
-        (msg.sender_id === userId && msg.receiver_id === partnerId) || 
-        (msg.sender_id === partnerId && msg.receiver_id === userId)
-      );
-      
-      console.log("Fetched messages:", filteredMessages);
-      setMessages(filteredMessages || []);
+      console.log("Fetched messages:", data);
+      setMessages(data || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
       setErrorMessage("Failed to load messages. Please try again later.");
@@ -163,6 +157,15 @@ const ChatView: React.FC<ChatViewProps> = ({
     }
   };
 
+  const handleImageLoaded = (messageId: string) => {
+    setLoadingImages(prev => ({...prev, [messageId]: false}));
+  };
+
+  const handleImageError = (messageId: string, imageUrl: string) => {
+    console.error(`Image failed to load: ${imageUrl} for message ${messageId}`);
+    setLoadingImages(prev => ({...prev, [messageId]: false}));
+  };
+
   const uploadImage = async (file: File): Promise<string | null> => {
     try {
       // Generate a unique filename to avoid collisions
@@ -183,6 +186,7 @@ const ChatView: React.FC<ChatViewProps> = ({
         
       if (uploadError) {
         console.error("Upload error details:", uploadError);
+        toast.error(`Upload failed: ${uploadError.message}`);
         throw uploadError;
       }
       
@@ -195,6 +199,19 @@ const ChatView: React.FC<ChatViewProps> = ({
         .getPublicUrl(filePath);
         
       console.log("Generated public URL:", urlData.publicUrl);
+      
+      // Verify the URL is accessible
+      try {
+        const checkResponse = await fetch(urlData.publicUrl, { 
+          method: 'HEAD',
+          mode: 'no-cors' // This prevents CORS errors during checking
+        });
+        console.log("URL check response:", checkResponse);
+      } catch (e) {
+        console.log("URL check failed, but continuing", e);
+        // We'll continue anyway as this might be CORS related
+      }
+      
       return urlData.publicUrl;
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -223,36 +240,49 @@ const ChatView: React.FC<ChatViewProps> = ({
         }
       }
       
-      console.log("Sending message with:", {
+      // Use RPC function for sending message
+      const { data, error } = await supabase.rpc('send_message', {
         sender: userId,
         receiver: partnerId,
         message_content: messageText.trim() || ' ', // Send at least a space if no text
-        image_url: imageUrl || null
+        image_url: imageUrl
       });
-      
-      // Direct insert instead of using the RPC function
-      const { data, error } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: userId,
-          receiver_id: partnerId,
-          content: messageText.trim() || ' ',
-          image_url: imageUrl || null,
-          is_image_revealed: imageUrl ? true : null // Images are revealed by default for the sender
-        })
-        .select()
-        .single();
       
       if (error) {
         console.error("Error sending message:", error);
+        toast.error(`Failed to send message: ${error.message}`);
         throw error;
       }
       
-      console.log("Message sent successfully:", data);
+      console.log("Message sent successfully, ID:", data);
       
-      // Add the new message to the list
-      const newMessage = data as Message;
-      setMessages(prev => [...prev, newMessage]);
+      // Get the message details to add to the list
+      if (data) {
+        const { data: msgData, error: msgError } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('id', data)
+          .single();
+          
+        if (!msgError && msgData) {
+          setMessages(prev => [...prev, msgData]);
+        } else {
+          console.error("Error fetching sent message:", msgError);
+          // Add a temporary version of the message to the UI
+          const tempMessage: Message = {
+            id: data,
+            sender_id: userId,
+            receiver_id: partnerId,
+            content: messageText.trim() || ' ',
+            created_at: new Date().toISOString(),
+            read: false,
+            image_url: imageUrl || undefined,
+            is_image_revealed: true
+          };
+          setMessages(prev => [...prev, tempMessage]);
+        }
+      }
+      
       setMessageText(""); // Clear input field
       handleCancelImage(); // Clear image preview
       
@@ -321,6 +351,11 @@ const ChatView: React.FC<ChatViewProps> = ({
   const formatMessageDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  // Function to get a fallback image placeholder
+  const getImagePlaceholder = (message_id: string) => {
+    return `https://via.placeholder.com/400x300?text=Image+Loading`;
   };
   
   return (
@@ -392,16 +427,23 @@ const ChatView: React.FC<ChatViewProps> = ({
                           </div>
                         </div>
                       ) : (
-                        <img 
-                          src={message.image_url} 
-                          alt="Message attachment" 
-                          className="max-w-full rounded-md cursor-pointer"
-                          onClick={() => window.open(message.image_url, '_blank')}
-                          onError={(e) => {
-                            console.error("Image failed to load:", message.image_url);
-                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
-                          }}
-                        />
+                        <div className="relative">
+                          {loadingImages[message.id] && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-gray-200/50 rounded-md">
+                              <span className="animate-pulse">Loading...</span>
+                            </div>
+                          )}
+                          <img 
+                            src={message.image_url} 
+                            alt="Message attachment" 
+                            className="max-w-full rounded-md cursor-pointer"
+                            onClick={() => window.open(message.image_url, '_blank')}
+                            onLoad={() => handleImageLoaded(message.id)}
+                            onError={() => handleImageError(message.id, message.image_url || '')}
+                            onLoadStart={() => setLoadingImages(prev => ({...prev, [message.id]: true}))}
+                            loading="lazy"
+                          />
+                        </div>
                       )}
                     </div>
                   )}
