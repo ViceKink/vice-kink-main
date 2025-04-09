@@ -160,7 +160,10 @@ const ChatView: React.FC<ChatViewProps> = ({
       const { error: uploadError, data } = await supabase
         .storage
         .from('messages')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
         
       if (uploadError) {
         console.error("Upload error details:", uploadError);
@@ -199,6 +202,7 @@ const ChatView: React.FC<ChatViewProps> = ({
       if (hasImage && imageFile) {
         imageUrl = await uploadImage(imageFile);
         if (!imageUrl && !hasContent) {
+          setIsLoading(false);
           return; // Don't send if image upload failed and there's no text
         }
       }
@@ -208,7 +212,7 @@ const ChatView: React.FC<ChatViewProps> = ({
         sender: userId,
         receiver: partnerId,
         message_content: messageText.trim() || ' ', // Send at least a space if no text
-        image_url: imageUrl
+        image_url: imageUrl || null
       });
       
       if (error) {
@@ -224,7 +228,7 @@ const ChatView: React.FC<ChatViewProps> = ({
         content: messageText.trim() || ' ',
         created_at: new Date().toISOString(),
         read: false,
-        image_url: imageUrl ?? undefined,
+        image_url: imageUrl || undefined,
         is_image_revealed: true // Your own images are always revealed
       };
       
@@ -359,6 +363,10 @@ const ChatView: React.FC<ChatViewProps> = ({
                           alt="Message attachment" 
                           className="max-w-full rounded-md cursor-pointer"
                           onClick={() => window.open(message.image_url, '_blank')}
+                          onError={(e) => {
+                            console.error("Image failed to load:", message.image_url);
+                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
+                          }}
                         />
                       )}
                     </div>

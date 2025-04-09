@@ -13,6 +13,7 @@ AS $$
 DECLARE
   message_id UUID;
 BEGIN
+  -- Ensure the messages table has the necessary columns
   INSERT INTO public.messages (sender_id, receiver_id, content, image_url, is_image_revealed)
   VALUES (
     sender, 
@@ -33,3 +34,6 @@ $$;
 ALTER TABLE IF EXISTS public.messages 
 ADD COLUMN IF NOT EXISTS image_url TEXT,
 ADD COLUMN IF NOT EXISTS is_image_revealed BOOLEAN DEFAULT false;
+
+-- Update function parameters definition to properly accept image_url
+COMMENT ON FUNCTION public.send_message(UUID, UUID, TEXT, TEXT) IS 'Send a message with optional image attachment';
