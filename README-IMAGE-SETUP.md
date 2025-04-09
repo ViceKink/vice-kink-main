@@ -5,6 +5,18 @@ For the image messaging feature to work properly, you need to:
 
 ## 1. Creating the Storage Bucket
 
+There are two ways to create a bucket in Supabase:
+
+### Option 1: Using the SQL Editor
+Run the following SQL in the Supabase SQL Editor:
+
+```sql
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('messages', 'messages', true)
+ON CONFLICT (id) DO NOTHING;
+```
+
+### Option 2: Using the Supabase Dashboard
 Create a storage bucket in Supabase:
    - Go to Storage in the Supabase Dashboard
    - Click "New Bucket"
@@ -16,32 +28,33 @@ Create a storage bucket in Supabase:
 
 ## 2. Setting up Storage Policies
 
-Run the SQL script in `src/sql/message_storage_policies.sql` in the Supabase SQL Editor to set up the necessary storage policies:
+Run the following SQL script in the Supabase SQL Editor to set up the necessary storage policies:
 
 ```sql
--- First, ensure the messages bucket exists and is properly configured
-CREATE BUCKET IF NOT EXISTS "messages" WITH (public = true);
-
 -- Storage policy to allow public access to images in the messages bucket
-CREATE POLICY "Public access to messages bucket" ON storage.objects
-  FOR SELECT 
-  USING (bucket_id = 'messages');
+CREATE POLICY "Public access to messages bucket" 
+ON storage.objects
+FOR SELECT 
+USING (bucket_id = 'messages');
 
 -- Storage policy to allow authenticated uploads to messages bucket
-CREATE POLICY "Allow authenticated uploads to messages bucket" ON storage.objects
-  FOR INSERT 
-  WITH CHECK (bucket_id = 'messages' AND auth.role() = 'authenticated');
+CREATE POLICY "Allow authenticated uploads to messages bucket" 
+ON storage.objects
+FOR INSERT 
+WITH CHECK (bucket_id = 'messages' AND auth.role() = 'authenticated');
 
 -- Storage policy to allow owners to update their objects in messages bucket
-CREATE POLICY "Allow owners to update their objects in messages bucket" ON storage.objects
-  FOR UPDATE
-  USING (bucket_id = 'messages' AND auth.uid() = owner)
-  WITH CHECK (bucket_id = 'messages');
+CREATE POLICY "Allow owners to update their objects in messages bucket" 
+ON storage.objects
+FOR UPDATE
+USING (bucket_id = 'messages' AND auth.uid()::text = owner)
+WITH CHECK (bucket_id = 'messages');
 
 -- Storage policy to allow owners to delete their objects in messages bucket
-CREATE POLICY "Allow owners to delete their objects in messages bucket" ON storage.objects
-  FOR DELETE
-  USING (bucket_id = 'messages' AND auth.uid() = owner);
+CREATE POLICY "Allow owners to delete their objects in messages bucket" 
+ON storage.objects
+FOR DELETE
+USING (bucket_id = 'messages' AND auth.uid()::text = owner);
 ```
 
 ## 3. Troubleshooting
@@ -64,8 +77,8 @@ If images upload but don't display:
 ### "Bucket not found" Error
 If you see "Bucket not found" errors:
 1. Make sure the bucket name is exactly "messages" (not "message" or any other variation)
-2. Try recreating the bucket through the Supabase dashboard
-3. Run the SQL policies again from `src/sql/message_storage_policies.sql`
+2. Try creating the bucket through the Supabase dashboard
+3. Run the SQL policies again after creating the bucket
 4. Check if the Supabase project reference in the URL matches your current project
 
 ### Authentication Issues
@@ -76,13 +89,5 @@ If you're getting authentication errors:
 
 ### Message Function Configuration
 Make sure your message function is properly configured:
-1. Run the SQL script in `src/sql/message_with_image_function.sql`
+1. Run any SQL script for message functions if provided
 2. Check that your messages table has the required columns for images
-
-## Alternative Solutions
-
-If you continue to have issues with Supabase Storage:
-
-1. **Use Base64 Encoding**: You can encode small images as base64 strings and store them directly in the messages table
-2. **Use External Image Hosting**: Services like Cloudinary or Imgur can be used as alternatives
-3. **Implement Fallback Mode**: The current implementation will gracefully handle image upload failures by sending text-only messages
