@@ -19,13 +19,23 @@ const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, isLoading })
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if ((messageText.trim() || selectedImage) && !isLoading && !isCompressing) {
-      onSendMessage(messageText.trim(), selectedImage || undefined);
-      setMessageText("");
-      setSelectedImage(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      try {
+        // Send message first, then clear the input fields
+        await onSendMessage(messageText.trim(), selectedImage || undefined);
+        setMessageText("");
+        setSelectedImage(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      } catch (error) {
+        console.error("Error in handleSend:", error);
+        toast({
+          title: "Failed to send message",
+          description: "Please try again later",
+          variant: "destructive"
+        });
       }
     }
   };

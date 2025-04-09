@@ -86,6 +86,7 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
         .from('messages')
         .getPublicUrl(filePath);
         
+      console.log('Image uploaded successfully, URL:', urlData.publicUrl);
       return urlData.publicUrl;
     } catch (error) {
       console.error('Error in image upload:', error);
@@ -112,31 +113,19 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
         }
       }
       
-      // Use the RPC function if it exists
-      let result;
-      if (typeof supabase.rpc === 'function') {
-        result = await supabase.rpc('send_message', {
-          sender: userId,
-          receiver: partnerId,
-          message_content: content.trim() || null,
-          image_url: imageUrl
-        });
-      } else {
-        // Fallback to direct insert
-        result = await supabase
-          .from('messages')
-          .insert({
-            sender_id: userId,
-            receiver_id: partnerId,
-            content: content.trim() || null,
-            image_url: imageUrl,
-            read: false
-          })
-          .select()
-          .single();
-      }
+      console.log('Sending message with content:', content, 'image URL:', imageUrl);
       
-      const { data, error } = result;
+      // Direct insert approach (fallback if RPC not working)
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: userId,
+          receiver_id: partnerId,
+          content: content.trim() || null,
+          image_url: imageUrl,
+          read: false
+        })
+        .select();
         
       if (error) {
         console.error("Error sending message:", error);
@@ -148,8 +137,9 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
         throw error;
       }
       
-      if (data) {
-        setMessages(prev => [...prev, data]);
+      if (data && data.length > 0) {
+        setMessages(prev => [...prev, data[0]]);
+        console.log("Message sent successfully:", data[0]);
       }
       
       // Invalidate matches query to refresh the list with the new message
