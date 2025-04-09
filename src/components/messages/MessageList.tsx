@@ -3,8 +3,9 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Message } from '@/models/matchesTypes';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, RefreshCw } from "lucide-react";
+import { RefreshCw, ExternalLink } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import { useToast } from "@/hooks/use-toast";
 
 interface MessageListProps {
   messages: Message[];
@@ -25,7 +26,9 @@ const MessageList: React.FC<MessageListProps> = ({
   const [imageLoadErrors, setImageLoadErrors] = useState<Record<string, boolean>>({});
   const [imageLoading, setImageLoading] = useState<Record<string, boolean>>({});
   const [imageSrcs, setImageSrcs] = useState<Record<string, string>>({});
+  const { toast } = useToast();
   
+  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -53,7 +56,9 @@ const MessageList: React.FC<MessageListProps> = ({
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const handleImageError = (messageId: string) => {
+  // Enhanced error handling with logging
+  const handleImageError = (messageId: string, imageUrl: string) => {
+    console.error(`Image failed to load: ${imageUrl}`, new Error().stack);
     setImageLoadErrors(prev => ({
       ...prev,
       [messageId]: true
@@ -66,10 +71,20 @@ const MessageList: React.FC<MessageListProps> = ({
   };
 
   const handleImageLoad = (messageId: string) => {
+    console.log(`Image loaded successfully: ${messageId}`);
     setImageLoading(prev => {
       const newState = { ...prev };
       delete newState[messageId];
       return newState;
+    });
+    // Clear any error state
+    setImageLoadErrors(prev => {
+      if (prev[messageId]) {
+        const newState = { ...prev };
+        delete newState[messageId];
+        return newState;
+      }
+      return prev;
     });
   };
 
@@ -80,6 +95,7 @@ const MessageList: React.FC<MessageListProps> = ({
     }));
   };
 
+  // Improved retry mechanism with multiple approaches
   const retryLoadImage = (messageId: string, imageUrl: string) => {
     // Clear the error state
     setImageLoadErrors(prev => {
@@ -91,16 +107,35 @@ const MessageList: React.FC<MessageListProps> = ({
     // Set loading state
     handleImageLoadStart(messageId);
     
-    // Force image refresh by adding a timestamp query param
-    const newSrc = `${imageUrl}?t=${Date.now()}`;
+    // Try to apply a fix for potential CORS or cache issues
+    let newSrc = imageUrl;
+    
+    // Add a timestamp to bust cache
+    newSrc = `${newSrc}?t=${Date.now()}`;
+    
+    console.log("Retrying image load with URL:", newSrc);
+    
+    // Update the image source
     setImageSrcs(prev => ({
       ...prev,
       [messageId]: newSrc
     }));
     
+    // Show feedback to user
+    toast({
+      title: "Retrying image load",
+      description: "Attempting to reload the image..."
+    });
+    
     return newSrc;
   };
 
+  // Open image in new tab for fallback viewing
+  const openImageInNewTab = (imageUrl: string) => {
+    window.open(imageUrl, '_blank');
+  };
+
+  // Handle main message display logic
   if (errorMessage) {
     return (
       <div className="p-4 mb-4 text-white bg-destructive rounded-md text-center">
@@ -154,6 +189,7 @@ const MessageList: React.FC<MessageListProps> = ({
             {/* Only show content if it's more than just a space character (for image-only messages) */}
             {message.content && message.content.trim() && <p className="break-words">{message.content}</p>}
             
+            {/* Image handling with improved reliability */}
             {message.image_url && !imageLoadErrors[message.id] && (
               <div className="mt-2 relative">
                 {imageLoading[message.id] && (
@@ -165,30 +201,44 @@ const MessageList: React.FC<MessageListProps> = ({
                   src={imageSrcs[message.id] || message.image_url}
                   alt="Message attachment" 
                   className="rounded-md max-h-60 max-w-full object-contain"
-                  onError={() => handleImageError(message.id)}
+                  onError={() => handleImageError(message.id, message.image_url || '')}
                   onLoad={() => handleImageLoad(message.id)}
                   onLoadStart={() => handleImageLoadStart(message.id)}
+                  crossOrigin="anonymous"
                 />
               </div>
             )}
 
+            {/* Error state with improved retry options */}
             {message.image_url && imageLoadErrors[message.id] && (
               <div className="mt-2 text-center p-3 bg-muted/50 rounded-md">
                 <p className="text-sm text-muted-foreground mb-1">Image failed to load</p>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="w-full flex items-center justify-center gap-1"
-                  onClick={() => {
-                    const newSrc = retryLoadImage(message.id, message.image_url!);
-                    // Force a reload of the image element
-                    const img = new Image();
-                    img.src = newSrc;
-                  }}
-                >
-                  <RefreshCw className="h-3 w-3" />
-                  Retry
-                </Button>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="flex-1 flex items-center justify-center gap-1"
+                    onClick={() => {
+                      const newSrc = retryLoadImage(message.id, message.image_url!);
+                      // Force a reload of the image element
+                      const img = new Image();
+                      img.src = newSrc;
+                      img.onload = () => handleImageLoad(message.id);
+                    }}
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    Retry
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center justify-center gap-1"
+                    onClick={() => openImageInNewTab(message.image_url!)}
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Open
+                  </Button>
+                </div>
               </div>
             )}
             
