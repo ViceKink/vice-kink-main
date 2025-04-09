@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, Image as ImageIcon, X, Lock } from "lucide-react";
@@ -41,7 +40,6 @@ const ChatView: React.FC<ChatViewProps> = ({
   const queryClient = useQueryClient();
   const { purchaseFeature } = useAdCoins();
   
-  // Default to '?' if name is undefined or empty
   const nameInitial = partnerName && partnerName.length > 0 ? partnerName.charAt(0) : '?';
   
   useEffect(() => {
@@ -216,7 +214,7 @@ const ChatView: React.FC<ChatViewProps> = ({
         sender_id: userId,
         receiver_id: partnerId,
         content: messageText.trim() || ' ',
-        image_url: imageUrl || undefined,
+        image_url: imageUrl,
         is_image_revealed: true, // Your own images are always revealed
         created_at: new Date().toISOString(),
         read: false
