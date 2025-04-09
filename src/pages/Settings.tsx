@@ -12,11 +12,16 @@ const Settings = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState('account');
   
   // Check if we should open the delete dialog based on navigation state
   useEffect(() => {
     if (location.state?.openDeleteDialog) {
       setOpenDeleteDialog(true);
+      setActiveTab('account'); // Ensure account tab is active
+      
+      // Clear the state after processing to prevent reopening on refresh
+      window.history.replaceState({}, document.title);
     }
   }, [location.state]);
   
@@ -24,7 +29,7 @@ const Settings = () => {
     <div className="container mx-auto px-4 max-w-4xl pt-20 pb-24 md:pb-10">
       <h1 className="text-2xl md:text-3xl font-bold mb-6">Settings</h1>
       
-      <Tabs defaultValue="account" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="account">Account</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
