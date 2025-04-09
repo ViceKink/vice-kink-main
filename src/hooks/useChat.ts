@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from '@tanstack/react-query';
@@ -113,19 +112,16 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
         }
       }
       
-      // Ensure we always have content, even for image-only messages
-      // This fixes the "content NOT NULL constraint" error
-      const messageContent = content.trim() || (imageUrl ? "[Image]" : null);
+      const messageContent = content.trim() || (imageUrl ? " " : null);
       
       console.log('Sending message with content:', messageContent, 'image URL:', imageUrl);
       
-      // Direct insert approach
       const { data, error } = await supabase
         .from('messages')
         .insert({
           sender_id: userId,
           receiver_id: partnerId,
-          content: messageContent, // Using our default content if empty
+          content: messageContent,
           image_url: imageUrl,
           read: false
         })
@@ -146,7 +142,6 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
         console.log("Message sent successfully:", data[0]);
       }
       
-      // Invalidate matches query to refresh the list with the new message
       queryClient.invalidateQueries({ queryKey: ['matches'] });
     } catch (error) {
       console.error('Error sending message:', error);
@@ -164,7 +159,6 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
     fetchMessages();
     markMessagesAsRead();
     
-    // Subscribe to new messages
     const channel = supabase
       .channel('messages-channel')
       .on('postgres_changes', 

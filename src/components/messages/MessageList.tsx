@@ -42,6 +42,18 @@ const MessageList: React.FC<MessageListProps> = ({
     }));
   };
 
+  const retryLoadImage = (messageId: string, imageUrl: string) => {
+    // Remove from error state to allow retry
+    setImageLoadErrors(prev => {
+      const newState = { ...prev };
+      delete newState[messageId];
+      return newState;
+    });
+    
+    // Force image refresh by adding a timestamp query param
+    return `${imageUrl}?t=${Date.now()}`;
+  };
+
   if (errorMessage) {
     return (
       <div className="p-4 mb-4 text-white bg-destructive rounded-md text-center">
@@ -92,7 +104,8 @@ const MessageList: React.FC<MessageListProps> = ({
                 : 'bg-muted'
             }`}
           >
-            {message.content && <p className="break-words">{message.content}</p>}
+            {/* Only show content if it's more than just a space character (for image-only messages) */}
+            {message.content && message.content.trim() && <p className="break-words">{message.content}</p>}
             
             {message.image_url && !imageLoadErrors[message.id] && (
               <div className="mt-2 relative">
@@ -101,15 +114,22 @@ const MessageList: React.FC<MessageListProps> = ({
                   alt="Message attachment" 
                   className="rounded-md max-h-60 max-w-full object-contain"
                   onError={() => handleImageError(message.id)}
+                  onLoad={() => console.log("Image loaded successfully:", message.image_url)}
                 />
               </div>
             )}
 
             {message.image_url && imageLoadErrors[message.id] && (
-              <div className="mt-1 text-sm italic">
-                {message.sender_id === userId 
-                  ? "Image could not be displayed" 
-                  : "Image attachment"}
+              <div className="mt-1 text-sm italic flex flex-col">
+                <span>Image could not be displayed</span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="p-0 h-auto text-xs self-start underline"
+                  onClick={() => window.open(message.image_url, '_blank')}
+                >
+                  Open in browser
+                </Button>
               </div>
             )}
             
