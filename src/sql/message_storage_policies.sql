@@ -1,12 +1,6 @@
 
--- First, ensure the messages bucket exists
-DO $$
-BEGIN
-  INSERT INTO storage.buckets (id, name, public)
-  VALUES ('messages', 'messages', true)
-  ON CONFLICT (id) DO NOTHING;
-END
-$$;
+-- First, ensure the messages bucket exists and is properly configured
+CREATE BUCKET IF NOT EXISTS "messages" WITH (public = true);
 
 -- Storage policy to allow public access to images in the messages bucket
 CREATE POLICY "Public access to messages bucket" ON storage.objects

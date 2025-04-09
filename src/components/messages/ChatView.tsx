@@ -36,6 +36,7 @@ const ChatView: React.FC<ChatViewProps> = ({
   const [revealingImage, setRevealingImage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({});
+  const [imageUploadFailed, setImageUploadFailed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast: toastNotification } = useToast();
@@ -142,6 +143,7 @@ const ChatView: React.FC<ChatViewProps> = ({
     }
     
     setImageFile(file);
+    setImageUploadFailed(false);
     
     // Create a preview URL
     const objectUrl = URL.createObjectURL(file);
@@ -151,6 +153,7 @@ const ChatView: React.FC<ChatViewProps> = ({
   const handleCancelImage = () => {
     setImageFile(null);
     setImagePreviewUrl(null);
+    setImageUploadFailed(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -173,7 +176,6 @@ const ChatView: React.FC<ChatViewProps> = ({
       const filePath = `${userId}/${fileName}`;
       
       console.log(`[DEBUG] Trying to upload to: messages/${filePath}`);
-      console.log(`[DEBUG] Supabase URL: ${supabase.supabaseUrl}`);
       
       // List all buckets to debug
       const { data: buckets, error: bucketError } = await supabase
@@ -197,12 +199,7 @@ const ChatView: React.FC<ChatViewProps> = ({
       if (uploadError) {
         console.error("[DEBUG] Upload error details:", uploadError);
         toast.error(`Upload failed: ${uploadError.message}`);
-        
-        // Alternative approach if the upload fails
-        if (uploadError.message.includes("Bucket not found")) {
-          toast.error("Image upload currently unavailable. Please try again later or send a text message only.");
-        }
-        
+        setImageUploadFailed(true);
         return null;
       }
       
@@ -216,10 +213,25 @@ const ChatView: React.FC<ChatViewProps> = ({
         
       console.log("[DEBUG] Generated public URL:", urlData.publicUrl);
       
+      // Test if the URL is accessible
+      try {
+        const response = await fetch(urlData.publicUrl, { method: 'HEAD' });
+        if (!response.ok) {
+          console.error("[DEBUG] URL is not accessible:", response.status);
+          toast.error("Image URL is not accessible. Sending text-only message.");
+          setImageUploadFailed(true);
+          return null;
+        }
+      } catch (error) {
+        console.error("[DEBUG] Error checking URL accessibility:", error);
+        // Continue anyway - the error might be due to CORS
+      }
+      
       return urlData.publicUrl;
     } catch (error) {
       console.error('[DEBUG] Error uploading image:', error);
-      toast.error("Failed to upload image. Please try again.");
+      toast.error("Failed to upload image. Sending text-only message.");
+      setImageUploadFailed(true);
       return null;
     }
   };
@@ -238,15 +250,13 @@ const ChatView: React.FC<ChatViewProps> = ({
       // Upload image if present
       if (hasImage && imageFile) {
         imageUrl = await uploadImage(imageFile);
-        if (!imageUrl && !hasContent) {
-          setIsLoading(false);
-          if (imageUrl === null) {
-            // If upload failed but we have text, continue with text-only message
-            if (hasContent) {
-              toast.warning("Image upload failed, sending text only");
-            } else {
-              return;
-            }
+        
+        // If upload failed but we have text, continue with text-only message
+        if (imageUrl === null && !hasContent) {
+          if (!imageUploadFailed) {
+            setIsLoading(false);
+            toast.error("Image upload failed and no message text provided.");
+            return;
           }
         }
       }
@@ -364,11 +374,29 @@ const ChatView: React.FC<ChatViewProps> = ({
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Function to get a fallback image placeholder
-  const getImagePlaceholder = (message_id: string) => {
-    return `https://via.placeholder.com/400x300?text=Image+Loading`;
+  const getImageUrl = (url: string | undefined): string => {
+    if (!url) return '';
+    
+    // If URL already contains the full URL structure, return as is
+    if (url.includes('storage/v1/object/public/messages')) {
+      return url;
+    }
+    
+    // Try to use a direct storage proxy if available
+    try {
+      const supabaseURL = new URL(supabase.getURL());
+      const host = supabaseURL.host;
+      return `${supabaseURL.protocol}//${host}/storage/v1/object/public/messages/${url}`;
+    } catch (error) {
+      console.error("[DEBUG] Error constructing URL:", error);
+      return url; // Fallback to the original URL
+    }
   };
-  
+
+  const hasValidImage = (message: Message): boolean => {
+    return !!message.image_url && message.is_image_revealed !== false;
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="border-b p-3 flex items-center gap-3">
@@ -444,16 +472,24 @@ const ChatView: React.FC<ChatViewProps> = ({
                               <span className="animate-pulse">Loading...</span>
                             </div>
                           )}
-                          <img 
-                            src={message.image_url} 
-                            alt="Message attachment" 
-                            className="max-w-full rounded-md cursor-pointer"
-                            onClick={() => window.open(message.image_url, '_blank')}
-                            onLoad={() => handleImageLoaded(message.id)}
-                            onError={() => handleImageError(message.id, message.image_url || '')}
-                            onLoadStart={() => setLoadingImages(prev => ({...prev, [message.id]: true}))}
-                            loading="lazy"
-                          />
+                          {message.image_url && (
+                            <a 
+                              href={getImageUrl(message.image_url)} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="block"
+                            >
+                              <img 
+                                src={getImageUrl(message.image_url)} 
+                                alt="Message attachment" 
+                                className="max-w-full rounded-md cursor-pointer"
+                                onLoad={() => handleImageLoaded(message.id)}
+                                onError={() => handleImageError(message.id, message.image_url || '')}
+                                onLoadStart={() => setLoadingImages(prev => ({...prev, [message.id]: true}))}
+                                loading="lazy"
+                              />
+                            </a>
+                          )}
                         </div>
                       )}
                     </div>
@@ -489,6 +525,11 @@ const ChatView: React.FC<ChatViewProps> = ({
               <X size={14} />
             </button>
           </div>
+          {imageUploadFailed && (
+            <div className="text-xs text-destructive mt-1">
+              Warning: Previous image upload failed. Try again or send text only.
+            </div>
+          )}
         </div>
       )}
       
