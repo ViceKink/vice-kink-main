@@ -20,11 +20,11 @@ WITH CHECK (bucket_id = 'message' AND auth.role() = 'authenticated');
 CREATE POLICY "Allow owners to update their objects in message bucket" 
 ON storage.objects
 FOR UPDATE
-USING (bucket_id = 'message' AND auth.uid()::text = owner)
+USING (bucket_id = 'message' AND owner = auth.uid()::text)
 WITH CHECK (bucket_id = 'message');
 
 -- Storage policy to allow owners to delete their objects in message bucket
 CREATE POLICY "Allow owners to delete their objects in message bucket" 
 ON storage.objects
 FOR DELETE
-USING (bucket_id = 'message' AND auth.uid()::text = owner);
+USING (bucket_id = 'message' AND owner = auth.uid()::text);

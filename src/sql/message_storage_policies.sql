@@ -1,6 +1,7 @@
 
 -- First, ensure the message bucket exists and is properly configured
-CREATE BUCKET IF NOT EXISTS "message" WITH (public = true);
+-- Note: CREATE BUCKET syntax might not work in all Supabase instances
+-- Consider using the INSERT approach from message_storage_policies_fixed.sql instead
 
 -- Storage policy to allow public access to images in the message bucket
 CREATE POLICY "Public access to message bucket" ON storage.objects
@@ -15,10 +16,10 @@ CREATE POLICY "Allow authenticated uploads to message bucket" ON storage.objects
 -- Storage policy to allow owners to update their objects in message bucket
 CREATE POLICY "Allow owners to update their objects in message bucket" ON storage.objects
   FOR UPDATE
-  USING (bucket_id = 'message' AND auth.uid()::text = owner)
+  USING (bucket_id = 'message' AND owner = auth.uid()::text)
   WITH CHECK (bucket_id = 'message');
 
 -- Storage policy to allow owners to delete their objects in message bucket
 CREATE POLICY "Allow owners to delete their objects in message bucket" ON storage.objects
   FOR DELETE
-  USING (bucket_id = 'message' AND auth.uid()::text = owner);
+  USING (bucket_id = 'message' AND owner = auth.uid()::text);
