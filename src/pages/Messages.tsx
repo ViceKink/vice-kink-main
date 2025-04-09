@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from '@/context/auth';
 import { useQuery } from '@tanstack/react-query';
@@ -14,26 +14,21 @@ const Messages = () => {
   const [activeMatch, setActiveMatch] = useState<MatchWithProfile | null>(null);
   const [activeTab, setActiveTab] = useState('matches');
 
-  // Function to fetch matches with profiles and last messages
   const fetchMatches = async () => {
     if (!user?.id) return [];
     
-    // Get matches with user profiles
     const { data: matchesData, error: matchesError } = await supabase.rpc('get_user_matches', {
       user_id: user.id
     });
     
     if (matchesError) throw matchesError;
     
-    // Enhance the matches with last message and unread count
     const enhancedMatches = await Promise.all(matchesData.map(async (match: any) => {
-      // Get last message between users
       const { data: lastMessageData } = await supabase.rpc('get_last_message', {
         user1: user.id,
         user2: match.other_user_id
       });
       
-      // Get unread count
       const { data: unreadCount } = await supabase.rpc('count_unread_messages', {
         user_id: user.id,
         other_user_id: match.other_user_id
@@ -49,15 +44,13 @@ const Messages = () => {
     return enhancedMatches;
   };
 
-  // Use React Query to fetch and cache matches
   const { data: matches = [], isLoading: isLoadingMatches, refetch: refetchMatches } = useQuery({
     queryKey: ['matches'],
     queryFn: fetchMatches,
     enabled: !!user?.id,
-    refetchInterval: 10000, // Refresh every 10 seconds
+    refetchInterval: 10000,
   });
 
-  // Fetch likes (using existing component)
   const { data: likes = [], isLoading: isLoadingLikes } = useQuery({
     queryKey: ['likes'],
     queryFn: async () => {
@@ -99,7 +92,6 @@ const Messages = () => {
       {activeMatch ? (
         <div className="h-full">
           <ChatView 
-            matchId={activeMatch.match_id}
             userId={user?.id || ''}
             partnerId={activeMatch.other_user_id}
             partnerName={activeMatch.other_user.name || 'User'}

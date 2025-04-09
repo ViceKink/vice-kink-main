@@ -14,11 +14,14 @@ export const useChat = ({ userId, partnerId }) => {
   const fetchMessages = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.rpc('get_conversation', { user1: userId, user2: partnerId });
+      const { data, error } = await supabase.rpc('get_conversation', { 
+        user1: userId, 
+        user2: partnerId 
+      });
       if (error) throw error;
       setMessages(data || []);
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      console.error('Error:', error);
       toast({ title: "Failed to load messages", variant: "destructive" });
     } finally {
       setIsLoading(false);
@@ -26,8 +29,14 @@ export const useChat = ({ userId, partnerId }) => {
   };
 
   const markRead = async () => {
-    await supabase.rpc('mark_messages_as_read', { user_id: userId, other_user_id: partnerId })
-      .catch(error => console.error('Error marking messages as read:', error));
+    try {
+      await supabase.rpc('mark_messages_as_read', { 
+        user_id: userId, 
+        other_user_id: partnerId 
+      });
+    } catch (error) {
+      console.error('Error marking read:', error);
+    }
   };
 
   const sendTextMessage = async (content) => {
@@ -37,7 +46,11 @@ export const useChat = ({ userId, partnerId }) => {
       setIsSending(true);
       const { data, error } = await supabase
         .from('messages')
-        .insert({ sender_id: userId, receiver_id: partnerId, content: content.trim() })
+        .insert({ 
+          sender_id: userId, 
+          receiver_id: partnerId, 
+          content: content.trim() 
+        })
         .select('id')
         .single();
       
@@ -54,8 +67,8 @@ export const useChat = ({ userId, partnerId }) => {
       queryClient.invalidateQueries({ queryKey: ['matches'] });
       return true;
     } catch (error) {
-      console.error('Error sending message:', error);
-      toast({ title: "Failed to send message", variant: "destructive" });
+      console.error('Error:', error);
+      toast({ title: "Failed to send", variant: "destructive" });
       return false;
     } finally {
       setIsSending(false);

@@ -31,7 +31,7 @@ const MessageList = ({ matches, isLoading, onSelectMatch }) => {
       <div className="text-center py-8">
         <div className="text-6xl mb-4">💌</div>
         <h3 className="text-xl font-semibold mb-2">No matches yet</h3>
-        <p className="text-muted-foreground">Start swiping to find your matches</p>
+        <p className="text-muted-foreground">Start swiping to find matches</p>
       </div>
     );
   }

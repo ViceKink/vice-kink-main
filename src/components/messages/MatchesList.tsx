@@ -36,14 +36,14 @@ const MatchesList = ({ matches, isLoading, onSelectMatch }) => {
       <Card className="h-full flex flex-col items-center justify-center text-center p-6">
         <User2 className="w-12 h-12 mb-2 text-gray-400" />
         <h3 className="text-lg font-medium">No matches yet</h3>
-        <p className="text-sm text-muted-foreground mt-1">Start liking profiles to get matches</p>
+        <p className="text-sm text-muted-foreground mt-1">Start liking profiles</p>
         <Button className="mt-4" onClick={() => navigate('/discover')}>Discover</Button>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-2 overflow-y-auto max-h-[70vh]">
+    <div className="space-y-2">
       {matches.map((match) => (
         <Card 
           key={match.match_id}
