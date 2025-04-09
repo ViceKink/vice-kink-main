@@ -64,8 +64,69 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
     }
   }, [userId, partnerId]);
 
+  const createBucketIfNotExists = async () => {
+    try {
+      // First check if bucket exists
+      const { data: buckets, error: bucketListError } = await supabase
+        .storage
+        .listBuckets();
+      
+      if (bucketListError) {
+        console.error('Error listing buckets:', bucketListError);
+        return false;
+      }
+      
+      // If bucket doesn't exist, try to create it
+      if (!buckets.some(b => b.name === BUCKET_NAME)) {
+        console.log(`Bucket "${BUCKET_NAME}" not found, attempting to create it...`);
+        
+        const { data, error: createError } = await supabase
+          .storage
+          .createBucket(BUCKET_NAME, {
+            public: true,
+            fileSizeLimit: 5242880, // 5MB
+            allowedMimeTypes: ['image/*']
+          });
+          
+        if (createError) {
+          console.error('Error creating bucket:', createError);
+          toast({
+            title: "Storage configuration error",
+            description: "Could not create storage bucket. Please check the README-IMAGE-SETUP.md file for manual setup instructions.",
+            variant: "destructive"
+          });
+          return false;
+        }
+        
+        console.log(`Bucket "${BUCKET_NAME}" created successfully:`, data);
+        
+        // Now create the necessary policies (this might require manual setup)
+        toast({
+          title: "Storage bucket created",
+          description: "New storage bucket was created. You might need to manually set up storage policies in Supabase.",
+        });
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error in bucket creation:', error);
+      return false;
+    }
+  };
+
   const uploadImage = async (file: File): Promise<string | null> => {
     try {
+      // First make sure the bucket exists
+      const bucketExists = await createBucketIfNotExists();
+      if (!bucketExists) {
+        toast({
+          title: "Storage setup required",
+          description: "Please check README-IMAGE-SETUP.md for manual setup instructions",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
       const fileExt = file.name.split('.').pop();
       const filePath = `${userId}/${uuidv4()}.${fileExt}`;
       
@@ -96,7 +157,7 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
         console.error(`Bucket "${BUCKET_NAME}" does not exist!`);
         toast({
           title: "Storage error",
-          description: `Bucket "${BUCKET_NAME}" not found. Please contact support.`,
+          description: `Bucket "${BUCKET_NAME}" not found. Please check README-IMAGE-SETUP.md for setup instructions.`,
           variant: "destructive"
         });
         return null;

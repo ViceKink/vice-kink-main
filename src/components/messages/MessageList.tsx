@@ -78,7 +78,16 @@ const MessageList: React.FC<MessageListProps> = ({
 
   const handleImageError = (url: string) => {
     console.error(`Failed to load image: ${url}`);
-    console.error(`Image URL parsing: ${new URL(url).toString()}`);
+    console.error(`Image URL parsing:`, url);
+    try {
+      // Only try to parse if it's a valid URL
+      if (url.startsWith('http')) {
+        console.error(`As URL object:`, new URL(url).toString());
+      }
+    } catch (e) {
+      console.error('Error parsing URL:', e);
+    }
+    
     toast({
       title: "Image failed to load",
       description: "The image could not be displayed. Please check the console for details."
@@ -104,7 +113,7 @@ const MessageList: React.FC<MessageListProps> = ({
               <p className="break-words">{message.content}</p>
             )}
             
-            {/* Image handling */}
+            {/* Image handling with improved debugging */}
             {message.image_url && (
               <div className="mt-2 relative">
                 <img 
