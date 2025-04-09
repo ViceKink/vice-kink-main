@@ -54,7 +54,7 @@ WITH CHECK (bucket_id = 'message');
 CREATE POLICY "Allow owners to delete their objects in message bucket" 
 ON storage.objects
 FOR DELETE
-USING (bucket_id = 'message' AND auth.uid()::text = owner);
+USING (bucket_id = 'message' AND owner = auth.uid()::text);
 ```
 
 ## 3. Troubleshooting
