@@ -3,7 +3,7 @@ import React, { useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Message } from '@/models/matchesTypes';
 import { Skeleton } from '@/components/ui/skeleton';
-import { RefreshCw, ExternalLink } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { useToast } from "@/hooks/use-toast";
 
@@ -76,6 +76,14 @@ const MessageList: React.FC<MessageListProps> = ({
     );
   }
 
+  const handleImageError = (url: string) => {
+    console.error(`Failed to load image: ${url}`);
+    toast({
+      title: "Image failed to load",
+      description: "The image could not be displayed"
+    });
+  };
+
   return (
     <div className="space-y-4">
       {messages.map((message) => (
@@ -90,25 +98,19 @@ const MessageList: React.FC<MessageListProps> = ({
                 : 'bg-muted'
             }`}
           >
-            {/* Only show content if it exists and isn't just whitespace */}
+            {/* Display content if it exists and isn't just whitespace */}
             {message.content && message.content.trim() && (
               <p className="break-words">{message.content}</p>
             )}
             
-            {/* Simple image handling without bucket name correction */}
+            {/* Image handling */}
             {message.image_url && (
               <div className="mt-2 relative">
                 <img 
                   src={message.image_url}
                   alt="Message attachment" 
                   className="rounded-md max-h-60 max-w-full object-contain"
-                  onError={() => {
-                    console.error(`Failed to load image: ${message.image_url}`);
-                    toast({
-                      title: "Image failed to load",
-                      description: "The image could not be displayed"
-                    });
-                  }}
+                  onError={() => handleImageError(message.image_url || '')}
                   loading="lazy"
                 />
               </div>

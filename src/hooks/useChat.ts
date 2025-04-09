@@ -18,6 +18,9 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Define bucket name as a constant to ensure consistency
+  const BUCKET_NAME = 'messages';
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -66,17 +69,15 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
       const fileExt = file.name.split('.').pop();
       const filePath = `${userId}/${uuidv4()}.${fileExt}`;
       
-      // Use the correct 'messages' bucket name
-      const bucketName = 'messages';
-      console.log(`Uploading image to "${bucketName}" bucket with path:`, filePath);
+      console.log(`Uploading image to "${BUCKET_NAME}" bucket with path:`, filePath);
       
       const { error: uploadError, data } = await supabase
         .storage
-        .from(bucketName)
+        .from(BUCKET_NAME)
         .upload(filePath, file);
         
       if (uploadError) {
-        console.error(`Error uploading image to ${bucketName} bucket:`, uploadError);
+        console.error(`Error uploading image to ${BUCKET_NAME} bucket:`, uploadError);
         toast({
           title: "Failed to upload image",
           description: "Storage error: " + uploadError.message,
@@ -87,7 +88,7 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
       
       const { data: urlData } = supabase
         .storage
-        .from(bucketName)
+        .from(BUCKET_NAME)
         .getPublicUrl(filePath);
         
       console.log(`Image uploaded successfully, URL:`, urlData.publicUrl);
