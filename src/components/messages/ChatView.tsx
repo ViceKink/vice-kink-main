@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Send, Image as ImageIcon, X } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, X, Lock } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from "sonner";
+import { useAdCoins } from '@/hooks/useAdCoins';
 
 interface Message {
   id: string;
@@ -16,6 +17,7 @@ interface Message {
   receiver_id: string;
   content: string;
   image_url?: string;
+  is_image_revealed?: boolean;
   created_at: string;
   read: boolean;
 }
@@ -42,10 +44,12 @@ const ChatView: React.FC<ChatViewProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [revealingImage, setRevealingImage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast: toastNotification } = useToast();
   const queryClient = useQueryClient();
+  const { purchaseFeature } = useAdCoins();
   
   // Default to '?' if name is undefined or empty
   const nameInitial = partnerName && partnerName.length > 0 ? partnerName.charAt(0) : '?';
@@ -204,8 +208,8 @@ const ChatView: React.FC<ChatViewProps> = ({
         }
       }
       
-      // Use the send_message_with_image RPC function if available, otherwise fall back
-      const { data, error } = await supabase.rpc('send_message_with_image', {
+      // Send message with image if available
+      const { data, error } = await supabase.rpc('send_message', {
         sender: userId,
         receiver: partnerId,
         message_content: messageText.trim() || ' ', // Send at least a space if no text
@@ -223,6 +227,7 @@ const ChatView: React.FC<ChatViewProps> = ({
         receiver_id: partnerId,
         content: messageText.trim() || ' ',
         image_url: imageUrl || undefined,
+        is_image_revealed: true, // Your own images are always revealed
         created_at: new Date().toISOString(),
         read: false
       };
@@ -242,6 +247,39 @@ const ChatView: React.FC<ChatViewProps> = ({
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleRevealImage = async (messageId: string) => {
+    try {
+      setRevealingImage(messageId);
+      
+      // Use AdCoins to reveal the image
+      const success = await purchaseFeature('REVEAL_PROFILE');
+      
+      if (success) {
+        // Update the local state to show the image as revealed
+        setMessages(prevMessages => 
+          prevMessages.map(msg => 
+            msg.id === messageId ? { ...msg, is_image_revealed: true } : msg
+          )
+        );
+        
+        // Update the database to mark the image as revealed
+        await supabase
+          .from('messages')
+          .update({ is_image_revealed: true })
+          .eq('id', messageId);
+          
+        toast.success("Image revealed!");
+      } else {
+        toast.error("Failed to reveal image. Check your AdCoins balance.");
+      }
+    } catch (error) {
+      console.error("Error revealing image:", error);
+      toast.error("Failed to reveal image. Please try again.");
+    } finally {
+      setRevealingImage(null);
     }
   };
 
@@ -298,13 +336,31 @@ const ChatView: React.FC<ChatViewProps> = ({
                   }`}
                 >
                   {message.image_url && (
-                    <div className="mb-2">
-                      <img 
-                        src={message.image_url} 
-                        alt="Message attachment" 
-                        className="max-w-full rounded-md cursor-pointer"
-                        onClick={() => window.open(message.image_url, '_blank')}
-                      />
+                    <div className="mb-2 relative">
+                      {message.sender_id !== userId && !message.is_image_revealed ? (
+                        <div className="relative">
+                          <div className="w-full h-32 bg-gray-700 rounded-md flex flex-col items-center justify-center cursor-pointer">
+                            <Lock className="w-8 h-8 text-gray-400 mb-2" />
+                            <p className="text-sm text-gray-300">Image hidden</p>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="mt-2"
+                              onClick={() => handleRevealImage(message.id)}
+                              disabled={revealingImage === message.id}
+                            >
+                              {revealingImage === message.id ? 'Revealing...' : 'Reveal (1 AdCoin)'}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <img 
+                          src={message.image_url} 
+                          alt="Message attachment" 
+                          className="max-w-full rounded-md cursor-pointer"
+                          onClick={() => window.open(message.image_url, '_blank')}
+                        />
+                      )}
                     </div>
                   )}
                   <p className="break-words">{message.content !== ' ' ? message.content : ''}</p>
