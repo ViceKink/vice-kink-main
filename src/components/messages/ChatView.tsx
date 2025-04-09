@@ -123,15 +123,15 @@ const ChatView: React.FC<ChatViewProps> = ({
     try {
       setIsLoading(true);
       
-      // Use the fixed function without the image_url parameter
-      const { data, error } = await supabase.rpc('send_message', {
+      // Use the new send_text_message function
+      const { data, error } = await supabase.rpc('send_text_message', {
         sender: userId,
         receiver: partnerId,
         message_content: messageText.trim()
       });
       
       if (error) {
-        console.error('Error response from send_message:', error);
+        console.error('Error response from send_text_message:', error);
         throw error;
       }
       

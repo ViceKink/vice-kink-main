@@ -111,7 +111,8 @@ RETURNS TABLE (
   receiver_id UUID,
   content TEXT,
   created_at TIMESTAMPTZ,
-  read BOOLEAN
+  read BOOLEAN,
+  image_url TEXT
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -143,9 +144,8 @@ BEGIN
 END;
 $$;
 
--- Fix the overloaded function by removing one of the send_message functions and keeping just one version
--- Function to send a message (simpler version without image_url parameter)
-CREATE OR REPLACE FUNCTION public.send_message(sender UUID, receiver UUID, message_content TEXT)
+-- Create a function for sending basic text messages (no image)
+CREATE OR REPLACE FUNCTION public.send_text_message(sender UUID, receiver UUID, message_content TEXT)
 RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -161,8 +161,8 @@ BEGIN
 END;
 $$;
 
--- Add a new function for sending messages with images
-CREATE OR REPLACE FUNCTION public.send_message_with_image(sender UUID, receiver UUID, message_content TEXT, image_url TEXT)
+-- Function for sending messages with images
+CREATE OR REPLACE FUNCTION public.send_image_message(sender UUID, receiver UUID, message_content TEXT, image_url TEXT)
 RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
