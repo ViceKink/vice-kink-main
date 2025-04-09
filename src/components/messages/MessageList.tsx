@@ -1,7 +1,8 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Message } from '@/models/matchesTypes';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface MessageListProps {
   messages: Message[];
@@ -19,6 +20,7 @@ const MessageList: React.FC<MessageListProps> = ({
   fetchMessages
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [imageLoadErrors, setImageLoadErrors] = useState<Record<string, boolean>>({});
   
   useEffect(() => {
     scrollToBottom();
@@ -33,6 +35,13 @@ const MessageList: React.FC<MessageListProps> = ({
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const handleImageError = (messageId: string) => {
+    setImageLoadErrors(prev => ({
+      ...prev,
+      [messageId]: true
+    }));
+  };
+
   if (errorMessage) {
     return (
       <div className="p-4 mb-4 text-white bg-destructive rounded-md text-center">
@@ -45,6 +54,18 @@ const MessageList: React.FC<MessageListProps> = ({
         >
           Try Again
         </Button>
+      </div>
+    );
+  }
+
+  if (isLoading && messages.length === 0) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map(i => (
+          <div key={i} className={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
+            <Skeleton className={`h-14 ${i % 2 === 0 ? 'w-32' : 'w-40'} rounded-lg`} />
+          </div>
+        ))}
       </div>
     );
   }
@@ -71,7 +92,27 @@ const MessageList: React.FC<MessageListProps> = ({
                 : 'bg-muted'
             }`}
           >
-            <p className="break-words">{message.content}</p>
+            {message.content && <p className="break-words">{message.content}</p>}
+            
+            {message.image_url && !imageLoadErrors[message.id] && (
+              <div className="mt-2 relative">
+                <img 
+                  src={message.image_url}
+                  alt="Message attachment" 
+                  className="rounded-md max-h-60 max-w-full object-contain"
+                  onError={() => handleImageError(message.id)}
+                />
+              </div>
+            )}
+
+            {message.image_url && imageLoadErrors[message.id] && (
+              <div className="mt-1 text-sm italic">
+                {message.sender_id === userId 
+                  ? "Image could not be displayed" 
+                  : "Image attachment"}
+              </div>
+            )}
+            
             <p className={`text-xs mt-1 ${
               message.sender_id === userId 
                 ? 'text-primary-foreground/70' 

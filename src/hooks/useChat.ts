@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import { Message } from '@/models/matchesTypes';
+import { v4 as uuidv4 } from 'uuid';
 
 interface UseChatProps {
   matchId: string;
@@ -60,22 +61,82 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
     }
   }, [userId, partnerId]);
 
-  const sendMessage = useCallback(async (content: string) => {
-    if (!content.trim()) return;
-    
+  const uploadImage = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${userId}/${uuidv4()}.${fileExt}`;
+      
+      const { error: uploadError, data } = await supabase
+        .storage
+        .from('messages')
+        .upload(filePath, file);
+        
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        toast({
+          title: "Failed to upload image",
+          description: "Please try again later",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
+      const { data: urlData } = supabase
+        .storage
+        .from('messages')
+        .getPublicUrl(filePath);
+        
+      return urlData.publicUrl;
+    } catch (error) {
+      console.error('Error in image upload:', error);
+      toast({
+        title: "Failed to upload image",
+        description: "Please try again later",
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
+
+  const sendMessage = useCallback(async (content: string, imageFile?: File) => {
     try {
       setIsLoading(true);
       
-      const { data, error } = await supabase
-        .from('messages')
-        .insert({
-          sender_id: userId,
-          receiver_id: partnerId,
-          content: content.trim(),
-          read: false
-        })
-        .select()
-        .single();
+      let imageUrl = null;
+      
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
+        if (!imageUrl && !content.trim()) {
+          setIsLoading(false);
+          return; // Don't send empty message if image upload failed
+        }
+      }
+      
+      // Use the RPC function if it exists
+      let result;
+      if (typeof supabase.rpc === 'function') {
+        result = await supabase.rpc('send_message', {
+          sender: userId,
+          receiver: partnerId,
+          message_content: content.trim() || null,
+          image_url: imageUrl
+        });
+      } else {
+        // Fallback to direct insert
+        result = await supabase
+          .from('messages')
+          .insert({
+            sender_id: userId,
+            receiver_id: partnerId,
+            content: content.trim() || null,
+            image_url: imageUrl,
+            read: false
+          })
+          .select()
+          .single();
+      }
+      
+      const { data, error } = result;
         
       if (error) {
         console.error("Error sending message:", error);
