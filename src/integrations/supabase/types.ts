@@ -190,8 +190,6 @@ export type Database = {
           content: string
           created_at: string
           id: string
-          image_url: string | null
-          is_image_revealed: boolean | null
           read: boolean
           receiver_id: string
           sender_id: string
@@ -200,8 +198,6 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
-          image_url?: string | null
-          is_image_revealed?: boolean | null
           read?: boolean
           receiver_id: string
           sender_id: string
@@ -210,8 +206,6 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
-          image_url?: string | null
-          is_image_revealed?: boolean | null
           read?: boolean
           receiver_id?: string
           sender_id?: string
@@ -1578,14 +1572,7 @@ export type Database = {
         Returns: string
       }
       send_message: {
-        Args:
-          | { sender: string; receiver: string; message_content: string }
-          | {
-              sender: string
-              receiver: string
-              message_content: string
-              image_url?: string
-            }
+        Args: { sender: string; receiver: string; message_content: string }
         Returns: string
       }
       spend_adcoins: {

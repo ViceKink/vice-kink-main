@@ -68,9 +68,7 @@ RETURNS TABLE (
   receiver_id UUID,
   content TEXT,
   created_at TIMESTAMPTZ,
-  read BOOLEAN,
-  image_url TEXT,
-  is_image_revealed BOOLEAN
+  read BOOLEAN
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -113,9 +111,7 @@ RETURNS TABLE (
   receiver_id UUID,
   content TEXT,
   created_at TIMESTAMPTZ,
-  read BOOLEAN,
-  image_url TEXT,
-  is_image_revealed BOOLEAN
+  read BOOLEAN
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -144,5 +140,22 @@ BEGIN
     receiver_id = user_id AND 
     sender_id = other_user_id AND 
     read = false;
+END;
+$$;
+
+-- Function to send a message
+CREATE OR REPLACE FUNCTION public.send_message(sender UUID, receiver UUID, message_content TEXT)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  message_id UUID;
+BEGIN
+  INSERT INTO public.messages (sender_id, receiver_id, content)
+  VALUES (sender, receiver, message_content)
+  RETURNING id INTO message_id;
+  
+  RETURN message_id;
 END;
 $$;

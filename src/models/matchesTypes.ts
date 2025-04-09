@@ -23,8 +23,6 @@ export interface Message {
   content: string;
   created_at: string;
   read: boolean;
-  image_url?: string;
-  is_image_revealed?: boolean;
 }
 
 export interface MatchWithProfile {
