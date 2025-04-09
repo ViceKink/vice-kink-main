@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Message } from '@/models/matchesTypes';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, RefreshCw } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 interface MessageListProps {
   messages: Message[];
@@ -23,9 +24,24 @@ const MessageList: React.FC<MessageListProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [imageLoadErrors, setImageLoadErrors] = useState<Record<string, boolean>>({});
   const [imageLoading, setImageLoading] = useState<Record<string, boolean>>({});
+  const [imageSrcs, setImageSrcs] = useState<Record<string, string>>({});
   
   useEffect(() => {
     scrollToBottom();
+  }, [messages]);
+
+  // Initialize image sources when messages change
+  useEffect(() => {
+    const newImageSrcs: Record<string, string> = {};
+    messages.forEach(message => {
+      if (message.image_url && !imageSrcs[message.id]) {
+        newImageSrcs[message.id] = message.image_url;
+      }
+    });
+    
+    if (Object.keys(newImageSrcs).length > 0) {
+      setImageSrcs(prev => ({...prev, ...newImageSrcs}));
+    }
   }, [messages]);
 
   const scrollToBottom = () => {
@@ -76,7 +92,13 @@ const MessageList: React.FC<MessageListProps> = ({
     handleImageLoadStart(messageId);
     
     // Force image refresh by adding a timestamp query param
-    return `${imageUrl}?t=${Date.now()}`;
+    const newSrc = `${imageUrl}?t=${Date.now()}`;
+    setImageSrcs(prev => ({
+      ...prev,
+      [messageId]: newSrc
+    }));
+    
+    return newSrc;
   };
 
   if (errorMessage) {
@@ -136,11 +158,11 @@ const MessageList: React.FC<MessageListProps> = ({
               <div className="mt-2 relative">
                 {imageLoading[message.id] && (
                   <div className="absolute inset-0 flex items-center justify-center bg-background/30 rounded-md">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <Spinner className="h-8 w-8" />
                   </div>
                 )}
                 <img 
-                  src={message.image_url}
+                  src={imageSrcs[message.id] || message.image_url}
                   alt="Message attachment" 
                   className="rounded-md max-h-60 max-w-full object-contain"
                   onError={() => handleImageError(message.id)}
@@ -157,7 +179,12 @@ const MessageList: React.FC<MessageListProps> = ({
                   variant="secondary"
                   size="sm"
                   className="w-full flex items-center justify-center gap-1"
-                  onClick={() => retryLoadImage(message.id, message.image_url!)}
+                  onClick={() => {
+                    const newSrc = retryLoadImage(message.id, message.image_url!);
+                    // Force a reload of the image element
+                    const img = new Image();
+                    img.src = newSrc;
+                  }}
                 >
                   <RefreshCw className="h-3 w-3" />
                   Retry
