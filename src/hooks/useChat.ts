@@ -66,13 +66,13 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
       const fileExt = file.name.split('.').pop();
       const filePath = `${userId}/${uuidv4()}.${fileExt}`;
       
-      // IMPORTANT: Make sure we're using 'messages' (with 's') bucket name consistently
+      // Use the correct 'messages' bucket name
       const bucketName = 'messages';
-      console.log(`Starting image upload to "${bucketName}" bucket with path:`, filePath);
+      console.log(`Uploading image to "${bucketName}" bucket with path:`, filePath);
       
       const { error: uploadError, data } = await supabase
         .storage
-        .from(bucketName)  // Use the explicit bucket name variable
+        .from(bucketName)
         .upload(filePath, file);
         
       if (uploadError) {
@@ -87,19 +87,10 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
       
       const { data: urlData } = supabase
         .storage
-        .from(bucketName)  // Use the same bucket name here
+        .from(bucketName)
         .getPublicUrl(filePath);
         
-      console.log(`Image uploaded successfully to ${bucketName} bucket, URL:`, urlData.publicUrl);
-      
-      // Double-check that we're using the correct bucket name in the URL
-      if (urlData.publicUrl.includes('/message/')) {
-        console.warn('Warning: Generated URL contains incorrect bucket name "message". Correcting to "messages".');
-        const correctedUrl = urlData.publicUrl.replace('/message/', '/messages/');
-        console.log('Corrected URL:', correctedUrl);
-        return correctedUrl;
-      }
-      
+      console.log(`Image uploaded successfully, URL:`, urlData.publicUrl);
       return urlData.publicUrl;
     } catch (error) {
       console.error('Error in image upload:', error);
@@ -130,11 +121,6 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
       
       console.log('Sending message with content:', messageContent, 'image URL:', imageUrl);
       
-      // One last check to make sure image URL has correct bucket name
-      if (imageUrl && imageUrl.includes('/message/')) {
-        imageUrl = imageUrl.replace('/message/', '/messages/');
-      }
-      
       const { data, error } = await supabase
         .from('messages')
         .insert({
@@ -157,10 +143,6 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
       }
       
       if (data && data.length > 0) {
-        // Make sure we're using the correct bucket name in any received image URLs
-        if (data[0].image_url && data[0].image_url.includes('/message/')) {
-          data[0].image_url = data[0].image_url.replace('/message/', '/messages/');
-        }
         setMessages(prev => [...prev, data[0]]);
         console.log("Message sent successfully:", data[0]);
       }
@@ -194,10 +176,6 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
         (payload) => {
           const newMessage = payload.new as Message;
           if (newMessage.sender_id === partnerId) {
-            // Fix bucket name if needed
-            if (newMessage.image_url && newMessage.image_url.includes('/message/')) {
-              newMessage.image_url = newMessage.image_url.replace('/message/', '/messages/');
-            }
             setMessages(prev => [...prev, newMessage]);
             markMessagesAsRead();
             queryClient.invalidateQueries({ queryKey: ['matches'] });
