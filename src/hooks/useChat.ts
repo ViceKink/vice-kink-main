@@ -56,10 +56,14 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
 
   // Send a text message
   const sendTextMessage = async (content: string) => {
+    if (!content.trim()) return false;
+    
     try {
       setIsSending(true);
       
-      // Fixed typing for RPC call
+      console.log('Sending message with params:', { userId, partnerId, content: content.trim() });
+      
+      // Call the send_message function correctly
       const { data, error } = await supabase.rpc('send_message', {
         sender: userId,
         receiver: partnerId,
@@ -71,13 +75,14 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
         throw error;
       }
       
-      // Check if data exists 
+      // Check if data exists
       if (!data) {
+        console.error('No data returned from send_message');
         throw new Error('No data returned from send_message');
       }
       
-      // Explicitly cast data to string to satisfy TypeScript
-      const messageId: string = data as string;
+      // Create new message object
+      const messageId = data as string;
       
       const newMessage: Message = {
         id: messageId,
@@ -88,6 +93,7 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
         read: false
       };
       
+      console.log('Message sent successfully with ID:', messageId);
       setMessages(prev => [...prev, newMessage]);
       
       // Invalidate matches query to refresh the list with the new message
