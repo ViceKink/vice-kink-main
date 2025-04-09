@@ -59,8 +59,8 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
     try {
       setIsSending(true);
       
-      // Fix: Provide both input and output type parameters to rpc
-      const { data, error } = await supabase.rpc<{ id: string }, string>('send_text_message', {
+      // Using send_message instead of send_text_message
+      const { data, error } = await supabase.rpc('send_message', {
         sender: userId,
         receiver: partnerId,
         message_content: content.trim()
