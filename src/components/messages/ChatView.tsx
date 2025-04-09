@@ -154,23 +154,29 @@ const ChatView: React.FC<ChatViewProps> = ({
       const fileName = `${uuidv4()}.${fileExt}`;
       const filePath = `${userId}/${fileName}`;
       
+      console.log(`Trying to upload to: messages/${filePath}`);
+      
       // Upload the file to Supabase Storage
-      const { error: uploadError } = await supabase
+      const { error: uploadError, data } = await supabase
         .storage
         .from('messages')
         .upload(filePath, file);
         
       if (uploadError) {
+        console.error("Upload error details:", uploadError);
         throw uploadError;
       }
       
+      console.log("Upload successful, data:", data);
+      
       // Get the public URL for the file
-      const { data } = supabase
+      const { data: urlData } = supabase
         .storage
         .from('messages')
         .getPublicUrl(filePath);
         
-      return data.publicUrl;
+      console.log("Generated public URL:", urlData.publicUrl);
+      return urlData.publicUrl;
     } catch (error) {
       console.error('Error uploading image:', error);
       toast.error("Failed to upload image. Please try again.");
@@ -206,6 +212,7 @@ const ChatView: React.FC<ChatViewProps> = ({
       });
       
       if (error) {
+        console.error("Error sending message:", error);
         throw error;
       }
       
