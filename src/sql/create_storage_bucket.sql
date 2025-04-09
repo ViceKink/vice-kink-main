@@ -10,10 +10,18 @@
 -- Replace with Supabase UI steps:
 -- 1. Go to Storage > message > Policies
 -- 2. Create a new policy:
---    - Policy name: Allow users to upload their own images
+--    - Policy name: Auth uploads to message
 --    - Allowed operation: INSERT
---    - Policy definition: (bucket_id = 'message' AND auth.uid()::text = (storage.foldername)[1])
+--    - Policy definition: (bucket_id = 'message' AND auth.role() = 'authenticated')
 -- 3. Create another policy:
---    - Policy name: Allow users to view images
+--    - Policy name: Public access to message
 --    - Allowed operation: SELECT
 --    - Policy definition: bucket_id = 'message'
+-- 4. Create another policy:
+--    - Policy name: Owner update message objects
+--    - Allowed operation: UPDATE
+--    - Policy definition: (bucket_id = 'message' AND owner = auth.uid()::text)
+-- 5. Create another policy:
+--    - Policy name: Owner delete message objects
+--    - Allowed operation: DELETE
+--    - Policy definition: (bucket_id = 'message' AND owner = auth.uid()::text)
