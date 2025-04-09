@@ -20,7 +20,7 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
   const queryClient = useQueryClient();
   
   // Define bucket name as a constant to ensure consistency
-  const BUCKET_NAME = 'messages';
+  const BUCKET_NAME = 'message';
 
   const fetchMessages = useCallback(async () => {
     try {
