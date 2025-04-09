@@ -8,12 +8,12 @@ import { useChat } from "@/hooks/useChat";
 import { formatDistanceToNow } from "date-fns";
 
 export interface ChatViewProps {
-  matchId: string;
   userId: string;
   partnerId: string;
   partnerName: string;
   partnerAvatar?: string;
   onBack: () => void;
+  matchId: string;
 }
 
 const ChatView: React.FC<ChatViewProps> = ({ userId, partnerId, partnerName, partnerAvatar, onBack }) => {

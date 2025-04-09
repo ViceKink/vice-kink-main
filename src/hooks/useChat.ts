@@ -53,7 +53,6 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
         .single();
       
       if (error) throw error;
-      if (!data) throw new Error('Failed to send message');
       
       const newMessage: Message = {
         id: data.id,
@@ -101,5 +100,5 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
     return () => { supabase.removeChannel(channel); };
   }, [userId, partnerId, queryClient]);
 
-  return { messages, isLoading, isSending, sendTextMessage, markMessagesAsRead };
+  return { messages, isLoading, isSending, sendTextMessage };
 };

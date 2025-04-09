@@ -1,5 +1,4 @@
 
--- Core messaging functions
 CREATE OR REPLACE FUNCTION public.create_match(user_id_a UUID, user_id_b UUID) RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
   INSERT INTO public.matches (user_id_1, user_id_2)
@@ -11,11 +10,8 @@ CREATE OR REPLACE FUNCTION public.get_user_matches(user_id UUID) RETURNS TABLE (
 BEGIN RETURN QUERY
   SELECT m.id as match_id, m.matched_at,
     CASE WHEN m.user_id_1 = user_id THEN m.user_id_2 ELSE m.user_id_1 END as other_user_id,
-    CASE WHEN m.user_id_1 = user_id THEN 
-      json_build_object('id', p2.id, 'name', p2.name, 'avatar', p2.avatar)
-    ELSE 
-      json_build_object('id', p1.id, 'name', p1.name, 'avatar', p1.avatar)
-    END as other_user
+    CASE WHEN m.user_id_1 = user_id THEN json_build_object('id', p2.id, 'name', p2.name, 'avatar', p2.avatar)
+    ELSE json_build_object('id', p1.id, 'name', p1.name, 'avatar', p1.avatar) END as other_user
   FROM public.matches m
   JOIN public.profiles p1 ON m.user_id_1 = p1.id
   JOIN public.profiles p2 ON m.user_id_2 = p2.id
@@ -56,13 +52,5 @@ DECLARE message_id UUID;
 BEGIN
   INSERT INTO public.messages (sender_id, receiver_id, content)
   VALUES (sender, receiver, message_content) RETURNING id INTO message_id;
-  RETURN message_id;
-END; $$;
-
-CREATE OR REPLACE FUNCTION public.send_image_message(sender UUID, receiver UUID, message_content TEXT, image_url TEXT) RETURNS UUID LANGUAGE plpgsql SECURITY DEFINER AS $$
-DECLARE message_id UUID;
-BEGIN
-  INSERT INTO public.messages (sender_id, receiver_id, content, image_url)
-  VALUES (sender, receiver, message_content, image_url) RETURNING id INTO message_id;
   RETURN message_id;
 END; $$;

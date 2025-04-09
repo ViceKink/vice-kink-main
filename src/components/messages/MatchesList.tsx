@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { MatchWithProfile } from '@/models/matchesTypes';
+import { MatchWithProfile } from '@/models/messageTypes';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
