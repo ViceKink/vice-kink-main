@@ -1,4 +1,13 @@
 
+-- First, ensure the messages bucket exists
+DO $$
+BEGIN
+  INSERT INTO storage.buckets (id, name, public)
+  VALUES ('messages', 'messages', true)
+  ON CONFLICT (id) DO NOTHING;
+END
+$$;
+
 -- Storage policy to allow public access to images in the messages bucket
 CREATE POLICY "Public access to messages bucket" ON storage.objects
   FOR SELECT 

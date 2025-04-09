@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, Image as ImageIcon, X, Lock } from "lucide-react";
@@ -173,7 +172,18 @@ const ChatView: React.FC<ChatViewProps> = ({
       const fileName = `${uuidv4()}.${fileExt}`;
       const filePath = `${userId}/${fileName}`;
       
-      console.log(`Trying to upload to: messages/${filePath}`);
+      console.log(`[DEBUG] Trying to upload to: messages/${filePath}`);
+      console.log(`[DEBUG] Supabase URL: ${supabase.supabaseUrl}`);
+      
+      // List all buckets to debug
+      const { data: buckets, error: bucketError } = await supabase
+        .storage
+        .listBuckets();
+        
+      console.log("[DEBUG] Available buckets:", buckets);
+      if (bucketError) {
+        console.error("[DEBUG] Error listing buckets:", bucketError);
+      }
       
       // Upload the file to Supabase Storage
       const { error: uploadError, data } = await supabase
@@ -185,12 +195,18 @@ const ChatView: React.FC<ChatViewProps> = ({
         });
         
       if (uploadError) {
-        console.error("Upload error details:", uploadError);
+        console.error("[DEBUG] Upload error details:", uploadError);
         toast.error(`Upload failed: ${uploadError.message}`);
-        throw uploadError;
+        
+        // Alternative approach if the upload fails
+        if (uploadError.message.includes("Bucket not found")) {
+          toast.error("Image upload currently unavailable. Please try again later or send a text message only.");
+        }
+        
+        return null;
       }
       
-      console.log("Upload successful, data:", data);
+      console.log("[DEBUG] Upload successful, data:", data);
       
       // Get the public URL for the file
       const { data: urlData } = supabase
@@ -198,23 +214,11 @@ const ChatView: React.FC<ChatViewProps> = ({
         .from('messages')
         .getPublicUrl(filePath);
         
-      console.log("Generated public URL:", urlData.publicUrl);
-      
-      // Verify the URL is accessible
-      try {
-        const checkResponse = await fetch(urlData.publicUrl, { 
-          method: 'HEAD',
-          mode: 'no-cors' // This prevents CORS errors during checking
-        });
-        console.log("URL check response:", checkResponse);
-      } catch (e) {
-        console.log("URL check failed, but continuing", e);
-        // We'll continue anyway as this might be CORS related
-      }
+      console.log("[DEBUG] Generated public URL:", urlData.publicUrl);
       
       return urlData.publicUrl;
     } catch (error) {
-      console.error('Error uploading image:', error);
+      console.error('[DEBUG] Error uploading image:', error);
       toast.error("Failed to upload image. Please try again.");
       return null;
     }
@@ -236,7 +240,14 @@ const ChatView: React.FC<ChatViewProps> = ({
         imageUrl = await uploadImage(imageFile);
         if (!imageUrl && !hasContent) {
           setIsLoading(false);
-          return; // Don't send if image upload failed and there's no text
+          if (imageUrl === null) {
+            // If upload failed but we have text, continue with text-only message
+            if (hasContent) {
+              toast.warning("Image upload failed, sending text only");
+            } else {
+              return;
+            }
+          }
         }
       }
       
@@ -249,12 +260,12 @@ const ChatView: React.FC<ChatViewProps> = ({
       });
       
       if (error) {
-        console.error("Error sending message:", error);
+        console.error("[DEBUG] Error sending message:", error);
         toast.error(`Failed to send message: ${error.message}`);
         throw error;
       }
       
-      console.log("Message sent successfully, ID:", data);
+      console.log("[DEBUG] Message sent successfully, ID:", data);
       
       // Get the message details to add to the list
       if (data) {
@@ -267,7 +278,7 @@ const ChatView: React.FC<ChatViewProps> = ({
         if (!msgError && msgData) {
           setMessages(prev => [...prev, msgData]);
         } else {
-          console.error("Error fetching sent message:", msgError);
+          console.error("[DEBUG] Error fetching sent message:", msgError);
           // Add a temporary version of the message to the UI
           const tempMessage: Message = {
             id: data,
@@ -289,7 +300,7 @@ const ChatView: React.FC<ChatViewProps> = ({
       // Invalidate matches query to refresh the list with the new message
       queryClient.invalidateQueries({ queryKey: ['matches'] });
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('[DEBUG] Error sending message:', error);
       toastNotification({
         title: "Failed to send message",
         description: "Please try again later",
