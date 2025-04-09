@@ -59,19 +59,29 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
     try {
       setIsSending(true);
       
-      // Using send_message instead of send_text_message
-      const { data, error } = await supabase.rpc('send_message', {
+      // Using send_message RPC function with proper typing
+      const { data, error } = await supabase.rpc<string, { 
+        sender: string; 
+        receiver: string; 
+        message_content: string;
+      }>('send_message', {
         sender: userId,
         receiver: partnerId,
         message_content: content.trim()
       });
       
       if (error) {
+        console.error('Supabase error:', error);
         throw error;
       }
       
+      // Check if data exists and is a string (the message ID)
+      if (!data) {
+        throw new Error('No data returned from send_message');
+      }
+      
       const newMessage: Message = {
-        id: data as string,
+        id: data,
         sender_id: userId,
         receiver_id: partnerId,
         content: content.trim(),
