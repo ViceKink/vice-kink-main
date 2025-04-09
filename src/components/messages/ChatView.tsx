@@ -1,18 +1,21 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from '@tanstack/react-query';
+import { v4 as uuidv4 } from 'uuid';
+import { toast } from "sonner";
 
 interface Message {
   id: string;
   sender_id: string;
   receiver_id: string;
   content: string;
+  image_url?: string;
   created_at: string;
   read: boolean;
 }
@@ -37,8 +40,11 @@ const ChatView: React.FC<ChatViewProps> = ({
   const [messageText, setMessageText] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast: toastNotification } = useToast();
   const queryClient = useQueryClient();
   
   // Default to '?' if name is undefined or empty
@@ -96,7 +102,7 @@ const ChatView: React.FC<ChatViewProps> = ({
       setMessages(data || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
-      toast({
+      toastNotification({
         title: "Failed to load messages",
         description: "Please try again later",
         variant: "destructive"
@@ -117,15 +123,93 @@ const ChatView: React.FC<ChatViewProps> = ({
     }
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Check file size (limit to 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image too large. Maximum size is 5MB.");
+      return;
+    }
+    
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Only image files are supported.");
+      return;
+    }
+    
+    setImageFile(file);
+    
+    // Create a preview URL
+    const objectUrl = URL.createObjectURL(file);
+    setImagePreviewUrl(objectUrl);
+  };
+
+  const handleCancelImage = () => {
+    setImageFile(null);
+    setImagePreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    try {
+      // Generate a unique filename to avoid collisions
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${uuidv4()}.${fileExt}`;
+      const filePath = `message_images/${userId}/${fileName}`;
+      
+      // Upload the file to Supabase Storage
+      const { error: uploadError } = await supabase
+        .storage
+        .from('messages')
+        .upload(filePath, file);
+        
+      if (uploadError) {
+        throw uploadError;
+      }
+      
+      // Get the public URL for the file
+      const { data } = supabase
+        .storage
+        .from('messages')
+        .getPublicUrl(filePath);
+        
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error("Failed to upload image. Please try again.");
+      return null;
+    }
+  };
+
   const handleSendMessage = async () => {
-    if (!messageText.trim()) return;
+    const hasContent = messageText.trim().length > 0;
+    const hasImage = imageFile !== null;
+    
+    if (!hasContent && !hasImage) return;
     
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.rpc('send_message', {
+      
+      let imageUrl: string | null = null;
+      
+      // Upload image if present
+      if (hasImage && imageFile) {
+        imageUrl = await uploadImage(imageFile);
+        if (!imageUrl && !hasContent) {
+          return; // Don't send if image upload failed and there's no text
+        }
+      }
+      
+      // Use the send_message_with_image RPC function if available, otherwise fall back
+      const { data, error } = await supabase.rpc('send_message_with_image', {
         sender: userId,
         receiver: partnerId,
-        message_content: messageText.trim()
+        message_content: messageText.trim() || ' ', // Send at least a space if no text
+        image_url: imageUrl
       });
       
       if (error) {
@@ -137,19 +221,21 @@ const ChatView: React.FC<ChatViewProps> = ({
         id: data,
         sender_id: userId,
         receiver_id: partnerId,
-        content: messageText.trim(),
+        content: messageText.trim() || ' ',
+        image_url: imageUrl || undefined,
         created_at: new Date().toISOString(),
         read: false
       };
       
       setMessages(prev => [...prev, newMessage]);
       setMessageText(""); // Clear input field
+      handleCancelImage(); // Clear image preview
       
       // Invalidate matches query to refresh the list with the new message
       queryClient.invalidateQueries({ queryKey: ['matches'] });
     } catch (error) {
       console.error('Error sending message:', error);
-      toast({
+      toastNotification({
         title: "Failed to send message",
         description: "Please try again later",
         variant: "destructive"
@@ -211,7 +297,17 @@ const ChatView: React.FC<ChatViewProps> = ({
                       : 'bg-muted'
                   }`}
                 >
-                  <p className="break-words">{message.content}</p>
+                  {message.image_url && (
+                    <div className="mb-2">
+                      <img 
+                        src={message.image_url} 
+                        alt="Message attachment" 
+                        className="max-w-full rounded-md cursor-pointer"
+                        onClick={() => window.open(message.image_url, '_blank')}
+                      />
+                    </div>
+                  )}
+                  <p className="break-words">{message.content !== ' ' ? message.content : ''}</p>
                   <p className={`text-xs mt-1 ${
                     message.sender_id === userId 
                       ? 'text-primary-foreground/70' 
@@ -227,8 +323,41 @@ const ChatView: React.FC<ChatViewProps> = ({
         )}
       </div>
       
+      {imagePreviewUrl && (
+        <div className="border-t border-b p-2">
+          <div className="relative inline-block">
+            <img 
+              src={imagePreviewUrl} 
+              alt="Preview" 
+              className="h-20 rounded-md"
+            />
+            <button 
+              onClick={handleCancelImage}
+              className="absolute -right-2 -top-2 bg-destructive text-destructive-foreground rounded-full p-1"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+      
       <div className="border-t p-3">
         <div className="flex gap-2 items-center">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+            ref={fileInputRef}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => fileInputRef.current?.click()}
+            type="button"
+          >
+            <ImageIcon className="h-5 w-5" />
+          </Button>
           <Input
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
@@ -239,7 +368,7 @@ const ChatView: React.FC<ChatViewProps> = ({
           />
           <Button 
             onClick={handleSendMessage} 
-            disabled={isLoading || !messageText.trim()}
+            disabled={isLoading || (!messageText.trim() && !imageFile)}
             size="icon"
             className="rounded-full h-10 w-10"
           >
