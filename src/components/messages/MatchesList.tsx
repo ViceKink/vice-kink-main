@@ -1,20 +1,14 @@
+
 import React from 'react';
-import { MatchWithProfile } from '@/models/messageTypes';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
-import { MessageSquare, User2 } from 'lucide-react';
+import { User2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
-interface MatchesListProps {
-  matches: MatchWithProfile[];
-  isLoading: boolean;
-  onSelectMatch: (matchId: string) => void;
-}
-
-const MatchesList: React.FC<MatchesListProps> = ({ matches, isLoading, onSelectMatch }) => {
+const MatchesList = ({ matches, isLoading, onSelectMatch }) => {
   const navigate = useNavigate();
 
   if (isLoading) {
@@ -42,15 +36,8 @@ const MatchesList: React.FC<MatchesListProps> = ({ matches, isLoading, onSelectM
       <Card className="h-full flex flex-col items-center justify-center text-center p-6">
         <User2 className="w-12 h-12 mb-2 text-gray-400" />
         <h3 className="text-lg font-medium">No matches yet</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          Start liking profiles to get matches
-        </p>
-        <Button 
-          className="mt-4" 
-          onClick={() => navigate('/discover')}
-        >
-          Discover
-        </Button>
+        <p className="text-sm text-muted-foreground mt-1">Start liking profiles to get matches</p>
+        <Button className="mt-4" onClick={() => navigate('/discover')}>Discover</Button>
       </Card>
     );
   }
@@ -67,25 +54,15 @@ const MatchesList: React.FC<MatchesListProps> = ({ matches, isLoading, onSelectM
             <div className="flex items-start">
               <Avatar className="h-12 w-12 mr-3 flex-shrink-0">
                 <AvatarImage src={match.other_user.avatar} />
-                <AvatarFallback>{match.other_user.name ? match.other_user.name.charAt(0) : '?'}</AvatarFallback>
+                <AvatarFallback>{match.other_user.name?.[0] || '?'}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
                 <div className="flex justify-between items-baseline">
-                  <h3 className="text-sm font-medium truncate">
-                    {match.other_user.name || 'User'}
-                  </h3>
-                  <span className="text-xs text-muted-foreground">
-                    {format(new Date(match.matched_at), 'P')}
-                  </span>
+                  <h3 className="text-sm font-medium truncate">{match.other_user.name || 'User'}</h3>
+                  <span className="text-xs text-muted-foreground">{format(new Date(match.matched_at), 'P')}</span>
                 </div>
-                <p className="text-sm text-muted-foreground truncate">
-                  {match.last_message || "No messages yet"}
-                </p>
-                {match.unread_count > 0 && (
-                  <Badge variant="default" className="mt-1">
-                    {match.unread_count}
-                  </Badge>
-                )}
+                <p className="text-sm text-muted-foreground truncate">{match.last_message || "No messages yet"}</p>
+                {match.unread_count > 0 && <Badge variant="default" className="mt-1">{match.unread_count}</Badge>}
               </div>
             </div>
           </CardContent>

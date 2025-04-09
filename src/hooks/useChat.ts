@@ -5,18 +5,12 @@ import { toast } from '@/hooks/use-toast';
 import { Message } from '@/models/messageTypes';
 import { useQueryClient } from '@tanstack/react-query';
 
-interface UseChatProps {
-  userId: string;
-  partnerId: string;
-}
-
-export const useChat = ({ userId, partnerId }: UseChatProps) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+export const useChat = ({ userId, partnerId }) => {
+  const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const queryClient = useQueryClient();
 
-  // Fetch messages
   const fetchMessages = async () => {
     try {
       setIsLoading(true);
@@ -25,23 +19,18 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
       setMessages(data || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
-      toast({ title: "Failed to load messages", description: "Please try again later", variant: "destructive" });
+      toast({ title: "Failed to load messages", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Mark messages as read
-  const markMessagesAsRead = async () => {
-    try {
-      await supabase.rpc('mark_messages_as_read', { user_id: userId, other_user_id: partnerId });
-    } catch (error) {
-      console.error('Error marking messages as read:', error);
-    }
+  const markRead = async () => {
+    await supabase.rpc('mark_messages_as_read', { user_id: userId, other_user_id: partnerId })
+      .catch(error => console.error('Error marking messages as read:', error));
   };
 
-  // Send a text message
-  const sendTextMessage = async (content: string) => {
+  const sendTextMessage = async (content) => {
     if (!content.trim()) return false;
     
     try {
@@ -54,31 +43,28 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
       
       if (error) throw error;
       
-      const newMessage: Message = {
+      setMessages(prev => [...prev, {
         id: data.id,
         sender_id: userId,
         receiver_id: partnerId,
         content: content.trim(),
         created_at: new Date().toISOString(),
         read: false
-      };
-      
-      setMessages(prev => [...prev, newMessage]);
+      }]);
       queryClient.invalidateQueries({ queryKey: ['matches'] });
       return true;
     } catch (error) {
       console.error('Error sending message:', error);
-      toast({ title: "Failed to send message", description: "Please try again later", variant: "destructive" });
+      toast({ title: "Failed to send message", variant: "destructive" });
       return false;
     } finally {
       setIsSending(false);
     }
   };
 
-  // Set up subscription for real-time messages
   useEffect(() => {
     fetchMessages();
-    markMessagesAsRead();
+    markRead();
     
     const channel = supabase
       .channel('messages-channel')
@@ -88,10 +74,10 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
         table: 'messages',
         filter: `receiver_id=eq.${userId}`
       }, payload => {
-        const newMessage = payload.new as Message;
+        const newMessage = payload.new;
         if (newMessage.sender_id === partnerId) {
           setMessages(prev => [...prev, newMessage]);
-          markMessagesAsRead();
+          markRead();
           queryClient.invalidateQueries({ queryKey: ['matches'] });
         }
       })

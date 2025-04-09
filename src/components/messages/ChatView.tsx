@@ -7,20 +7,11 @@ import { Input } from "@/components/ui/input";
 import { useChat } from "@/hooks/useChat";
 import { formatDistanceToNow } from "date-fns";
 
-export interface ChatViewProps {
-  userId: string;
-  partnerId: string;
-  partnerName: string;
-  partnerAvatar?: string;
-  onBack: () => void;
-  matchId: string;
-}
-
-const ChatView: React.FC<ChatViewProps> = ({ userId, partnerId, partnerName, partnerAvatar, onBack }) => {
+const ChatView = ({ userId, partnerId, partnerName, partnerAvatar, onBack }) => {
   const [messageText, setMessageText] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef(null);
   const { messages, isSending, sendTextMessage } = useChat({ userId, partnerId });
-  const nameInitial = partnerName && partnerName.length > 0 ? partnerName.charAt(0) : '?';
+  const nameInitial = partnerName?.[0] || '?';
   
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -32,7 +23,7 @@ const ChatView: React.FC<ChatViewProps> = ({ userId, partnerId, partnerName, par
     if (success) setMessageText("");
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -47,13 +38,11 @@ const ChatView: React.FC<ChatViewProps> = ({ userId, partnerId, partnerName, par
         </Button>
         
         <Avatar className="h-8 w-8">
-          <AvatarImage src={partnerAvatar} alt={partnerName || 'User'} />
+          <AvatarImage src={partnerAvatar} />
           <AvatarFallback>{nameInitial}</AvatarFallback>
         </Avatar>
         
-        <div>
-          <h3 className="font-semibold">{partnerName || 'User'}</h3>
-        </div>
+        <h3 className="font-semibold">{partnerName || 'User'}</h3>
       </div>
       
       <div className="flex-1 p-4 overflow-y-auto">
@@ -75,24 +64,16 @@ const ChatView: React.FC<ChatViewProps> = ({ userId, partnerId, partnerName, par
                       : 'bg-muted'
                   }`}
                 >
-                  <p className="break-words">{message.content}</p>
+                  <p>{message.content}</p>
                   {message.image_url && (
-                    <div className="mt-2">
-                      <img 
-                        src={message.image_url} 
-                        alt="Message attachment" 
-                        className="rounded max-w-full max-h-60 object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    </div>
+                    <img 
+                      src={message.image_url} 
+                      alt="Attachment" 
+                      className="mt-2 rounded max-w-full max-h-60 object-contain"
+                      onError={(e) => e.target.style.display = 'none'}
+                    />
                   )}
-                  <p className={`text-xs mt-1 ${
-                    message.sender_id === userId 
-                      ? 'text-primary-foreground/70' 
-                      : 'text-muted-foreground'
-                  }`}>
+                  <p className="text-xs mt-1 text-muted-foreground">
                     {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                   </p>
                 </div>
