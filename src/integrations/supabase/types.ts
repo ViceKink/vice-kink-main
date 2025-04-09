@@ -1572,7 +1572,14 @@ export type Database = {
         Returns: string
       }
       send_message: {
-        Args: { sender: string; receiver: string; message_content: string }
+        Args:
+          | { sender: string; receiver: string; message_content: string }
+          | {
+              sender: string
+              receiver: string
+              message_content: string
+              image_url?: string
+            }
         Returns: string
       }
       spend_adcoins: {

@@ -23,6 +23,7 @@ export interface Message {
   content: string;
   created_at: string;
   read: boolean;
+  image_url?: string;
 }
 
 export interface MatchWithProfile {

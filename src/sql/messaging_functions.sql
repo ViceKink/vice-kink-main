@@ -143,7 +143,8 @@ BEGIN
 END;
 $$;
 
--- Function to send a message
+-- Fix the overloaded function by removing one of the send_message functions and keeping just one version
+-- Function to send a message (simpler version without image_url parameter)
 CREATE OR REPLACE FUNCTION public.send_message(sender UUID, receiver UUID, message_content TEXT)
 RETURNS UUID
 LANGUAGE plpgsql
@@ -154,6 +155,23 @@ DECLARE
 BEGIN
   INSERT INTO public.messages (sender_id, receiver_id, content)
   VALUES (sender, receiver, message_content)
+  RETURNING id INTO message_id;
+  
+  RETURN message_id;
+END;
+$$;
+
+-- Add a new function for sending messages with images
+CREATE OR REPLACE FUNCTION public.send_message_with_image(sender UUID, receiver UUID, message_content TEXT, image_url TEXT)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  message_id UUID;
+BEGIN
+  INSERT INTO public.messages (sender_id, receiver_id, content, image_url)
+  VALUES (sender, receiver, message_content, image_url)
   RETURNING id INTO message_id;
   
   RETURN message_id;

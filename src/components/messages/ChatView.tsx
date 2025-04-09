@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -15,6 +15,7 @@ interface Message {
   content: string;
   created_at: string;
   read: boolean;
+  image_url?: string;
 }
 
 export interface ChatViewProps {
@@ -38,7 +39,6 @@ const ChatView: React.FC<ChatViewProps> = ({
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
   const queryClient = useQueryClient();
   
   // Default to '?' if name is undefined or empty
@@ -122,6 +122,8 @@ const ChatView: React.FC<ChatViewProps> = ({
     
     try {
       setIsLoading(true);
+      
+      // Use the fixed function without the image_url parameter
       const { data, error } = await supabase.rpc('send_message', {
         sender: userId,
         receiver: partnerId,
@@ -129,6 +131,7 @@ const ChatView: React.FC<ChatViewProps> = ({
       });
       
       if (error) {
+        console.error('Error response from send_message:', error);
         throw error;
       }
       
@@ -212,6 +215,19 @@ const ChatView: React.FC<ChatViewProps> = ({
                   }`}
                 >
                   <p className="break-words">{message.content}</p>
+                  {message.image_url && (
+                    <div className="mt-2">
+                      <img 
+                        src={message.image_url} 
+                        alt="Message attachment" 
+                        className="rounded max-w-full max-h-60 object-contain"
+                        onError={(e) => {
+                          console.error('Image failed to load:', message.image_url);
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                   <p className={`text-xs mt-1 ${
                     message.sender_id === userId 
                       ? 'text-primary-foreground/70' 
