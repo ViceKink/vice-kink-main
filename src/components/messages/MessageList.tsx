@@ -33,13 +33,15 @@ const MessageList: React.FC<MessageListProps> = ({
     scrollToBottom();
   }, [messages]);
 
-  // Initialize image sources when messages change
+  // Initialize image sources and ensure correct bucket name
   useEffect(() => {
     const newImageSrcs: Record<string, string> = {};
     messages.forEach(message => {
       if (message.image_url && !imageSrcs[message.id]) {
-        // Make sure we're using the correct bucket name 'messages' (not 'message')
-        const correctedUrl = message.image_url?.replace('/message/', '/messages/');
+        // Always ensure we're using the correct bucket name 'messages' (not 'message')
+        const correctedUrl = message.image_url?.includes('/message/') 
+          ? message.image_url.replace('/message/', '/messages/')
+          : message.image_url;
         newImageSrcs[message.id] = correctedUrl;
       }
     });
@@ -58,9 +60,9 @@ const MessageList: React.FC<MessageListProps> = ({
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Enhanced error handling with logging
+  // Enhanced error handling with aggressive bucket name correction
   const handleImageError = (messageId: string, imageUrl: string) => {
-    // Log the error with the URL for debugging
+    // Always log the full error with URL for debugging
     console.error(`Image failed to load: ${imageUrl}`, new Error().stack);
     
     // Check if URL contains 'message/' instead of 'messages/'
@@ -83,6 +85,9 @@ const MessageList: React.FC<MessageListProps> = ({
         delete newState[messageId];
         return newState;
       });
+      
+      // Log additional information about the error
+      console.error(`Image with correct bucket name still failed to load: ${imageUrl}`);
     }
   };
 
@@ -111,7 +116,7 @@ const MessageList: React.FC<MessageListProps> = ({
     }));
   };
 
-  // Improved retry mechanism with multiple approaches
+  // Improved retry mechanism with aggressive bucket name checking
   const retryLoadImage = (messageId: string, imageUrl: string) => {
     // Clear the error state
     setImageLoadErrors(prev => {
@@ -123,14 +128,14 @@ const MessageList: React.FC<MessageListProps> = ({
     // Set loading state
     handleImageLoadStart(messageId);
     
-    // Fix the bucket name if it's wrong
+    // ALWAYS check and fix the bucket name
     let newSrc = imageUrl;
     if (newSrc?.includes('/message/')) {
       newSrc = newSrc.replace('/message/', '/messages/');
       console.log("Correcting bucket name from 'message' to 'messages':", newSrc);
     }
     
-    // Add a timestamp to bust cache
+    // Add a cache-busting timestamp
     newSrc = `${newSrc}?t=${Date.now()}`;
     
     console.log("Retrying image load with URL:", newSrc);
@@ -150,12 +155,13 @@ const MessageList: React.FC<MessageListProps> = ({
     return newSrc;
   };
 
-  // Open image in new tab for fallback viewing
+  // Open image in new tab with bucket name correction
   const openImageInNewTab = (imageUrl: string) => {
-    // Fix URL if it's using the wrong bucket name
+    // ALWAYS check and fix the bucket name
     let correctedUrl = imageUrl;
     if (correctedUrl?.includes('/message/')) {
       correctedUrl = correctedUrl.replace('/message/', '/messages/');
+      console.log("Opening corrected URL in new tab:", correctedUrl);
     }
     window.open(correctedUrl, '_blank');
   };
@@ -199,87 +205,92 @@ const MessageList: React.FC<MessageListProps> = ({
 
   return (
     <div className="space-y-4">
-      {messages.map((message) => (
-        <div 
-          key={message.id}
-          className={`flex ${message.sender_id === userId ? 'justify-end' : 'justify-start'}`}
-        >
+      {messages.map((message) => {
+        // Always correct the bucket name in message.image_url if needed
+        const correctedImageUrl = message.image_url && message.image_url.includes('/message/')
+          ? message.image_url.replace('/message/', '/messages/')
+          : message.image_url;
+          
+        return (
           <div 
-            className={`max-w-[75%] px-4 py-2 rounded-lg ${
-              message.sender_id === userId 
-                ? 'bg-primary text-primary-foreground' 
-                : 'bg-muted'
-            }`}
+            key={message.id}
+            className={`flex ${message.sender_id === userId ? 'justify-end' : 'justify-start'}`}
           >
-            {/* Only show content if it's more than just a space character (for image-only messages) */}
-            {message.content && message.content.trim() && <p className="break-words">{message.content}</p>}
-            
-            {/* Image handling with improved reliability */}
-            {message.image_url && !imageLoadErrors[message.id] && (
-              <div className="mt-2 relative">
-                {imageLoading[message.id] && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-background/30 rounded-md">
-                    <Spinner className="h-8 w-8" />
-                  </div>
-                )}
-                <img 
-                  src={imageSrcs[message.id] || message.image_url.replace('/message/', '/messages/')}
-                  alt="Message attachment" 
-                  className="rounded-md max-h-60 max-w-full object-contain"
-                  onError={() => handleImageError(message.id, imageSrcs[message.id] || message.image_url)}
-                  onLoad={() => handleImageLoad(message.id)}
-                  onLoadStart={() => handleImageLoadStart(message.id)}
-                  crossOrigin="anonymous"
-                />
-              </div>
-            )}
-
-            {/* Error state with improved retry options */}
-            {message.image_url && imageLoadErrors[message.id] && (
-              <div className="mt-2 text-center p-3 bg-muted/50 rounded-md">
-                <p className="text-sm text-muted-foreground mb-1">Image failed to load</p>
-                <div className="flex space-x-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="flex-1 flex items-center justify-center gap-1"
-                    onClick={() => {
-                      const newSrc = retryLoadImage(
-                        message.id, 
-                        message.image_url!.replace('/message/', '/messages/')
-                      );
-                      // Force a reload of the image element
-                      const img = new Image();
-                      img.src = newSrc;
-                      img.onload = () => handleImageLoad(message.id);
-                    }}
-                  >
-                    <RefreshCw className="h-3 w-3" />
-                    Retry
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center justify-center gap-1"
-                    onClick={() => openImageInNewTab(message.image_url!)}
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    Open
-                  </Button>
+            <div 
+              className={`max-w-[75%] px-4 py-2 rounded-lg ${
+                message.sender_id === userId 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-muted'
+              }`}
+            >
+              {/* Only show content if it's more than just a space character (for image-only messages) */}
+              {message.content && message.content.trim() && <p className="break-words">{message.content}</p>}
+              
+              {/* Image handling with improved bucket name correction */}
+              {message.image_url && !imageLoadErrors[message.id] && (
+                <div className="mt-2 relative">
+                  {imageLoading[message.id] && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/30 rounded-md">
+                      <Spinner className="h-8 w-8" />
+                    </div>
+                  )}
+                  <img 
+                    src={imageSrcs[message.id] || correctedImageUrl}
+                    alt="Message attachment" 
+                    className="rounded-md max-h-60 max-w-full object-contain"
+                    onError={() => handleImageError(message.id, imageSrcs[message.id] || correctedImageUrl || '')}
+                    onLoad={() => handleImageLoad(message.id)}
+                    onLoadStart={() => handleImageLoadStart(message.id)}
+                    crossOrigin="anonymous"
+                  />
                 </div>
-              </div>
-            )}
-            
-            <p className={`text-xs mt-1 ${
-              message.sender_id === userId 
-                ? 'text-primary-foreground/70' 
-                : 'text-muted-foreground'
-            }`}>
-              {formatMessageDate(message.created_at)}
-            </p>
+              )}
+
+              {/* Error state with improved retry options */}
+              {message.image_url && imageLoadErrors[message.id] && (
+                <div className="mt-2 text-center p-3 bg-muted/50 rounded-md">
+                  <p className="text-sm text-muted-foreground mb-1">Image failed to load</p>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="flex-1 flex items-center justify-center gap-1"
+                      onClick={() => {
+                        // Always use corrected URL
+                        const newSrc = retryLoadImage(message.id, correctedImageUrl || '');
+                        // Force a reload of the image element
+                        const img = new Image();
+                        img.src = newSrc;
+                        img.onload = () => handleImageLoad(message.id);
+                      }}
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      Retry
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center justify-center gap-1"
+                      onClick={() => openImageInNewTab(correctedImageUrl || '')}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Open
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              <p className={`text-xs mt-1 ${
+                message.sender_id === userId 
+                  ? 'text-primary-foreground/70' 
+                  : 'text-muted-foreground'
+              }`}>
+                {formatMessageDate(message.created_at)}
+              </p>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
       <div ref={messagesEndRef} />
     </div>
   );
