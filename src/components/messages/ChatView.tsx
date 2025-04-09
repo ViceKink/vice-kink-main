@@ -10,17 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from "sonner";
 import { useAdCoins } from '@/hooks/useAdCoins';
-
-interface Message {
-  id: string;
-  sender_id: string;
-  receiver_id: string;
-  content: string;
-  image_url?: string;
-  is_image_revealed?: boolean;
-  created_at: string;
-  read: boolean;
-}
+import { Message } from '@/models/matchesTypes';
 
 export interface ChatViewProps {
   matchId: string;
@@ -163,7 +153,7 @@ const ChatView: React.FC<ChatViewProps> = ({
       // Generate a unique filename to avoid collisions
       const fileExt = file.name.split('.').pop();
       const fileName = `${uuidv4()}.${fileExt}`;
-      const filePath = `message_images/${userId}/${fileName}`;
+      const filePath = `${userId}/${fileName}`;
       
       // Upload the file to Supabase Storage
       const { error: uploadError } = await supabase
@@ -255,7 +245,7 @@ const ChatView: React.FC<ChatViewProps> = ({
       setRevealingImage(messageId);
       
       // Use AdCoins to reveal the image
-      const success = await purchaseFeature('REVEAL_PROFILE');
+      const success = await purchaseFeature('REVEAL_IMAGE');
       
       if (success) {
         // Update the local state to show the image as revealed
