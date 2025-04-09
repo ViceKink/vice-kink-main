@@ -35,6 +35,7 @@ const ChatView: React.FC<ChatViewProps> = ({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [revealingImage, setRevealingImage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast: toastNotification } = useToast();
@@ -83,18 +84,33 @@ const ChatView: React.FC<ChatViewProps> = ({
   const fetchMessages = async () => {
     try {
       setIsLoading(true);
-      const { data, error } = await supabase.rpc('get_conversation', {
-        user1: userId,
-        user2: partnerId
-      });
+      setErrorMessage(null);
+      
+      // Using direct query instead of RPC function since the RPC has an error
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+        .or(`sender_id.eq.${partnerId},receiver_id.eq.${partnerId}`)
+        .order('created_at', { ascending: true });
       
       if (error) {
+        console.error('Error fetching messages:', error);
+        setErrorMessage("Failed to load messages. Please try again later.");
         throw error;
       }
       
-      setMessages(data || []);
+      // Filter to only include messages between these two users
+      const filteredMessages = data.filter(msg => 
+        (msg.sender_id === userId && msg.receiver_id === partnerId) || 
+        (msg.sender_id === partnerId && msg.receiver_id === userId)
+      );
+      
+      console.log("Fetched messages:", filteredMessages);
+      setMessages(filteredMessages || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
+      setErrorMessage("Failed to load messages. Please try again later.");
       toastNotification({
         title: "Failed to load messages",
         description: "Please try again later",
@@ -207,31 +223,35 @@ const ChatView: React.FC<ChatViewProps> = ({
         }
       }
       
-      // Send message with image if available
-      const { data, error } = await supabase.rpc('send_message', {
+      console.log("Sending message with:", {
         sender: userId,
         receiver: partnerId,
         message_content: messageText.trim() || ' ', // Send at least a space if no text
         image_url: imageUrl || null
       });
       
+      // Direct insert instead of using the RPC function
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: userId,
+          receiver_id: partnerId,
+          content: messageText.trim() || ' ',
+          image_url: imageUrl || null,
+          is_image_revealed: imageUrl ? true : null // Images are revealed by default for the sender
+        })
+        .select()
+        .single();
+      
       if (error) {
         console.error("Error sending message:", error);
         throw error;
       }
       
-      // Add the new message to the list
-      const newMessage: Message = {
-        id: data,
-        sender_id: userId,
-        receiver_id: partnerId,
-        content: messageText.trim() || ' ',
-        created_at: new Date().toISOString(),
-        read: false,
-        image_url: imageUrl || undefined,
-        is_image_revealed: true // Your own images are always revealed
-      };
+      console.log("Message sent successfully:", data);
       
+      // Add the new message to the list
+      const newMessage = data as Message;
       setMessages(prev => [...prev, newMessage]);
       setMessageText(""); // Clear input field
       handleCancelImage(); // Clear image preview
@@ -321,7 +341,21 @@ const ChatView: React.FC<ChatViewProps> = ({
       </div>
       
       <div className="flex-1 p-4 overflow-y-auto">
-        {messages.length === 0 && !isLoading ? (
+        {errorMessage && (
+          <div className="p-4 mb-4 text-white bg-destructive rounded-md text-center">
+            {errorMessage}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-2 bg-transparent border-white text-white hover:bg-white/20"
+              onClick={() => fetchMessages()}
+            >
+              Try Again
+            </Button>
+          </div>
+        )}
+        
+        {messages.length === 0 && !isLoading && !errorMessage ? (
           <div className="text-center text-muted-foreground py-6">
             You matched with {partnerName || 'this user'}. Say hello!
           </div>
