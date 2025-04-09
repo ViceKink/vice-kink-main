@@ -69,7 +69,38 @@ export const useChat = ({ matchId, userId, partnerId }: UseChatProps) => {
       const fileExt = file.name.split('.').pop();
       const filePath = `${userId}/${uuidv4()}.${fileExt}`;
       
-      console.log(`Uploading image to "${BUCKET_NAME}" bucket with path:`, filePath);
+      // Log additional debugging information
+      console.log(`Attempting to upload image to bucket: "${BUCKET_NAME}"`);
+      console.log(`File path: ${filePath}`);
+      console.log(`User ID: ${userId}`);
+      
+      // Check if bucket exists before uploading
+      const { data: buckets, error: bucketError } = await supabase
+        .storage
+        .listBuckets();
+        
+      if (bucketError) {
+        console.error('Error listing buckets:', bucketError);
+        toast({
+          title: "Storage error",
+          description: "Could not access storage buckets",
+          variant: "destructive"
+        });
+        return null;
+      }
+      
+      // Log available buckets for debugging
+      console.log('Available buckets:', buckets.map(b => b.name));
+      
+      if (!buckets.some(b => b.name === BUCKET_NAME)) {
+        console.error(`Bucket "${BUCKET_NAME}" does not exist!`);
+        toast({
+          title: "Storage error",
+          description: `Bucket "${BUCKET_NAME}" not found. Please contact support.`,
+          variant: "destructive"
+        });
+        return null;
+      }
       
       const { error: uploadError, data } = await supabase
         .storage

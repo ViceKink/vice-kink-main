@@ -78,9 +78,10 @@ const MessageList: React.FC<MessageListProps> = ({
 
   const handleImageError = (url: string) => {
     console.error(`Failed to load image: ${url}`);
+    console.error(`Image URL parsing: ${new URL(url).toString()}`);
     toast({
       title: "Image failed to load",
-      description: "The image could not be displayed"
+      description: "The image could not be displayed. Please check the console for details."
     });
   };
 
