@@ -59,12 +59,8 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
     try {
       setIsSending(true);
       
-      // Using send_message RPC function with proper typing
-      const { data, error } = await supabase.rpc<string, { 
-        sender: string; 
-        receiver: string; 
-        message_content: string;
-      }>('send_message', {
+      // Fixed typing for RPC call
+      const { data, error } = await supabase.rpc('send_message', {
         sender: userId,
         receiver: partnerId,
         message_content: content.trim()
@@ -75,13 +71,16 @@ export const useChat = ({ userId, partnerId }: UseChatProps) => {
         throw error;
       }
       
-      // Check if data exists and is a string (the message ID)
+      // Check if data exists 
       if (!data) {
         throw new Error('No data returned from send_message');
       }
       
+      // Explicitly cast data to string to satisfy TypeScript
+      const messageId: string = data as string;
+      
       const newMessage: Message = {
-        id: data,
+        id: messageId,
         sender_id: userId,
         receiver_id: partnerId,
         content: content.trim(),
