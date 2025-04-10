@@ -288,6 +288,37 @@ export const updateUserProfile = async (userId: string, profileData: Record<stri
       profileData.avatar = profileData.photos[0];
     }
     
+    // Check if profile exists before updating
+    const { data: existingProfile, error: checkError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+      
+    if (checkError && !checkError.message.includes('No rows found')) {
+      console.error('Error checking if profile exists:', checkError);
+    }
+    
+    // If profile doesn't exist, create it with minimal required data
+    if (!existingProfile) {
+      console.log('Profile does not exist, creating with minimal data');
+      
+      const minimalProfile = {
+        id: userId,
+        name: profileData.name || 'New User',
+        username: profileData.username || `user_${Math.random().toString(36).substring(2, 8)}`
+      };
+      
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert(minimalProfile);
+        
+      if (insertError) {
+        console.error('Error creating minimal profile:', insertError);
+        throw new Error(`Failed to create profile: ${insertError.message}`);
+      }
+    }
+    
     // Split data into main profile fields and languages
     const { languages, preferences, ...mainProfileData } = profileData;
     const finalData: Record<string, any> = {};

@@ -62,12 +62,18 @@ export async function signup(email: string, password: string, name: string, user
           throw loginError;
         }
         
+        // Ensure the profile is created
+        await createProfileIfNeeded(loginData?.user?.id, name, username);
+        
         return loginData;
       } else {
         console.error('Error signing up:', error);
         throw error;
       }
     }
+    
+    // Ensure the profile is created
+    await createProfileIfNeeded(data?.user?.id, name, username);
     
     return data;
   } catch (error: any) {
@@ -79,6 +85,48 @@ export async function signup(email: string, password: string, name: string, user
     }
     
     throw error;
+  }
+}
+
+// Helper function to ensure a profile exists for the user
+async function createProfileIfNeeded(userId?: string, name?: string, username?: string) {
+  if (!userId) return;
+  
+  try {
+    // Check if profile already exists
+    const { data: existingProfile, error: fetchError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+      
+    if (fetchError && !fetchError.message.includes('No rows found')) {
+      console.error('Error fetching user profile:', fetchError);
+      // Non-critical error, continue
+    }
+    
+    // If profile doesn't exist, create it
+    if (!existingProfile) {
+      console.log('Creating profile for user:', userId);
+      
+      const profileData = {
+        id: userId,
+        name: name || 'New User', // Provide a default name if none is given
+        username: username || `user_${Math.random().toString(36).substring(2, 9)}` // Generate a random username if none is provided
+      };
+      
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert(profileData);
+        
+      if (insertError) {
+        console.error('Error creating user profile:', insertError);
+        // This is serious as it may affect user experience, but don't block authentication
+      }
+    }
+  } catch (error) {
+    console.error('Error in createProfileIfNeeded:', error);
+    // Non-critical function, don't throw error
   }
 }
 
