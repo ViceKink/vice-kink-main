@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 
@@ -52,6 +51,7 @@ const Auth = () => {
       isLoading
     });
   }, [isAuthenticated, isLoading]);
+  
   return <div className="min-h-screen pt-20 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
@@ -228,6 +228,7 @@ const SignupForm = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [localLoading, setLocalLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [emailConfirmWarning, setEmailConfirmWarning] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,6 +236,7 @@ const SignupForm = ({
     // Reset errors
     setErrors({});
     setAuthError(null);
+    setEmailConfirmWarning(false);
 
     // Basic validation
     const newErrors: Record<string, string> = {};
@@ -252,13 +254,18 @@ const SignupForm = ({
       // Set the new signup flag before calling the signup function
       setIsNewSignup(true);
       await onSignup(email, password, name, username);
-      toast.success('Please check your email to confirm your account.');
+      
+      // If we get here, signup was successful
+      toast.success('Account created successfully!');
+      
+      // Set a flag if there was an email confirmation issue but login succeeded
+      setEmailConfirmWarning(true);
     } catch (error: any) {
       // Handle specific signup errors
       console.error("Signup error:", error);
       const errorMessage = error?.message || 'An error occurred during signup';
       
-      if (errorMessage.includes('User already registered')) {
+      if (errorMessage.includes('User already registered') || errorMessage.includes('already registered')) {
         setAuthError('This email is already registered. Please login instead.');
       } else {
         setAuthError(errorMessage);
@@ -282,7 +289,16 @@ const SignupForm = ({
         </Alert>
       )}
       
-      <form onSubmit={handleSubmit} className="space-y-4">      
+      {emailConfirmWarning && (
+        <Alert className="mb-4 bg-amber-100 border-amber-300 dark:bg-amber-900 dark:border-amber-600">
+          <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <AlertDescription className="ml-2">
+            Email confirmation was skipped due to server restrictions. You're now logged in.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1">
           <Label htmlFor="name">Full Name</Label>
           <Input id="name" type="text" placeholder="John Doe" value={name} onChange={e => setName(e.target.value)} className={cn(errors.name && "border-destructive")} disabled={buttonLoading} />

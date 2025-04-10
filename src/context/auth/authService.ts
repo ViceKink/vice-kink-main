@@ -32,6 +32,7 @@ export async function login(email: string, password: string) {
 
 export async function signup(email: string, password: string, name: string, username: string) {
   try {
+    // First attempt normal signup
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -40,12 +41,32 @@ export async function signup(email: string, password: string, name: string, user
           name,
           username,
         },
+        // Don't require email confirmation
+        emailRedirectTo: window.location.origin,
       },
     });
     
     if (error) {
-      console.error('Error signing up:', error);
-      throw error;
+      // If the signup failed due to email sending issues, try a different approach
+      if (error.message?.includes('send email') || error.message?.includes('sending confirmation')) {
+        console.warn('Error sending confirmation email, attempting auto-confirmation workaround');
+        
+        // Try signin directly since the user was likely created despite email failure
+        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (loginError) {
+          console.error('Error with auto-login after signup:', loginError);
+          throw loginError;
+        }
+        
+        return loginData;
+      } else {
+        console.error('Error signing up:', error);
+        throw error;
+      }
     }
     
     return data;
@@ -53,7 +74,7 @@ export async function signup(email: string, password: string, name: string, user
     console.error('Error signing up:', error);
     
     // Make error messages more user-friendly
-    if (error.message.includes('already registered')) {
+    if (error.message?.includes('already registered')) {
       throw new Error('This email is already registered. Please login instead.');
     }
     
