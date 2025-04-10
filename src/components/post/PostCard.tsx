@@ -429,7 +429,6 @@ export const PostCard = ({ post, onDelete }: PostCardProps) => {
       let lastIndex = 0;
       const parts = [];
       let match;
-      let processedLine = line;
       
       while ((match = urlRegex.exec(line)) !== null) {
         if (match.index > lastIndex) {
@@ -700,7 +699,7 @@ export const PostCard = ({ post, onDelete }: PostCardProps) => {
         )}
         
         {post.content && (
-          <div className="mb-4 whitespace-pre-line">{formatTextWithLineBreaks(post.content)}</div>
+          <div className="mb-4 post-content whitespace-pre-line">{formatTextWithLineBreaks(post.content)}</div>
         )}
         
         {post.type === 'comic' ? (

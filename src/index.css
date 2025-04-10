@@ -96,4 +96,33 @@
   body {
     @apply bg-background text-foreground transition-colors duration-300;
   }
+  
+  /* Ensure text formatting is preserved in posts */
+  .whitespace-pre-line {
+    white-space: pre-line !important;
+  }
+}
+
+/* Ensure proper paragraph formatting in posts */
+.post-content {
+  white-space: pre-line !important;
+  word-break: break-word;
+}
+
+/* Add styling for blockquotes in posts */
+.post-content blockquote {
+  border-left: 3px solid #ccc;
+  margin-left: 1rem;
+  padding-left: 1rem;
+  font-style: italic;
+}
+
+/* Improve link styling in posts */
+.post-content a {
+  color: theme('colors.blue.500');
+  text-decoration: none;
+}
+
+.post-content a:hover {
+  text-decoration: underline;
 }
