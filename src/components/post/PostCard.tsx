@@ -420,6 +420,15 @@ export const PostCard = ({ post, onDelete }: PostCardProps) => {
     checkLikeStatus();
   }, [post.id]);
   
+  const formatTextWithLineBreaks = (text: string) => {
+    return text.split('\n').map((line, i) => (
+      <React.Fragment key={i}>
+        {line}
+        {i < text.split('\n').length - 1 && <br />}
+      </React.Fragment>
+    ));
+  };
+  
   const renderComicContent = () => {
     if (!post.comicData || post.comicData.length === 0) {
       return null;
@@ -640,7 +649,9 @@ export const PostCard = ({ post, onDelete }: PostCardProps) => {
           <h3 className="text-lg font-semibold mb-2">{post.title}</h3>
         )}
         
-        {post.content && <p className="mb-4">{post.content}</p>}
+        {post.content && (
+          <div className="mb-4 whitespace-pre-line">{formatTextWithLineBreaks(post.content)}</div>
+        )}
         
         {post.type === 'comic' ? (
           renderComicContent()

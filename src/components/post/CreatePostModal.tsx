@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { X, Image, AlignLeft, BookOpen, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -162,7 +163,7 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
           .insert({
             user_id: user?.id,
             title: title,
-            content,
+            content, // Keep the content as is, including line breaks
             type: 'text',
             community_id: communityId
           })
@@ -312,7 +313,7 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
             <TabsContent value="text" className="space-y-4">
               <Textarea 
                 placeholder={`What's on your mind, ${user?.name?.split(' ')[0]}?`}
-                className="min-h-[150px] border-none focus-visible:ring-0 bg-muted"
+                className="min-h-[150px] border-none focus-visible:ring-0 bg-muted whitespace-pre-wrap"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
               />
@@ -321,7 +322,7 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
             <TabsContent value="photo" className="space-y-4">
               <Textarea 
                 placeholder={`What's on your mind, ${user?.name?.split(' ')[0]}?`}
-                className="min-h-[100px] border-none focus-visible:ring-0 bg-muted"
+                className="min-h-[100px] border-none focus-visible:ring-0 bg-muted whitespace-pre-wrap"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
               />
@@ -372,7 +373,7 @@ const CreatePostModal = ({ onClose, onPost }: CreatePostModalProps) => {
               <div className="mb-4">
                 <Textarea 
                   placeholder="Add a description to your comic..."
-                  className="min-h-[80px] border-none focus-visible:ring-0 bg-muted mb-4"
+                  className="min-h-[80px] border-none focus-visible:ring-0 bg-muted mb-4 whitespace-pre-wrap"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                 />
