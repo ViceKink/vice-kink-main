@@ -40,21 +40,8 @@ export const useProfilePosts = (profileId?: string) => {
         .eq('id', profileId)
         .single();
       
-      if (profileError) {
+      if (profileError && !profileError.message.includes('No rows found')) {
         console.error('Error fetching profile for posts:', profileError);
-        return postsData.map(post => ({
-          ...post,
-          images: post.media_url ? 
-            (post.type === 'comic' ? undefined : [post.media_url]) : 
-            undefined,
-          comicData: post.type === 'comic' && post.media_url ? 
-            JSON.parse(post.media_url) as ComicPanelData[] : 
-            undefined,
-          user: {
-            name: 'Anonymous',
-            avatar: undefined
-          }
-        }));
       }
       
       const communityIds = postsData
@@ -96,7 +83,7 @@ export const useProfilePosts = (profileId?: string) => {
           community_id: post.community_id,
           community_name: community ? community.name : undefined,
           user: {
-            name: profileData?.name || 'Anonymous',
+            name: profileData?.name || 'Deleted User',
             avatar: profileData?.avatar
           }
         };

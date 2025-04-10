@@ -2,25 +2,37 @@
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * A service to handle the complete deletion of a user profile including all related data.
- * This ensures that when a user deletes their account, all their data is removed.
+ * A service to handle the complete deletion of a user profile while preserving their content.
+ * Comments and posts are kept but anonymized to "Deleted User"
  */
 export const deleteUserProfile = async (userId: string) => {
   try {
-    // Using DB functions is more efficient than deleting records one by one from the client
-    // The auth.users cascade will handle most deletions, but we need to handle some manually
-
-    // 1. Delete all comments by this user
+    // Instead of deleting comments and posts, we'll update them to show "Deleted User"
+    // First, anonymize comments by this user
     const { error: commentsError } = await supabase
-      .from('comments')
-      .delete()
+      .from('posts')
+      .update({ 
+        user_id: null  // This will make the posts appear as from "Deleted User"
+      })
       .eq('user_id', userId);
     
     if (commentsError) {
-      console.error("Error deleting user comments:", commentsError);
+      console.error("Error anonymizing user posts:", commentsError);
     }
 
-    // 2. Delete all post likes by this user
+    // Anonymize comments instead of deleting them
+    const { error: postsError } = await supabase
+      .from('comments')
+      .update({ 
+        user_id: null  // This will make the comments appear as from "Deleted User"
+      })
+      .eq('user_id', userId);
+    
+    if (postsError) {
+      console.error("Error anonymizing user comments:", postsError);
+    }
+
+    // Delete all post likes by this user - these can be removed safely
     const { error: likesError } = await supabase
       .from('post_likes')
       .delete()
@@ -30,7 +42,7 @@ export const deleteUserProfile = async (userId: string) => {
       console.error("Error deleting user likes:", likesError);
     }
 
-    // 3. Delete all post saves by this user
+    // Delete all post saves by this user
     const { error: savesError } = await supabase
       .from('post_saves')
       .delete()
@@ -40,7 +52,7 @@ export const deleteUserProfile = async (userId: string) => {
       console.error("Error deleting user saves:", savesError);
     }
 
-    // 4. Delete all profile interactions involving this user
+    // Delete all profile interactions involving this user
     const { error: interactionsError1 } = await supabase
       .from('profile_interactions')
       .delete()
@@ -55,7 +67,7 @@ export const deleteUserProfile = async (userId: string) => {
       console.error("Error deleting user interactions:", interactionsError1 || interactionsError2);
     }
 
-    // 5. Delete all matches involving this user
+    // Delete all matches involving this user
     const { error: matchesError1 } = await supabase
       .from('matches')
       .delete()
@@ -70,7 +82,7 @@ export const deleteUserProfile = async (userId: string) => {
       console.error("Error deleting user matches:", matchesError1 || matchesError2);
     }
 
-    // 6. Delete all messages involving this user
+    // Delete all messages involving this user
     const { error: messagesError1 } = await supabase
       .from('messages')
       .delete()
@@ -85,19 +97,7 @@ export const deleteUserProfile = async (userId: string) => {
       console.error("Error deleting user messages:", messagesError1 || messagesError2);
     }
 
-    // 7. Delete all posts by this user
-    // This will cascade delete all comments, likes, etc. attached to these posts
-    const { error: postsError } = await supabase
-      .from('posts')
-      .delete()
-      .eq('user_id', userId);
-    
-    if (postsError) {
-      console.error("Error deleting user posts:", postsError);
-    }
-
-    // 8. Finally, delete the user's profile
-    // Note: auth.users deletion will be handled by Supabase auth admin API
+    // Delete the user's profile
     const { error: profileError } = await supabase
       .from('profiles')
       .delete()

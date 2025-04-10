@@ -38,7 +38,7 @@ interface Comment {
   id: string;
   content: string;
   created_at: string;
-  user_id: string;
+  user_id: string | null;
   user: {
     name: string;
     avatar?: string;
@@ -62,7 +62,7 @@ const CommentItem = ({ comment, onDelete }: CommentItemProps) => {
     fetchCurrentUser();
   }, []);
   
-  const isCommentOwner = currentUserId === comment.user_id;
+  const isCommentOwner = currentUserId === comment.user_id && comment.user_id !== null;
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
@@ -212,22 +212,27 @@ export const PostCard = ({ post, onDelete }: PostCardProps) => {
         return;
       }
       
-      const userIds = [...new Set(commentsData.map(comment => comment.user_id))];
-      const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, name, avatar')
-        .in('id', userIds);
+      const userIds = commentsData
+        .filter(comment => comment.user_id !== null)
+        .map(comment => comment.user_id);
       
-      if (profilesError) {
-        console.error("Error fetching profiles for comments:", profilesError);
-        setIsLoadingComments(false);
-        return;
+      let profilesMap = {};
+      
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, name, avatar')
+          .in('id', userIds);
+        
+        if (profilesError) {
+          console.error("Error fetching profiles for comments:", profilesError);
+        } else if (profilesData) {
+          profilesMap = profilesData.reduce((acc, profile) => {
+            acc[profile.id] = profile;
+            return acc;
+          }, {});
+        }
       }
-      
-      const profilesMap = profilesData.reduce((acc, profile) => {
-        acc[profile.id] = profile;
-        return acc;
-      }, {});
       
       const formattedComments: Comment[] = commentsData.map(comment => ({
         id: comment.id,
@@ -235,8 +240,8 @@ export const PostCard = ({ post, onDelete }: PostCardProps) => {
         created_at: comment.created_at,
         user_id: comment.user_id,
         user: {
-          name: profilesMap[comment.user_id]?.name || 'Anonymous',
-          avatar: profilesMap[comment.user_id]?.avatar
+          name: comment.user_id ? profilesMap[comment.user_id]?.name || 'Anonymous' : 'Deleted User',
+          avatar: comment.user_id ? profilesMap[comment.user_id]?.avatar : undefined
         }
       }));
       
@@ -579,11 +584,14 @@ export const PostCard = ({ post, onDelete }: PostCardProps) => {
     const checkCurrentUser = async () => {
       const sessionData = await supabase.auth.getSession();
       const userId = sessionData.data.session?.user?.id;
-      setIsCurrentUserPost(userId === post.user_id);
+      setIsCurrentUserPost(userId === post.user_id && post.user_id !== null);
     };
     
     checkCurrentUser();
   }, [post.user_id]);
+  
+  const postUserName = post.user && post.user.name ? post.user.name : 'Deleted User';
+  const postUserAvatar = post.user && post.user.avatar ? post.user.avatar : undefined;
   
   return (
     <Card className="overflow-hidden">
@@ -591,11 +599,11 @@ export const PostCard = ({ post, onDelete }: PostCardProps) => {
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-3">
             <Avatar>
-              <AvatarImage src={post.user.avatar} />
-              <AvatarFallback>{post.user.name[0]}</AvatarFallback>
+              <AvatarImage src={postUserAvatar} />
+              <AvatarFallback>{postUserName[0]}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium">{post.user.name}</p>
+              <p className="font-medium">{postUserName}</p>
               <p className="text-xs text-muted-foreground">
                 {formatDate(post.created_at)}
                 {post.community_name && ` · ${post.community_name}`}

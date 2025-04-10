@@ -11,7 +11,10 @@ export interface ProfileCardProps {
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onSelectLike, onViewProfile }) => {
-  const initials = profile.name ? profile.name.split(' ').map((n: string) => n[0]).join('') : '?';
+  const profileName = profile.name || 'Deleted User';
+  const initials = profileName !== 'Deleted User' ? 
+    profileName.split(' ').map((n: string) => n[0]).join('') : 
+    'DU';
   const navigate = useNavigate();
   
   const handleClick = () => {
@@ -32,12 +35,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onSelectLike, onView
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center">
           <Avatar className="w-12 h-12 mr-4">
-            <AvatarImage src={profile.avatar} alt={profile.name} />
+            <AvatarImage src={profile.avatar} alt={profileName} />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           
           <div>
-            <h3 className="font-semibold text-lg">{profile.is_revealed ? profile.name : 'Hidden Profile'}</h3>
+            <h3 className="font-semibold text-lg">{profile.is_revealed ? profileName : 'Hidden Profile'}</h3>
             {profile.is_revealed ? (
               <p className="text-sm text-muted-foreground">{profile.age} • {profile.location}</p>
             ) : (
