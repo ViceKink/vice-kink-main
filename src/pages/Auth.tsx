@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,8 +8,8 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/auth';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { AlertCircle, Info } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Info, CheckCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 
 const Auth = () => {
@@ -228,50 +229,58 @@ const SignupForm = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [localLoading, setLocalLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [emailConfirmWarning, setEmailConfirmWarning] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
+  const [confirmationEmailSent, setConfirmationEmailSent] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Reset errors
+    // Reset state
     setErrors({});
     setAuthError(null);
-    setEmailConfirmWarning(false);
+    setSignupSuccess(false);
+    setConfirmationEmailSent(false);
 
     // Basic validation
     const newErrors: Record<string, string> = {};
     if (!name) newErrors.name = 'Name is required';
-    if (!username) newErrors.username = 'Username is required';else if (username.includes(' ')) newErrors.username = 'Username cannot contain spaces';
+    if (!username) newErrors.username = 'Username is required';
+    else if (username.includes(' ')) newErrors.username = 'Username cannot contain spaces';
     if (!email) newErrors.email = 'Email is required';
     if (!password) newErrors.password = 'Password is required';
     if (password !== confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+    
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
+    
     try {
       setLocalLoading(true);
-      // Set the new signup flag before calling the signup function
-      setIsNewSignup(true);
-      await onSignup(email, password, name, username);
       
-      // If we get here, signup was successful
-      toast.success('Account created successfully!');
+      // Call the signup function
+      const result = await onSignup(email, password, name, username);
       
-      // Set a flag if there was an email confirmation issue but login succeeded
-      setEmailConfirmWarning(true);
+      // Check if we have a session (instant login)
+      if (result?.session) {
+        setIsNewSignup(true);
+        setSignupSuccess(true);
+        toast.success('Account created and logged in successfully!');
+      } else {
+        // No session means email confirmation is required
+        setConfirmationEmailSent(true);
+        toast.success('Please check your email to confirm your account');
+      }
     } catch (error: any) {
       // Handle specific signup errors
       console.error("Signup error:", error);
       const errorMessage = error?.message || 'An error occurred during signup';
       
-      if (errorMessage.includes('User already registered') || errorMessage.includes('already registered')) {
+      if (errorMessage.includes('already registered')) {
         setAuthError('This email is already registered. Please login instead.');
       } else {
         setAuthError(errorMessage);
       }
-      
-      setIsNewSignup(false); // Reset if there's an error
     } finally {
       setLocalLoading(false);
     }
@@ -289,51 +298,66 @@ const SignupForm = ({
         </Alert>
       )}
       
-      {emailConfirmWarning && (
-        <Alert className="mb-4 bg-amber-100 border-amber-300 dark:bg-amber-900 dark:border-amber-600">
-          <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+      {signupSuccess && (
+        <Alert className="mb-4 bg-green-100 border-green-300 dark:bg-green-900 dark:border-green-600">
+          <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
           <AlertDescription className="ml-2">
-            Email confirmation was skipped due to server restrictions. You're now logged in.
+            Account created successfully! You are now logged in.
           </AlertDescription>
         </Alert>
       )}
       
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-1">
-          <Label htmlFor="name">Full Name</Label>
-          <Input id="name" type="text" placeholder="John Doe" value={name} onChange={e => setName(e.target.value)} className={cn(errors.name && "border-destructive")} disabled={buttonLoading} />
-          {errors.name && <p className="text-destructive text-sm">{errors.name}</p>}
-        </div>
-        
-        <div className="space-y-1">
-          <Label htmlFor="username">Username</Label>
-          <Input id="username" type="text" placeholder="johndoe" value={username} onChange={e => setUsername(e.target.value)} className={cn(errors.username && "border-destructive")} disabled={buttonLoading} />
-          {errors.username && <p className="text-destructive text-sm">{errors.username}</p>}
-          <p className="text-xs text-muted-foreground">Username cannot be changed later</p>
-        </div>
-        
-        <div className="space-y-1">
-          <Label htmlFor="signup-email">Email</Label>
-          <Input id="signup-email" type="email" placeholder="your.email@example.com" value={email} onChange={e => setEmail(e.target.value)} className={cn(errors.email && "border-destructive")} />
-          {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
-        </div>
-        
-        <div className="space-y-1">
-          <Label htmlFor="signup-password">Password</Label>
-          <Input id="signup-password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className={cn(errors.password && "border-destructive")} />
-          {errors.password && <p className="text-destructive text-sm">{errors.password}</p>}
-        </div>
-        
-        <div className="space-y-1">
-          <Label htmlFor="confirm-password">Confirm Password</Label>
-          <Input id="confirm-password" type="password" placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={cn(errors.confirmPassword && "border-destructive")} />
-          {errors.confirmPassword && <p className="text-destructive text-sm">{errors.confirmPassword}</p>}
-        </div>
-        
-        <Button type="submit" className="w-full bg-vice-purple hover:bg-vice-dark-purple" disabled={buttonLoading}>
-          {buttonLoading ? 'Creating Account...' : 'Create Account'}
-        </Button>
-      </form>
+      {confirmationEmailSent && (
+        <Alert className="mb-4 bg-blue-100 border-blue-300 dark:bg-blue-900 dark:border-blue-600">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <div className="ml-2">
+            <AlertTitle>Check your email</AlertTitle>
+            <AlertDescription>
+              We've sent a confirmation email to <span className="font-medium">{email}</span>. 
+              Please click the link in the email to verify your account.
+            </AlertDescription>
+          </div>
+        </Alert>
+      )}
+      
+      {!confirmationEmailSent && (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1">
+            <Label htmlFor="name">Full Name</Label>
+            <Input id="name" type="text" placeholder="John Doe" value={name} onChange={e => setName(e.target.value)} className={cn(errors.name && "border-destructive")} disabled={buttonLoading} />
+            {errors.name && <p className="text-destructive text-sm">{errors.name}</p>}
+          </div>
+          
+          <div className="space-y-1">
+            <Label htmlFor="username">Username</Label>
+            <Input id="username" type="text" placeholder="johndoe" value={username} onChange={e => setUsername(e.target.value)} className={cn(errors.username && "border-destructive")} disabled={buttonLoading} />
+            {errors.username && <p className="text-destructive text-sm">{errors.username}</p>}
+            <p className="text-xs text-muted-foreground">Username cannot be changed later</p>
+          </div>
+          
+          <div className="space-y-1">
+            <Label htmlFor="signup-email">Email</Label>
+            <Input id="signup-email" type="email" placeholder="your.email@example.com" value={email} onChange={e => setEmail(e.target.value)} className={cn(errors.email && "border-destructive")} disabled={buttonLoading} />
+            {errors.email && <p className="text-destructive text-sm">{errors.email}</p>}
+          </div>
+          
+          <div className="space-y-1">
+            <Label htmlFor="signup-password">Password</Label>
+            <Input id="signup-password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className={cn(errors.password && "border-destructive")} disabled={buttonLoading} />
+            {errors.password && <p className="text-destructive text-sm">{errors.password}</p>}
+          </div>
+          
+          <div className="space-y-1">
+            <Label htmlFor="confirm-password">Confirm Password</Label>
+            <Input id="confirm-password" type="password" placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={cn(errors.confirmPassword && "border-destructive")} disabled={buttonLoading} />
+            {errors.confirmPassword && <p className="text-destructive text-sm">{errors.confirmPassword}</p>}
+          </div>
+          
+          <Button type="submit" className="w-full bg-vice-purple hover:bg-vice-dark-purple" disabled={buttonLoading}>
+            {buttonLoading ? 'Creating Account...' : 'Create Account'}
+          </Button>
+        </form>
+      )}
     </div>
   );
 };

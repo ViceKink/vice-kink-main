@@ -1,4 +1,3 @@
-
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/auth';
@@ -41,41 +40,32 @@ export async function signup(email: string, password: string, name: string, user
           name,
           username,
         },
-        // Don't require email confirmation
         emailRedirectTo: window.location.origin,
       },
     });
     
     if (error) {
-      // If the signup failed due to email sending issues, try a different approach
-      if (error.message?.includes('send email') || error.message?.includes('sending confirmation')) {
-        console.warn('Error sending confirmation email, attempting auto-confirmation workaround');
-        
-        // Try signin directly since the user was likely created despite email failure
-        const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-        
-        if (loginError) {
-          console.error('Error with auto-login after signup:', loginError);
-          throw loginError;
-        }
-        
-        // Ensure the profile is created
-        await createProfileIfNeeded(loginData?.user?.id, name, username);
-        
-        return loginData;
-      } else {
-        console.error('Error signing up:', error);
-        throw error;
-      }
+      // If the signup failed due to a specific error, handle it appropriately
+      console.error('Error signing up:', error);
+      throw error;
+    }
+    
+    if (!data || !data.user) {
+      throw new Error('No user data returned from signup');
     }
     
     // Ensure the profile is created
-    await createProfileIfNeeded(data?.user?.id, name, username);
+    await createProfileIfNeeded(data.user.id, name, username);
     
-    return data;
+    // Check if the user is already confirmed or needs confirmation
+    if (data.session) {
+      // User is confirmed and has a session already - most likely email confirmation is disabled
+      return data;
+    } else {
+      // No session means the user needs to confirm their email
+      // Return the data anyway so the UI can show appropriate message
+      return data;
+    }
   } catch (error: any) {
     console.error('Error signing up:', error);
     
