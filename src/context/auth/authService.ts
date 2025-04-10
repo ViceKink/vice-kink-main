@@ -1,3 +1,4 @@
+
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/types/auth';
@@ -59,12 +60,17 @@ export async function signup(email: string, password: string, name: string, user
     
     // Check if the user is already confirmed or needs confirmation
     if (data.session) {
+      console.log("User has a session after signup - email confirmation might be disabled");
       // User is confirmed and has a session already - most likely email confirmation is disabled
       return data;
     } else {
+      console.log("No session after signup - user likely needs to confirm email");
       // No session means the user needs to confirm their email
-      // Return the data anyway so the UI can show appropriate message
-      return data;
+      return {
+        user: data.user,
+        session: null,
+        emailConfirmationRequired: true
+      };
     }
   } catch (error: any) {
     console.error('Error signing up:', error);

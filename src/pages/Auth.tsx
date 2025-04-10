@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -211,7 +210,7 @@ const LoginForm = ({
 };
 
 interface SignupFormProps {
-  onSignup: (email: string, password: string, name: string, username: string) => Promise<void>;
+  onSignup: (email: string, password: string, name: string, username: string) => Promise<any>;
   isLoading: boolean;
   setIsNewSignup: (value: boolean) => void;
 }
@@ -262,7 +261,7 @@ const SignupForm = ({
       const result = await onSignup(email, password, name, username);
       
       // Check if we have a session (instant login)
-      if (result?.session) {
+      if (result && result.session) {
         setIsNewSignup(true);
         setSignupSuccess(true);
         toast.success('Account created and logged in successfully!');
