@@ -46,7 +46,15 @@ export async function signup(email: string, password: string, name: string, user
     });
     
     if (error) {
-      // If the signup failed due to a specific error, handle it appropriately
+      // Check specifically for email sending errors
+      if (error.message?.includes('sending email') || 
+          error.message?.includes('confirmation email') ||
+          error.message?.includes('smtp')) {
+        console.error('Email sending error:', error);
+        throw new Error('Error sending confirmation email. Please try again or contact support.');
+      }
+      
+      // If the signup failed due to a different error, handle it appropriately
       console.error('Error signing up:', error);
       throw error;
     }

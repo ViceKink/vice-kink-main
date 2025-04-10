@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -277,6 +278,8 @@ const SignupForm = ({
       
       if (errorMessage.includes('already registered')) {
         setAuthError('This email is already registered. Please login instead.');
+      } else if (errorMessage.includes('sending confirmation email')) {
+        setAuthError('Error sending confirmation email. Please try again or check if the email is valid.');
       } else {
         setAuthError(errorMessage);
       }
