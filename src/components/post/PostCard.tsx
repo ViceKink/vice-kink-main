@@ -421,12 +421,62 @@ export const PostCard = ({ post, onDelete }: PostCardProps) => {
   }, [post.id]);
   
   const formatTextWithLineBreaks = (text: string) => {
-    return text.split('\n').map((line, i) => (
-      <React.Fragment key={i}>
-        {line}
-        {i < text.split('\n').length - 1 && <br />}
-      </React.Fragment>
-    ));
+    const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9]+\.[a-zA-Z]{2,}\.[a-zA-Z]{2,})|([a-zA-Z0-9]+\.[a-zA-Z]{2,})/g;
+    
+    const lines = text.split('\n');
+    
+    return lines.map((line, lineIndex) => {
+      let lastIndex = 0;
+      const parts = [];
+      let match;
+      let processedLine = line;
+      
+      while ((match = urlRegex.exec(line)) !== null) {
+        if (match.index > lastIndex) {
+          parts.push(line.substring(lastIndex, match.index));
+        }
+        
+        let url = match[0];
+        
+        if (!url.match(/^https?:\/\//)) {
+          url = 'https://' + url;
+        }
+        
+        parts.push(
+          <a 
+            key={`${lineIndex}-${match.index}`}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:underline"
+          >
+            {match[0]}
+          </a>
+        );
+        
+        lastIndex = match.index + match[0].length;
+      }
+      
+      if (lastIndex < line.length) {
+        parts.push(line.substring(lastIndex));
+      }
+      
+      if (parts.length === 0) {
+        return (
+          <React.Fragment key={lineIndex}>
+            {line}
+            {lineIndex < lines.length - 1 && <br />}
+          </React.Fragment>
+        );
+      }
+      
+      return (
+        <React.Fragment key={lineIndex}>
+          {parts}
+          {lineIndex < lines.length - 1 && <br />}
+        </React.Fragment>
+      );
+    });
   };
   
   const renderComicContent = () => {
